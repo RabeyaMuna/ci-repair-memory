@@ -1,0 +1,10 @@
+{
+    "sha_fail": "16c6139ab089f3cd774175cc7a5bc2e0cbd52699",
+    "changed_files": [
+        {
+            "commit": "16c6139ab089f3cd774175cc7a5bc2e0cbd52699",
+            "file_path": "cookbook/apps/playground/demo.py",
+            "diff": "diff --git a/cookbook/apps/playground/demo.py b/cookbook/apps/playground/demo.py\nindex 627488f52..d10c1c1ef 100644\n--- a/cookbook/apps/playground/demo.py\n+++ b/cookbook/apps/playground/demo.py\n@@ -214,6 +214,11 @@ movie_writer = Agent(\n     name=\"Movie Writer Agent\",\n     model=OpenAIChat(id=\"gpt-4o\"),\n     response_model=MovieScript,\n+    storage=SqliteStorage(\n+        table_name=\"movie_writer\",\n+        db_file=agent_storage_file,\n+        auto_upgrade_schema=True,\n+    ),\n )\n \n playground = Playground(\n"
+        }
+    ]
+}

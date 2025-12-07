@@ -1,0 +1,10 @@
+{
+    "sha_fail": "8dc44333c309188f0a8337f20af6f2c01313b0de",
+    "changed_files": [
+        {
+            "commit": "8dc44333c309188f0a8337f20af6f2c01313b0de",
+            "file_path": "ui/src/workflow/common/NodeContainer.vue",
+            "diff": "diff --git a/ui/src/workflow/common/NodeContainer.vue b/ui/src/workflow/common/NodeContainer.vue\nindex 4020c2c7a..2a3ade15c 100644\n--- a/ui/src/workflow/common/NodeContainer.vue\n+++ b/ui/src/workflow/common/NodeContainer.vue\n@@ -320,6 +320,7 @@ function clickNodes(item: any) {\n     sourceNodeId: props.nodeModel.id,\n     sourceAnchorId: anchorData.value?.id,\n     targetNodeId: nodeModel.id,\n+    targetAnchorId: nodeModel.id + '_left',\n   })\n \n   closeNodeMenu()\n"
+        }
+    ]
+}

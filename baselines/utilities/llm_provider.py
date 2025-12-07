@@ -12,7 +12,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")  # you must set this in .env
 LOCAL_LLM_API_KEY = os.getenv("LOCAL_LLM_API_KEY", "dummy-local-key")  # fallback
 
-
 @dataclass
 class LLMInfo:
     """Configuration for one logical LLM."""
@@ -46,7 +45,7 @@ LLM_REGISTRY: Dict[str, LLMInfo] = {
         api_key=OPENAI_API_KEY,
     ),
     
-    "gpt5.1": LLMInfo(
+    "gpt-5.1": LLMInfo(
         provider="openai",
         model_name="gpt-5.1",   # exact API name
         temperature=0.0,
@@ -61,12 +60,12 @@ LLM_REGISTRY: Dict[str, LLMInfo] = {
     ),
 
     # DeepSeek via OpenAI-compatible API
-    "DeepSeek-V3.2": LLMInfo(
+    "deepseek-coder": LLMInfo(
         provider="deepseek",
-        model_name="DeepSeek-V3.2", # Fixed missing comma
+        model_name="deepseek-coder", # Changed to the correct model name for the API
         temperature=0.0,
         base_url="https://api.deepseek.com/v1",
-        api_key=DEEPSEEK_API_KEY,     # comes from DEEPSEEK_API_KEY in .env
+        api_key=DEEPSEEK_API_KEY,
     ),
 
     # Local Llama (OpenAI-compatible server)

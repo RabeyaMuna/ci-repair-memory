@@ -1,0 +1,10 @@
+{
+    "sha_fail": "e1f83f4e100052b23c77ba60e4ff95d24a237ce8",
+    "changed_files": [
+        {
+            "commit": "e1f83f4e100052b23c77ba60e4ff95d24a237ce8",
+            "file_path": "setup.cfg",
+            "diff": "diff --git a/setup.cfg b/setup.cfg\nindex 7f7833248..07a6a2d0c 100644\n--- a/setup.cfg\n+++ b/setup.cfg\n@@ -38,6 +38,7 @@ classifiers =\n   Programming Language :: Python :: 3.11\n   Programming Language :: Python :: 3.12\n   Programming Language :: Python :: 3.13\n+  Programming Language :: Python :: 3.14\n \n   Topic :: Internet :: WWW/HTTP\n \n"
+        }
+    ]
+}

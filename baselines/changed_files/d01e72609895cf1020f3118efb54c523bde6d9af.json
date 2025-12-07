@@ -1,0 +1,25 @@
+{
+    "sha_fail": "d01e72609895cf1020f3118efb54c523bde6d9af",
+    "changed_files": [
+        {
+            "commit": "d01e72609895cf1020f3118efb54c523bde6d9af",
+            "file_path": "apps/application/flow/compare/__init__.py",
+            "diff": "diff --git a/apps/application/flow/compare/__init__.py b/apps/application/flow/compare/__init__.py\nindex c015f6fea..f18845014 100644\n--- a/apps/application/flow/compare/__init__.py\n+++ b/apps/application/flow/compare/__init__.py\n@@ -8,6 +8,7 @@\n \"\"\"\n \n from .contain_compare import *\n+from .end_with import EndWithCompare\n from .equal_compare import *\n from .ge_compare import *\n from .gt_compare import *\n@@ -23,8 +24,10 @@ from .len_le_compare import *\n from .len_lt_compare import *\n from .lt_compare import *\n from .not_contain_compare import *\n+from .start_with import StartWithCompare\n \n compare_handle_list = [GECompare(), GTCompare(), ContainCompare(), EqualCompare(), LTCompare(), LECompare(),\n                        LenLECompare(), LenGECompare(), LenEqualCompare(), LenGTCompare(), LenLTCompare(),\n                        IsNullCompare(),\n-                       IsNotNullCompare(), NotContainCompare(), IsTrueCompare(), IsNotTrueCompare()]\n+                       IsNotNullCompare(), NotContainCompare(), IsTrueCompare(), IsNotTrueCompare(), StartWithCompare(),\n+                       EndWithCompare()]\n"
+        },
+        {
+            "commit": "d01e72609895cf1020f3118efb54c523bde6d9af",
+            "file_path": "apps/application/flow/compare/end_with.py",
+            "diff": "diff --git a/apps/application/flow/compare/end_with.py b/apps/application/flow/compare/end_with.py\nnew file mode 100644\nindex 000000000..a0fe17989\n--- /dev/null\n+++ b/apps/application/flow/compare/end_with.py\n@@ -0,0 +1,22 @@\n+# coding=utf-8\n+\"\"\"\n+    @project: MaxKB\n+    @Author\uff1a\u864e\u864e\n+    @file\uff1a start_with.py\n+    @date\uff1a2025/10/20 10:37\n+    @desc:\n+\"\"\"\n+from typing import List\n+\n+from application.flow.compare import Compare\n+\n+\n+class EndWithCompare(Compare):\n+\n+    def support(self, node_id, fields: List[str], source_value, compare, target_value):\n+        if compare == 'end_with':\n+            return True\n+\n+    def compare(self, source_value, compare, target_value):\n+        source_value = str(source_value)\n+        return source_value.endswith(str(target_value))\n"
+        },
+        {
+            "commit": "d01e72609895cf1020f3118efb54c523bde6d9af",
+            "file_path": "apps/application/flow/compare/start_with.py",
+            "diff": "diff --git a/apps/application/flow/compare/start_with.py b/apps/application/flow/compare/start_with.py\nnew file mode 100644\nindex 000000000..ccf0ae45b\n--- /dev/null\n+++ b/apps/application/flow/compare/start_with.py\n@@ -0,0 +1,22 @@\n+# coding=utf-8\n+\"\"\"\n+    @project: MaxKB\n+    @Author\uff1a\u864e\u864e\n+    @file\uff1a start_with.py\n+    @date\uff1a2025/10/20 10:37\n+    @desc:\n+\"\"\"\n+from typing import List\n+\n+from application.flow.compare import Compare\n+\n+\n+class StartWithCompare(Compare):\n+\n+    def support(self, node_id, fields: List[str], source_value, compare, target_value):\n+        if compare == 'start_with':\n+            return True\n+\n+    def compare(self, source_value, compare, target_value):\n+        source_value = str(source_value)\n+        return source_value.startswith(str(target_value))\n"
+        },
+        {
+            "commit": "d01e72609895cf1020f3118efb54c523bde6d9af",
+            "file_path": "ui/src/workflow/common/data.ts",
+            "diff": "diff --git a/ui/src/workflow/common/data.ts b/ui/src/workflow/common/data.ts\nindex 54636e62a..a8595e14c 100644\n--- a/ui/src/workflow/common/data.ts\n+++ b/ui/src/workflow/common/data.ts\n@@ -344,7 +344,6 @@ export const variableAggregationNode = {\n   },\n }\n \n-\n export const variableAssignNode = {\n   type: WorkflowType.VariableAssignNode,\n   text: t('views.applicationWorkflow.nodes.variableAssignNode.text'),\n@@ -744,6 +743,8 @@ export const compareList = [\n   { value: 'len_lt', label: t('views.applicationWorkflow.compare.len_lt') },\n   { value: 'is_true', label: t('views.applicationWorkflow.compare.is_true') },\n   { value: 'is_not_true', label: t('views.applicationWorkflow.compare.is_not_true') },\n+  { value: 'start_with', label: 'startWith' },\n+  { value: 'end_with', label: 'endWith' },\n ]\n \n export const nodeDict: any = {\n"
+        }
+    ]
+}

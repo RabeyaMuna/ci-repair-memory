@@ -1,0 +1,10 @@
+{
+    "sha_fail": "6964fcd4152f54ef1091ddb84a102bde8ba8c12f",
+    "changed_files": [
+        {
+            "commit": "6964fcd4152f54ef1091ddb84a102bde8ba8c12f",
+            "file_path": "ui/src/workflow/common/data.ts",
+            "diff": "diff --git a/ui/src/workflow/common/data.ts b/ui/src/workflow/common/data.ts\nindex 7c0bacfd4..5e1d16ad4 100644\n--- a/ui/src/workflow/common/data.ts\n+++ b/ui/src/workflow/common/data.ts\n@@ -134,7 +134,7 @@ export const searchDocumentNode = {\n     config: {\n       fields: [\n         {\n-          label: t( 'views.applicationWorkflow.nodes.searchDocumentNode.knowledge_list'),\n+          label: t('views.applicationWorkflow.nodes.searchDocumentNode.knowledge_list'),\n           value: 'knowledge_list',\n         },\n         {\n@@ -618,7 +618,7 @@ export const menuNodes = [\n   },\n   {\n     label: t('views.knowledge.title'),\n-    list: [searchKnowledgeNode, searchDocumentNode, rerankerNode]\n+    list: [searchKnowledgeNode, searchDocumentNode, rerankerNode],\n   },\n   {\n     label: t('views.applicationWorkflow.nodes.classify.businessLogic'),\n@@ -651,7 +651,7 @@ export const applicationLoopMenuNodes = [\n   },\n   {\n     label: t('views.knowledge.title'),\n-    list: [searchKnowledgeNode, searchDocumentNode, rerankerNode]\n+    list: [searchKnowledgeNode, searchDocumentNode, rerankerNode],\n   },\n   {\n     label: t('views.applicationWorkflow.nodes.classify.businessLogic'),\n@@ -659,7 +659,7 @@ export const applicationLoopMenuNodes = [\n   },\n   {\n     label: t('views.applicationWorkflow.nodes.classify.dataProcessing', '\u6570\u636e\u5904\u7406'),\n-    list: [variableSplittingNode],\n+    list: [variableSplittingNode, parameterExtractionNode],\n   },\n   {\n     label: t('views.applicationWorkflow.nodes.classify.other'),\n"
+        }
+    ]
+}

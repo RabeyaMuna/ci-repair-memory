@@ -1,0 +1,25 @@
+{
+    "sha_fail": "5df3ea92f59125955124ea1883b777b489db3042",
+    "changed_files": [
+        {
+            "commit": "5df3ea92f59125955124ea1883b777b489db3042",
+            "file_path": "sqlglot/dialects/bigquery.py",
+            "diff": "diff --git a/sqlglot/dialects/bigquery.py b/sqlglot/dialects/bigquery.py\nindex 304b7ab..f0a30fa 100644\n--- a/sqlglot/dialects/bigquery.py\n+++ b/sqlglot/dialects/bigquery.py\n@@ -540,6 +540,9 @@ class BigQuery(Dialect):\n         exp.RegexpExtractAll: lambda self, e: self._annotate_by_args(e, \"this\", array=True),\n         exp.Replace: lambda self, e: self._annotate_by_args(e, \"this\"),\n         exp.Reverse: lambda self, e: self._annotate_by_args(e, \"this\"),\n+        exp.SafeConvertBytesToString: lambda self, e: self._annotate_with_type(\n+            e, exp.DataType.Type.VARCHAR\n+        ),\n         exp.Soundex: lambda self, e: self._annotate_with_type(e, exp.DataType.Type.VARCHAR),\n         exp.SHA: lambda self, e: self._annotate_with_type(e, exp.DataType.Type.BINARY),\n         exp.SHA2: lambda self, e: self._annotate_with_type(e, exp.DataType.Type.BINARY),\n"
+        },
+        {
+            "commit": "5df3ea92f59125955124ea1883b777b489db3042",
+            "file_path": "sqlglot/expressions.py",
+            "diff": "diff --git a/sqlglot/expressions.py b/sqlglot/expressions.py\nindex 28a33c2..3647758 100644\n--- a/sqlglot/expressions.py\n+++ b/sqlglot/expressions.py\n@@ -6939,6 +6939,10 @@ class SafeDivide(Func):\n     arg_types = {\"this\": True, \"expression\": True}\n \n \n+class SafeConvertBytesToString(Func):\n+    pass\n+\n+\n class SHA(Func):\n     _sql_names = [\"SHA\", \"SHA1\"]\n \n"
+        },
+        {
+            "commit": "5df3ea92f59125955124ea1883b777b489db3042",
+            "file_path": "tests/dialects/test_bigquery.py",
+            "diff": "diff --git a/tests/dialects/test_bigquery.py b/tests/dialects/test_bigquery.py\nindex fe0021e..dc49cb7 100644\n--- a/tests/dialects/test_bigquery.py\n+++ b/tests/dialects/test_bigquery.py\n@@ -1779,6 +1779,7 @@ WHERE\n         self.validate_identity(\"CODE_POINTS_TO_STRING([65, 255])\")\n         self.validate_identity(\"APPROX_TOP_COUNT(col, 2)\")\n         self.validate_identity(\"ARPOX_TOP_SUM(col, 1.5, 2)\")\n+        self.validate_identity(\"SAFE_CONVERT_BYTES_TO_STRING(b'\\xc2')\")\n         self.validate_identity(\"FROM_HEX('foo')\")\n         self.validate_identity(\"TO_CODE_POINTS('foo')\")\n         self.validate_identity(\"CODE_POINTS_TO_BYTES([65, 98])\")\n"
+        },
+        {
+            "commit": "5df3ea92f59125955124ea1883b777b489db3042",
+            "file_path": "tests/fixtures/optimizer/annotate_functions.sql",
+            "diff": "diff --git a/tests/fixtures/optimizer/annotate_functions.sql b/tests/fixtures/optimizer/annotate_functions.sql\nindex 996edc5..3664596 100644\n--- a/tests/fixtures/optimizer/annotate_functions.sql\n+++ b/tests/fixtures/optimizer/annotate_functions.sql\n@@ -824,6 +824,9 @@ APPROX_TOP_SUM(tbl.bigint_col, 1.5, 2);\n ARRAY<STRUCT<BIGINT, BIGINT>>;\n \n # dialect: bigquery\n+SAFE_CONVERT_BYTES_TO_STRING(b'\\xc2');\n+STRING;\n+\n FROM_HEX('foo');\n BINARY;\n \n"
+        }
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "sha_fail": "d004843873a1eaf274622b9dd027b7de87f33e16",
+    "changed_files": [
+        {
+            "commit": "d004843873a1eaf274622b9dd027b7de87f33e16",
+            "file_path": "tests/conftest.py",
+            "diff": "diff --git a/tests/conftest.py b/tests/conftest.py\nindex 82eae6dcc..2ad21bd5b 100644\n--- a/tests/conftest.py\n+++ b/tests/conftest.py\n@@ -327,7 +327,7 @@ def netrc_home_directory(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Pat\n     netrc_file = home_dir / netrc_filename\n     netrc_file.write_text(\"default login netrc_user password netrc_pass\\n\")\n \n-    monkeypatch.setenv('HOME', str(home_dir))\n+    monkeypatch.setenv(\"HOME\", str(home_dir))\n     # Ensure NETRC env var is not set\n     monkeypatch.delenv(\"NETRC\", raising=False)\n \n"
+        }
+    ]
+}

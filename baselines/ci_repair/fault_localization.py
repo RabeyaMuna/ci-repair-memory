@@ -434,6 +434,16 @@ R9. Output Contract (Hard)
       • No markdown fences, comments, or trailing commas.
   - Do NOT include "code_snippet" — it will be added later by the caller.
 
+R10. Line Number Formatting (Critical)
+  - The "line_range" array MUST contain plain decimal integers with NO leading zeros.
+  - If the source shows "0007:" or "0042:", you MUST output 7 or 42 in JSON.
+  - Examples:
+      • Correct: "line_range": [1, 15]
+      • Correct: "line_range": [7, 42]
+      • INCORRECT: "line_range": [0001, 0015]
+      • INCORRECT: "line_range": ["0001", "0015"]   (do NOT quote them)
+  - Always map the zero-padded display index NNNN to its integer value.
+
 ==============================================================================
 OUTPUT SCHEMA (JSON array)
 ------------------------------------------------------------------------------

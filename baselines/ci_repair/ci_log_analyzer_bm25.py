@@ -400,6 +400,11 @@ RULES:
 
 --- WORKFLOW (CI workflow context) ---
 {workflow_text}
+
+## IMPORTANT FORMATTING RULES:
+1. You MUST return ONLY valid JSON. Do NOT wrap the response in markdown code blocks.
+2. Do NOT use ```json or ``` in your response.
+3. Return plain JSON only.
 """.strip()
 
                 try:
@@ -474,18 +479,18 @@ RULES:
                 prompt = f"""
 You are a CI log explanation assistant.
 
-You receive **one CI step** and a subset of its detected failures (as JSON text in `subset_of_relevant_failures`).
+You receive ONE CI step and a subset of its detected failures (as JSON text in `subset_of_relevant_failures`).
 
-Your job for THIS SUBSET ONLY:
-1. Produce a short high-level explanation `error_context` of what these failures mean for this step.
-2. Produce ONE combined, detailed narrative `relevant_failures` that walks through ALL failures in this subset.
+YOUR TASK FOR THIS SUBSET ONLY:
+1. Produce a short high-level explanation as `error_context`.
+2. Produce one combined, detailed narrative as `relevant_failures` that describes ALL failures in this subset.
 
 INPUT:
 - step_name: {step_name}
 - subset_of_relevant_failures (JSON list of dicts):
 {failures_chunk}
 
-Each failure dict may contain:
+Each failure dict may include:
 - line_number
 - error_type
 - keywords
@@ -493,30 +498,38 @@ Each failure dict may contain:
 - message
 - context_lines (raw CI log lines)
 
-- Read every failure in this subset.
-- Build a continuous narrative that:
-  - Mentions each failure (line_number, error_type, message, keywords, bm25_score).
-  - Summarizes what the context_lines show (files involved, error messages, tests, commands, etc.) IN YOUR OWN WORDS.
-  - DO NOT copy raw context_lines or large log blocks. Only paraphrase them in natural language.
-  - Keep the text reasonably short and compact.
+READ CAREFULLY AND FOLLOW THESE RULES:
 
-OUTPUT (STRICT JSON):
+CRITICAL FORMAT RULES (MUST FOLLOW EXACTLY):
+- OUTPUT MUST BE STRICT JSON ONLY. No comments, no markdown, no explanations.
+- `error_context` and `relevant_failures` MUST be **single-line strings**.
+- DO NOT produce ANY newline characters (U+000A, "\\n") or carriage returns ("\\r") anywhere inside the JSON. Replace every newline with a single space.
+- DO NOT output multi-line text. All explanations must be one continuous line.
+- DO NOT copy raw log lines or raw JSON blocks. Always paraphrase context_lines in natural language.
+- DO NOT remove or ignore ANY failure. Every failure must be represented in `relevant_failures`.
 
-{
+CONTENT RULES:
+- `error_context` = one-line, high-level summary of what went wrong in this step, referencing involved files, commands, tools, and how the keywords and bm25_score relate.
+- `relevant_failures` = one-line continuous narrative that:
+    - Mentions EACH failure’s line_number, error_type, message, keywords, and bm25_score.
+    - Summarizes what the context_lines indicate IN YOUR OWN WORDS (no raw logs).
+    - Maintains all relevant context without omitting important details.
+- Use short sentences separated by periods or semicolons instead of newlines.
+
+OUTPUT (STRICT JSON FORMAT):
+
+{{
   "step_name": "<same as input>",
-  "error_context": "Single-line, high-level explanation for THIS CHUNK ONLY (subset of failures), summarizing what went wrong, which files and commands were involved, and how the keywords and bm25_score values support this. DO NOT include line breaks inside this string.",
-  "relevant_failures": "Single-line narrative for ALL failures in this subset. This string must include, for every failure, its line_number, error_type, message, keywords, bm25_score, and a natural-language summary of its context_lines. DO NOT paste raw logs or multi-line snippets. DO NOT include unescaped line breaks; keep this as one line of text."
-}
+  "error_context": "<single-line natural language text, no newlines>",
+  "relevant_failures": "<single-line narrative covering ALL failures, no newlines>"
+}}
 
-
-RULES:
-- Return ONLY valid JSON (no markdown, no comments, no extra text).
-- error_context and relevant_failures must each be a SINGLE-LINE STRING:
-  - Do not put line breaks inside the quotes.
-  - Use sentences separated by period or semicolon instead of newlines.
-- Never copy raw JSON or raw CI log blocks into the string values. Always paraphrase them in your own words.
-- Do not omit any distinct failure, but you may summarize log details concisely
+## IMPORTANT FORMATTING RULES:
+1. You MUST return ONLY valid JSON. Do NOT wrap the response in markdown code blocks.
+2. Do NOT use ```json or ``` in your response.
+3. Return plain JSON only.
 """.strip()
+
 
                 try:
                     t0 = time.time()
@@ -620,6 +633,11 @@ then produce a structured, evidence-based JSON summary that explains:
 - All string values must be single-line (no embedded line breaks). Use ". " or "; " to separate sentences, not newline characters.
 - If job/step/command cannot be determined, use null for those fields.
 - Return ONLY valid JSON, no markdown or extra text.
+
+## IMPORTANT FORMATTING RULES:
+1. You MUST return ONLY valid JSON. Do NOT wrap the response in markdown code blocks.
+2. Do NOT use ```json or ``` in your response.
+3. Return plain JSON only.
 """.strip()
 
         try:
