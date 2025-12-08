@@ -27958,5 +27958,28 @@
                 ]
             }
         ]
+    },
+    {
+        "sha_fail": "0ca45f6bc5636846b3aeaf10321cb07218bc23f3",
+        "fault_localization_data": [
+            {
+                "file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/security/security_config.py",
+                "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/security/security_config.py",
+                "faults": [
+                    {
+                        "file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/security/security_config.py",
+                        "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/security/security_config.py",
+                        "line_range": [
+                            20,
+                            116
+                        ],
+                        "reason": "The CI error indicates a TypeError: Cannot create a consistent method resolution order (MRO) for bases BaseModel and FlowTrackable. The SecurityConfig class (lines 20-116) inherits from BaseModel (line 20). The MRO conflict suggests that another class, likely FlowTrackable, is also being inherited from elsewhere in the codebase, possibly via a mixin or multiple inheritance pattern not visible in this chunk. This inheritance conflict prevents the class from being defined, causing test collection to fail.",
+                        "issue_type": "type_error",
+                        "fault_localization_level": "class",
+                        "code_snippet": "class SecurityConfig(BaseModel):\n    \"\"\"\n    Configuration for CrewAI security features.\n\n    This class manages security settings for CrewAI agents, including:\n    - Authentication credentials *TODO*\n    - Identity information (agent fingerprints)\n    - Scoping rules *TODO*\n    - Impersonation/delegation tokens *TODO*\n\n    Attributes:\n        version (str): Version of the security configuration\n        fingerprint (Fingerprint): The unique fingerprint automatically generated for the component\n    \"\"\"\n\n    model_config = ConfigDict(\n        arbitrary_types_allowed=True\n        # Note: Cannot use frozen=True as existing tests modify the fingerprint property\n    )\n\n    version: str = Field(\n        default=\"1.0.0\", \n        description=\"Version of the security configuration\"\n    )\n\n    fingerprint: Fingerprint = Field(\n        default_factory=Fingerprint, \n        description=\"Unique identifier for the component\"\n    )\n    \n    def is_compatible(self, min_version: str) -> bool:\n        \"\"\"\n        Check if this security configuration is compatible with the minimum required version.\n        \n        Args:\n            min_version (str): Minimum required version in semver format (e.g., \"1.0.0\")\n            \n        Returns:\n            bool: True if this configuration is compatible, False otherwise\n        \"\"\"\n        # Simple version comparison (can be enhanced with packaging.version if needed)\n        current = [int(x) for x in self.version.split(\".\")]\n        minimum = [int(x) for x in min_version.split(\".\")]\n        \n        # Compare major, minor, patch versions\n        for c, m in zip(current, minimum):\n            if c > m:\n                return True\n            if c < m:\n                return False\n        return True\n\n    @model_validator(mode='before')\n    @classmethod\n    def validate_fingerprint(cls, values):\n        \"\"\"Ensure fingerprint is properly initialized.\"\"\"\n        if isinstance(values, dict):\n            # Handle case where fingerprint is not provided or is None\n            if 'fingerprint' not in values or values['fingerprint'] is None:\n                values['fingerprint'] = Fingerprint()\n            # Handle case where fingerprint is a string (seed)\n            elif isinstance(values['fingerprint'], str):\n                if not values['fingerprint'].strip():\n                    raise ValueError(\"Fingerprint seed cannot be empty\")\n                values['fingerprint'] = Fingerprint.generate(seed=values['fingerprint'])\n        return values\n\n    def to_dict(self) -> Dict[str, Any]:\n        \"\"\"\n        Convert the security config to a dictionary.\n\n        Returns:\n            Dict[str, Any]: Dictionary representation of the security config\n        \"\"\"\n        result = {\n            \"fingerprint\": self.fingerprint.to_dict()\n        }\n        return result\n\n    @classmethod\n    def from_dict(cls, data: Dict[str, Any]) -> 'SecurityConfig':\n        \"\"\"\n        Create a SecurityConfig from a dictionary.\n\n        Args:\n            data (Dict[str, Any]): Dictionary representation of a security config\n\n        Returns:\n            SecurityConfig: A new SecurityConfig instance\n        \"\"\"\n        # Make a copy to avoid modifying the original\n        data_copy = data.copy()\n\n        fingerprint_data = data_copy.pop(\"fingerprint\", None)\n        fingerprint = Fingerprint.from_dict(fingerprint_data) if fingerprint_data else Fingerprint()\n\n        return cls(fingerprint=fingerprint)"
+                    }
+                ]
+            }
+        ]
     }
 ]
