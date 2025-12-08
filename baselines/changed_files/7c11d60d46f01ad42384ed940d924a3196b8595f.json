@@ -1,0 +1,10 @@
+{
+    "sha_fail": "7c11d60d46f01ad42384ed940d924a3196b8595f",
+    "changed_files": [
+        {
+            "commit": "7c11d60d46f01ad42384ed940d924a3196b8595f",
+            "file_path": "src/cowrie/ssh_proxy/client_transport.py",
+            "diff": "diff --git a/src/cowrie/ssh_proxy/client_transport.py b/src/cowrie/ssh_proxy/client_transport.py\nindex cd03810..344bf7d 100644\n--- a/src/cowrie/ssh_proxy/client_transport.py\n+++ b/src/cowrie/ssh_proxy/client_transport.py\n@@ -5,7 +5,7 @@ from __future__ import annotations\n \n from typing import Any\n \n-from twisted.conch.ssh import transport\n+from twisted.conch.ssh import factory, transport\n from twisted.internet import defer, protocol\n from twisted.protocols.policies import TimeoutMixin\n from twisted.python import log\n@@ -28,7 +28,7 @@ def get_string(data: bytes) -> tuple[int, bytes]:\n     return length + 4, value\n \n \n-class BackendSSHFactory(protocol.ClientFactory):\n+class BackendSSHFactory(factory.SSHFactory):\n     server: Any\n \n     def buildProtocol(self, addr):\n@@ -40,7 +40,6 @@ class BackendSSHTransport(transport.SSHClientTransport, TimeoutMixin):\n     This class represents the transport layer from Cowrie's proxy to the backend SSH server. It is responsible for\n     authentication to that server, and sending messages it gets to the handler.\n     \"\"\"\n-\n     def __init__(self, factory: BackendSSHFactory):\n         self.delayedPackets: list[tuple[int, bytes]] = []\n         self.factory: BackendSSHFactory = factory\n"
+        }
+    ]
+}

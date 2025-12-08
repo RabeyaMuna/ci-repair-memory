@@ -1,0 +1,25 @@
+{
+    "sha_fail": "73be451c05da635aa2828a6c3afb6e924da1ca03",
+    "changed_files": [
+        {
+            "commit": "73be451c05da635aa2828a6c3afb6e924da1ca03",
+            "file_path": "src/axolotl/monkeypatch/accelerate/fsdp2.py",
+            "diff": "diff --git a/src/axolotl/monkeypatch/accelerate/fsdp2.py b/src/axolotl/monkeypatch/accelerate/fsdp2.py\nindex a5eb364bf..2c1144d95 100644\n--- a/src/axolotl/monkeypatch/accelerate/fsdp2.py\n+++ b/src/axolotl/monkeypatch/accelerate/fsdp2.py\n@@ -407,11 +407,12 @@ def fsdp2_prepare_model(accelerator, model: torch.nn.Module) -> torch.nn.Module:\n                 module_log_bias_mismatch, ignored_params = (\n                     _process_lora_module_for_fsdp(module, fsdp2_kwargs)\n                 )\n-                log_bias_dtype_mismatch = (\n-                    log_bias_dtype_mismatch or module_log_bias_mismatch\n-                )\n+                log_bias_dtype_mismatch |= module_log_bias_mismatch\n             if auto_wrap_policy(module) and not isinstance(module, FSDPModule):\n-                fully_shard(module, ignored_params=ignored_params, **fsdp2_kwargs)\n+                if ignored_params:\n+                    fully_shard(module, ignored_params=ignored_params, **fsdp2_kwargs)\n+                else:\n+                    fully_shard(module, **fsdp2_kwargs)\n \n     # if not isinstance(model, FSDPModule):\n     fully_shard(model, **fsdp2_kwargs)\n"
+        },
+        {
+            "commit": "73be451c05da635aa2828a6c3afb6e924da1ca03",
+            "file_path": "src/axolotl/utils/schemas/config.py",
+            "diff": "diff --git a/src/axolotl/utils/schemas/config.py b/src/axolotl/utils/schemas/config.py\nindex ee1e74353..167a44880 100644\n--- a/src/axolotl/utils/schemas/config.py\n+++ b/src/axolotl/utils/schemas/config.py\n@@ -1178,3 +1178,23 @@ class AxolotlConfigWCapabilities(AxolotlInputConfig):\n                         \"Please omit the `fsdp_` prefix from the any fields in `fsdp_config`.\"\n                     )\n         return data\n+\n+\n+    @model_validator(mode=\"before\")\n+    @classmethod\n+    def check_fsdp2_lora_torch_2_7(cls, data):\n+        \n+        if data.get(\"fsdp_version\") == 2 and data.get(\"fsdp_config\") and data.get(\"adapter\") == \"lora\":\n+\n+            env_capabilities = data.get(\"env_capabilities\", {})\n+            torch_version = env_capabilities.get(\"torch_version\")\n+\n+            if torch_version is None:\n+                import torch\n+\n+            torch_version = str(torch.__version__).split(\"+\", maxsplit=1)[0]\n+            if version.parse(torch_version) < version.parse(\"2.7.0\"):\n+                raise ValueError(\n+                    \"FSDP2 does not support LoRA with torch version < 2.7.0\"\n+                )\n+        return data\n\\ No newline at end of file\n"
+        },
+        {
+            "commit": "73be451c05da635aa2828a6c3afb6e924da1ca03",
+            "file_path": "tests/e2e/multigpu/test_fsdp2.py",
+            "diff": "diff --git a/tests/e2e/multigpu/test_fsdp2.py b/tests/e2e/multigpu/test_fsdp2.py\nindex 7fc260617..351cc289d 100644\n--- a/tests/e2e/multigpu/test_fsdp2.py\n+++ b/tests/e2e/multigpu/test_fsdp2.py\n@@ -11,12 +11,12 @@ from transformers.testing_utils import get_torch_dist_unique_port\n \n from axolotl.utils.dict import DictDefault\n \n-from tests.e2e.utils import require_torch_2_6_0\n+from tests.e2e.utils import require_torch_2_7_0\n \n AXOLOTL_ROOT = Path(__file__).parent.parent.parent.parent\n \n \n-@require_torch_2_6_0\n+@require_torch_2_7_0\n class TestFSDP2:\n     \"\"\"Test class for FSDP2 functionality.\"\"\"\n \n"
+        },
+        {
+            "commit": "73be451c05da635aa2828a6c3afb6e924da1ca03",
+            "file_path": "tests/e2e/utils.py",
+            "diff": "diff --git a/tests/e2e/utils.py b/tests/e2e/utils.py\nindex 65069eb16..7e428c448 100644\n--- a/tests/e2e/utils.py\n+++ b/tests/e2e/utils.py\n@@ -41,6 +41,18 @@ def most_recent_subdir(path):\n     return subdir\n \n \n+def require_torch_2_7_0(test_case):\n+    \"\"\"\n+    Decorator marking a test that requires torch >= 2.7.0\n+    \"\"\"\n+\n+    def is_min_2_7_0():\n+        torch_version = version.parse(torch.__version__)\n+        return torch_version >= version.parse(\"2.7.0\")\n+\n+    return unittest.skipUnless(is_min_2_7_0(), \"test requires torch>=2.7.0\")(test_case)\n+\n+\n def require_torch_2_4_1(test_case):\n     \"\"\"\n     Decorator marking a test that requires torch >= 2.5.1\n"
+        }
+    ]
+}

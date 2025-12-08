@@ -1,0 +1,30 @@
+{
+    "sha_fail": "9df3e7857276b4804d1fadc0c33b4df0c6e5c254",
+    "changed_files": [
+        {
+            "commit": "9df3e7857276b4804d1fadc0c33b4df0c6e5c254",
+            "file_path": "src/axolotl/utils/data/shared.py",
+            "diff": "diff --git a/src/axolotl/utils/data/shared.py b/src/axolotl/utils/data/shared.py\nindex 0b567d14c..c116ca5a5 100644\n--- a/src/axolotl/utils/data/shared.py\n+++ b/src/axolotl/utils/data/shared.py\n@@ -432,7 +432,7 @@ def save_preprocessed_dataset(\n         os.makedirs(prepared_ds_path, exist_ok=True)\n         dataset.save_to_disk(\n             str(prepared_ds_path),\n-            num_proc=max(1, min(len(dataset) // 8, num_workers)),\n+            num_proc=min(max(1, len(dataset) // 8), num_workers),\n             max_shard_size=None,\n             num_shards=cfg.num_dataset_shards_to_save,\n         )\n"
+        },
+        {
+            "commit": "9df3e7857276b4804d1fadc0c33b4df0c6e5c254",
+            "file_path": "tests/core/test_builders.py",
+            "diff": "diff --git a/tests/core/test_builders.py b/tests/core/test_builders.py\nindex 0053b4d27..040152beb 100644\n--- a/tests/core/test_builders.py\n+++ b/tests/core/test_builders.py\n@@ -82,6 +82,7 @@ def fixture_base_cfg():\n             \"ddp_timeout\": 1800,\n             \"ddp_bucket_cap_mb\": 25,\n             \"ddp_broadcast_buffers\": False,\n+            \"dataset_processes\": 4,\n         }\n     )\n \n@@ -440,6 +441,7 @@ def rand_reward_func(prompts, completions) -> list[float]:\n             ]\n         else:\n             raise ValueError(f\"Unhandled cfg_string: {cfg_string}\")\n+        cfg[\"dataset_processes\"] = 4\n \n         if cfg_string == \"grpo_cfg\":\n             rewards_dir = tmp_path / \"rewards_test\"\n"
+        },
+        {
+            "commit": "9df3e7857276b4804d1fadc0c33b4df0c6e5c254",
+            "file_path": "tests/test_datasets.py",
+            "diff": "diff --git a/tests/test_datasets.py b/tests/test_datasets.py\nindex f4730f0f1..719dfdc19 100644\n--- a/tests/test_datasets.py\n+++ b/tests/test_datasets.py\n@@ -141,6 +141,7 @@ class TestDatasetPreparation:\n                             \"type\": \"alpaca\",\n                         },\n                     ],\n+                    \"dataset_processes\": 4,\n                 }\n             )\n \n@@ -179,6 +180,7 @@ class TestDatasetPreparation:\n                             \"type\": \"alpaca\",\n                         },\n                     ],\n+                    \"dataset_processes\": 4,\n                 }\n             )\n \n@@ -217,6 +219,7 @@ class TestDatasetPreparation:\n                             \"type\": \"alpaca\",\n                         },\n                     ],\n+                    \"dataset_processes\": 4,\n                 }\n             )\n \n@@ -249,6 +252,7 @@ class TestDatasetPreparation:\n                             \"type\": \"alpaca\",\n                         },\n                     ],\n+                    \"dataset_processes\": 4,\n                 }\n             )\n \n@@ -281,6 +285,7 @@ class TestDatasetPreparation:\n                             \"type\": \"alpaca\",\n                         },\n                     ],\n+                    \"dataset_processes\": 4,\n                 }\n             )\n \n@@ -365,6 +370,7 @@ class TestDatasetPreparation:\n                 \"rl\": \"dpo\",\n                 \"chat_template\": \"llama3\",\n                 \"datasets\": [ALPACA_MESSAGES_CONFIG_REVISION],\n+                \"dataset_processes\": 4,\n             }\n         )\n \n@@ -466,6 +472,7 @@ class TestDatasetPreparation:\n                             \"type\": \"alpaca\",\n                         },\n                     ],\n+                    \"dataset_processes\": 4,\n                 }\n             )\n \n"
+        },
+        {
+            "commit": "9df3e7857276b4804d1fadc0c33b4df0c6e5c254",
+            "file_path": "tests/test_exact_deduplication.py",
+            "diff": "diff --git a/tests/test_exact_deduplication.py b/tests/test_exact_deduplication.py\nindex 45a327a40..d97aad8ea 100644\n--- a/tests/test_exact_deduplication.py\n+++ b/tests/test_exact_deduplication.py\n@@ -210,6 +210,7 @@ class TestDeduplicateRLDataset:\n                     ALPACA_MESSAGES_CONFIG_REVISION,\n                     ALPACA_MESSAGES_CONFIG_REVISION,\n                 ],\n+                \"dataset_processes\": 4,\n             }\n         )\n         yield fixture\n"
+        },
+        {
+            "commit": "9df3e7857276b4804d1fadc0c33b4df0c6e5c254",
+            "file_path": "tests/test_packed_dataset.py",
+            "diff": "diff --git a/tests/test_packed_dataset.py b/tests/test_packed_dataset.py\nindex 8b29eab21..699d5e6cc 100644\n--- a/tests/test_packed_dataset.py\n+++ b/tests/test_packed_dataset.py\n@@ -99,6 +99,7 @@ class TestPacking(unittest.TestCase):\n                         \"type\": \"alpaca\",\n                     },\n                 ],\n+                \"dataset_processes\": 4,\n                 \"num_epochs\": 1,\n                 \"max_steps\": 20,\n                 \"save_steps\": 10,\n"
+        }
+    ]
+}

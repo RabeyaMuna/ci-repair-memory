@@ -1,0 +1,10 @@
+{
+    "sha_fail": "bfa16fa84a9e18c196dcfdc90c35a2e8ae1e0437",
+    "changed_files": [
+        {
+            "commit": "bfa16fa84a9e18c196dcfdc90c35a2e8ae1e0437",
+            "file_path": "src/axolotl/utils/callbacks/__init__.py",
+            "diff": "diff --git a/src/axolotl/utils/callbacks/__init__.py b/src/axolotl/utils/callbacks/__init__.py\nindex 766980b56..c8db11bcc 100644\n--- a/src/axolotl/utils/callbacks/__init__.py\n+++ b/src/axolotl/utils/callbacks/__init__.py\n@@ -113,9 +113,9 @@ class GPUStatsCallback(\n                 active, allocated, reserved = get_gpu_memory_usage()\n                 wandb.log(\n                     {\n-                        \"max_memory_active\": active,\n-                        \"max_memory_allocated\": allocated,\n-                        \"device_memory_reserved\": reserved,\n+                        \"memory/max_memory_active\": active,\n+                        \"memory/max_memory_allocated\": allocated,\n+                        \"memory/device_memory_reserved\": reserved,\n                     },\n                     step=state.global_step,\n                 )\n"
+        }
+    ]
+}

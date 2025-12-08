@@ -123,7 +123,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
     # Use the full dataset order as the canonical order
     # If you want a subset for processing, change here:
-    subset = dataset[1:]  # or dataset[start:end], etc.
+    subset = dataset[550:]  # or dataset[start:end], etc.
 
     for datapoint in subset:
         task_id = datapoint["id"]
@@ -204,7 +204,6 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
         except Exception as e:
             print(f"[ERROR] Failed to collect/save changed files for {sha_fail}: {e}")
-            continue
 
         # ------------------------------------------------------------------
         # 3) FAULT LOCALIZATION
@@ -238,6 +237,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         # ------------------------------------------------------------------
         # 4) PATCH GENERATION
         # ------------------------------------------------------------------
+
         try:
             patch_generator = PatchGeneration(
                 bug_report=fault_localizer,
@@ -249,7 +249,8 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                 llm=llm,
                 model_name=model_key,
             ).run()
-
+            
+            import pdb; pdb.set_trace()
             if not isinstance(patch_generator, dict):
                 print(f"[MAIN] Patch generator returned non-dict for {sha_fail}, skipping...")
                 continue
@@ -294,7 +295,7 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    model_key = "gpt-5-mini"   # or "gpt4o", "deepseek-chat", etc.
+    model_key = "deepseek-coder"   # or "gpt4o", "deepseek-chat", etc.
     llm = get_llm(model_key)
 
     # Load dataset (this is the canonical order)
@@ -302,7 +303,7 @@ if __name__ == "__main__":
     dataset = dataset_df.to_dict(orient="records")
 
     # Run processing (incrementally updates per-model JSON files)
-    results = process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm")
+    results = process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="bm25")
 
     # Optional: also maintain a global generated_patches.json
     # in config.project_result_dir, with same ordered-by-dataset behavior

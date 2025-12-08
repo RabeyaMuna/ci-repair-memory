@@ -1,0 +1,10 @@
+{
+    "sha_fail": "b5bb4c11018952a0f9f5693ce84dd3df18c644d7",
+    "changed_files": [
+        {
+            "commit": "b5bb4c11018952a0f9f5693ce84dd3df18c644d7",
+            "file_path": "requirements.txt",
+            "diff": "diff --git a/requirements.txt b/requirements.txt\nindex b065dbf6e..c15834a64 100644\n--- a/requirements.txt\n+++ b/requirements.txt\n@@ -19,7 +19,7 @@ accelerate @ git+https://github.com/SalmanMohammadi/accelerate.git@device_mesh_p\n datasets==4.0.0\n deepspeed>=0.17.0\n trl==0.19.1\n-hf_xet==1.1.2\n+hf_xet==1.1.5\n \n optimum==1.16.2\n hf_transfer\n"
+        }
+    ]
+}

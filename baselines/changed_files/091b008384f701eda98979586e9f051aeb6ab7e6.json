@@ -1,0 +1,10 @@
+{
+    "sha_fail": "091b008384f701eda98979586e9f051aeb6ab7e6",
+    "changed_files": [
+        {
+            "commit": "091b008384f701eda98979586e9f051aeb6ab7e6",
+            "file_path": "src/axolotl/utils/schemas/validation.py",
+            "diff": "diff --git a/src/axolotl/utils/schemas/validation.py b/src/axolotl/utils/schemas/validation.py\nindex 292159bb8..e17a19dee 100644\n--- a/src/axolotl/utils/schemas/validation.py\n+++ b/src/axolotl/utils/schemas/validation.py\n@@ -116,7 +116,8 @@ class DatasetValidationMixin:\n             and not data.get(\"eval_table_size\")\n         ):\n             LOG.info(\n-                \"explicitly setting `eval_sample_packing` to match `sample_packing`\"\n+                \"explicitly setting `eval_sample_packing` to match `sample_packing`\",\n+                main_process_only=True,\n             )\n             data[\"eval_sample_packing\"] = True\n \n"
+        }
+    ]
+}

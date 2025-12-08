@@ -77,13 +77,9 @@ def run_cmd(args, cwd=None, retries=1, retry_delay=5.0):
 
 def ensure_repo_at_commit(repo_url: str, repo_path: str, commit_sha: str) -> None:
     """
-    Ensure that `repo_path` is a clone of `repo_url` and checked out at `commit_sha`
-    in a clean, detached state.
-
-    Changes vs your original:
-    - No `git fetch --all`.
-    - Only fetch the specific commit if we don't already have it.
-    - Uses shallow, filtered fetch to reduce data and avoid RPC errors.
+    Ensure repo_path is cloned and reset at the specific commit_sha.
+    - Only reset once per commit.
+    - Skip reset if already at commit.
     """
     # 1) Clone if missing
     if not os.path.exists(repo_path):
@@ -96,46 +92,36 @@ def ensure_repo_at_commit(repo_url: str, repo_path: str, commit_sha: str) -> Non
             retries=3,
         )
 
-    # 2) Basic sanity check: must be a git repo
+    # 2) Ensure it is a git repo
     git_dir = os.path.join(repo_path, ".git")
     if not os.path.exists(git_dir):
-        raise RuntimeError(
-            f"[ensure_repo_at_commit] Directory exists but is not a git repository: {repo_path}"
-        )
+        raise RuntimeError(f"Directory exists but is not a git repository: {repo_path}")
 
-    # 3) Make sure origin URL is correct (in case repo moved)
+    # 3) Set correct origin URL
     run_cmd(["git", "remote", "set-url", "origin", repo_url], cwd=repo_path)
 
-    # 4) Check if we already have the commit locally
+    # 4) Check if commit exists
     have_commit = True
     try:
-        # `cat-file -e` returns 0 if object exists
         run_cmd(["git", "cat-file", "-e", f"{commit_sha}^{{commit}}"], cwd=repo_path, retries=0)
     except RuntimeError:
         have_commit = False
 
-    # 5) If commit is missing, fetch JUST that commit (shallow)
     if not have_commit:
         print(f"[ensure_repo_at_commit] Fetching commit {commit_sha}")
         run_cmd(
-            [
-                "git",
-                "fetch",
-                "--no-tags",
-                "--filter=blob:none",
-                "--depth",
-                "200",
-                "origin",
-                commit_sha,
-            ],
+            ["git", "fetch", "--no-tags", "--filter=blob:none", "--depth", "200", "origin", commit_sha],
             cwd=repo_path,
             retries=3,
         )
 
-    # 6) Reset and clean to the desired commit
-    print(f"[ensure_repo_at_commit] Resetting and cleaning {repo_path} to {commit_sha}")
-    run_cmd(["git", "reset", "--hard", commit_sha], cwd=repo_path, retries=1)
-    run_cmd(["git", "clean", "-fdx"], cwd=repo_path, retries=1)
+    # 5) Check if HEAD is already at commit_sha
+    current_commit = run_cmd(["git", "rev-parse", "HEAD"], cwd=repo_path)
+    if current_commit.strip() != commit_sha:
+        print(f"[ensure_repo_at_commit] Resetting and cleaning {repo_path} to {commit_sha}")
+        run_cmd(["git", "reset", "--hard", commit_sha], cwd=repo_path, retries=1)
+        run_cmd(["git", "clean", "-fdx"], cwd=repo_path, retries=1)
+    else:
+        print(f"[ensure_repo_at_commit] Repo already at {commit_sha}, skipping reset")
 
-    # Detached HEAD is implicit after reset to a raw commit hash
     print(f"[ensure_repo_at_commit] Ready at {commit_sha}")

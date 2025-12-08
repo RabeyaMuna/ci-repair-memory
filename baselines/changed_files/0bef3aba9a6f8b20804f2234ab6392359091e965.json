@@ -1,0 +1,10 @@
+{
+    "sha_fail": "0bef3aba9a6f8b20804f2234ab6392359091e965",
+    "changed_files": [
+        {
+            "commit": "0bef3aba9a6f8b20804f2234ab6392359091e965",
+            "file_path": "lib/crewai/tests/utilities/test_events.py",
+            "diff": "diff --git a/lib/crewai/tests/utilities/test_events.py b/lib/crewai/tests/utilities/test_events.py\nindex 1eeba199..bf6d85fe 100644\n--- a/lib/crewai/tests/utilities/test_events.py\n+++ b/lib/crewai/tests/utilities/test_events.py\n@@ -892,7 +892,7 @@ def test_streaming_empty_response_handling():\n     def mock_call(messages, tools=None, callbacks=None, available_functions=None):\n         # Emit a few empty chunks\n         for _ in range(3):\n-            crewai_event_bus.emit(llm, event=LLMStreamChunkEvent(chunk=\"\"))\n+            crewai_event_bus.emit(llm, event=LLMStreamChunkEvent(chunk=\"\",response_id=\"id\"))\n \n         # Return the default message for empty responses\n         return \"I apologize, but I couldn't generate a proper response. Please try again or rephrase your request.\"\n"
+        }
+    ]
+}

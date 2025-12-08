@@ -1,0 +1,10 @@
+{
+    "sha_fail": "e1dbd83b5eccd0a5435563900d30381bb4d4f27a",
+    "changed_files": [
+        {
+            "commit": "e1dbd83b5eccd0a5435563900d30381bb4d4f27a",
+            "file_path": "camel/societies/workforce/workforce.py",
+            "diff": "diff --git a/camel/societies/workforce/workforce.py b/camel/societies/workforce/workforce.py\nindex 75fb9363..ddc05f04 100644\n--- a/camel/societies/workforce/workforce.py\n+++ b/camel/societies/workforce/workforce.py\n@@ -1976,14 +1976,6 @@ class Workforce(BaseNode):\n             # Insert packets at the head of the queue\n             self._pending_tasks.extendleft(reversed(subtasks))\n \n-            # Sync shared memory after task decomposition\n-            if self.share_memory:\n-                logger.info(\n-                    f\"Syncing shared memory after decomposing failed \"\n-                    f\"task {task.id}\"\n-                )\n-                self._sync_shared_memory()\n-\n             await self._post_ready_tasks()\n             action_taken = f\"decomposed into {len(subtasks)} subtasks\"\n \n"
+        }
+    ]
+}

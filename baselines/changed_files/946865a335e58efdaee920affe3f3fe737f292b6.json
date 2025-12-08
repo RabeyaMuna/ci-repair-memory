@@ -1,0 +1,15 @@
+{
+    "sha_fail": "946865a335e58efdaee920affe3f3fe737f292b6",
+    "changed_files": [
+        {
+            "commit": "946865a335e58efdaee920affe3f3fe737f292b6",
+            "file_path": "tests/tts/test_elevenlabs_tts.py",
+            "diff": "diff --git a/tests/tts/test_elevenlabs_tts.py b/tests/tts/test_elevenlabs_tts.py\nnew file mode 100644\nindex 00000000..bea61b80\n--- /dev/null\n+++ b/tests/tts/test_elevenlabs_tts.py\n@@ -0,0 +1,43 @@\n+import base64\n+import sys\n+from types import ModuleType, SimpleNamespace\n+\n+from application.tts.elevenlabs import ElevenlabsTTS\n+\n+\n+def test_elevenlabs_text_to_speech_monkeypatched_client(monkeypatch):\n+    monkeypatch.setattr(\n+        \"application.tts.elevenlabs.settings\",\n+        SimpleNamespace(ELEVENLABS_API_KEY=\"api-key\"),\n+    )\n+\n+    created = {}\n+\n+    class DummyClient:\n+        def __init__(self, api_key):\n+            created[\"api_key\"] = api_key\n+            self.generate_calls = []\n+\n+        def generate(self, *, text, model, voice):\n+            self.generate_calls.append({\"text\": text, \"model\": model, \"voice\": voice})\n+            yield b\"chunk-one\"\n+            yield b\"chunk-two\"\n+\n+    client_module = ModuleType(\"elevenlabs.client\")\n+    client_module.ElevenLabs = DummyClient\n+    package_module = ModuleType(\"elevenlabs\")\n+    package_module.client = client_module\n+\n+    monkeypatch.setitem(sys.modules, \"elevenlabs\", package_module)\n+    monkeypatch.setitem(sys.modules, \"elevenlabs.client\", client_module)\n+\n+    tts = ElevenlabsTTS()\n+    audio_base64, lang = tts.text_to_speech(\"Speak\")\n+\n+    assert created[\"api_key\"] == \"api-key\"\n+    assert tts.client.generate_calls == [\n+        {\"text\": \"Speak\", \"model\": \"eleven_multilingual_v2\", \"voice\": \"Brian\"}\n+    ]\n+    assert lang == \"en\"\n+    assert base64.b64decode(audio_base64.encode()) == b\"chunk-onechunk-two\"\n+\n"
+        },
+        {
+            "commit": "946865a335e58efdaee920affe3f3fe737f292b6",
+            "file_path": "tests/tts/test_google_tts.py",
+            "diff": "diff --git a/tests/tts/test_google_tts.py b/tests/tts/test_google_tts.py\nnew file mode 100644\nindex 00000000..ea80ab79\n--- /dev/null\n+++ b/tests/tts/test_google_tts.py\n@@ -0,0 +1,24 @@\n+import base64\n+\n+from application.tts.google_tts import GoogleTTS\n+\n+\n+def test_google_tts_text_to_speech(monkeypatch):\n+    captured = {}\n+\n+    class DummyGTTS:\n+        def __init__(self, *, text, lang, slow):\n+            captured[\"args\"] = {\"text\": text, \"lang\": lang, \"slow\": slow}\n+\n+        def write_to_fp(self, fp):\n+            fp.write(b\"synthetic-audio\")\n+\n+    monkeypatch.setattr(\"application.tts.google_tts.gTTS\", DummyGTTS)\n+\n+    tts = GoogleTTS()\n+    audio_base64, lang = tts.text_to_speech(\"hello world\")\n+\n+    assert captured[\"args\"] == {\"text\": \"hello world\", \"lang\": \"en\", \"slow\": False}\n+    assert lang == \"en\"\n+    assert base64.b64decode(audio_base64.encode()) == b\"synthetic-audio\"\n+\n"
+        }
+    ]
+}

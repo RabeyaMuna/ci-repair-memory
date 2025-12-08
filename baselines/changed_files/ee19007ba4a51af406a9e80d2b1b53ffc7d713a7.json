@@ -1,0 +1,10 @@
+{
+    "sha_fail": "ee19007ba4a51af406a9e80d2b1b53ffc7d713a7",
+    "changed_files": [
+        {
+            "commit": "ee19007ba4a51af406a9e80d2b1b53ffc7d713a7",
+            "file_path": "src/axolotl/utils/collators/mm_chat.py",
+            "diff": "diff --git a/src/axolotl/utils/collators/mm_chat.py b/src/axolotl/utils/collators/mm_chat.py\nindex dba27f7d8..c5f6a62e3 100644\n--- a/src/axolotl/utils/collators/mm_chat.py\n+++ b/src/axolotl/utils/collators/mm_chat.py\n@@ -92,6 +92,9 @@ class MultiModalChatDataCollator(DataCollatorMixin):\n         if \"pixel_values\" in batch:\n             final_batch[\"pixel_values\"] = torch.stack(batch[\"pixel_values\"])\n \n+        if \"aspect_ratio_ids\" in batch:\n+            final_batch[\"aspect_ratio_ids\"] = torch.stack(batch[\"aspect_ratio_ids\"])\n+\n         if \"input_features\" in batch:\n             final_batch[\"input_features\"] = torch.stack(batch[\"input_features\"])\n \n"
+        }
+    ]
+}

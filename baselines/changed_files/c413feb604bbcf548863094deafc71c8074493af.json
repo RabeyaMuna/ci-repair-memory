@@ -1,0 +1,15 @@
+{
+    "sha_fail": "c413feb604bbcf548863094deafc71c8074493af",
+    "changed_files": [
+        {
+            "commit": "c413feb604bbcf548863094deafc71c8074493af",
+            "file_path": "litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py",
+            "diff": "diff --git a/litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py b/litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py\nindex 5055b5db5a..2613415351 100644\n--- a/litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py\n+++ b/litellm/litellm_core_utils/llm_response_utils/convert_dict_to_response.py\n@@ -532,6 +532,12 @@ def convert_to_model_response_object(  # noqa: PLR0915\n                 if finish_reason is None:\n                     # gpt-4 vision can return 'finish_reason' or 'finish_details'\n                     finish_reason = choice.get(\"finish_details\") or \"stop\"\n+                if (\n+                    finish_reason == \"stop\"\n+                    and message.tool_calls\n+                    and len(message.tool_calls) > 0\n+                ):\n+                    finish_reason = \"tool_calls\"\n                 logprobs = choice.get(\"logprobs\", None)\n                 enhancements = choice.get(\"enhancements\", None)\n                 choice = Choices(\n"
+        },
+        {
+            "commit": "c413feb604bbcf548863094deafc71c8074493af",
+            "file_path": "tests/llm_translation/base_llm_unit_tests.py",
+            "diff": "diff --git a/tests/llm_translation/base_llm_unit_tests.py b/tests/llm_translation/base_llm_unit_tests.py\nindex b26c75ff8f..6bf95b4cd5 100644\n--- a/tests/llm_translation/base_llm_unit_tests.py\n+++ b/tests/llm_translation/base_llm_unit_tests.py\n@@ -992,7 +992,7 @@ class BaseLLMChatTest(ABC):\n             assert isinstance(\n                 response.choices[0].message.tool_calls[0].function.arguments, str\n             )\n-            assert response.choices[0].finish_reason == \"tool_calls\"\n+            assert response.choices[0].finish_reason == \"tool_calls\", f\"finish_reason: {response.choices[0].finish_reason}, expected: tool_calls\"\n             messages.append(\n                 response.choices[0].message.model_dump()\n             )  # Add assistant tool invokes\n"
+        }
+    ]
+}

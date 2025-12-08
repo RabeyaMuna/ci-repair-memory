@@ -1,0 +1,10 @@
+{
+    "sha_fail": "9c2fddfc969337f28739a65dcbed6d3ca0e65d6e",
+    "changed_files": [
+        {
+            "commit": "9c2fddfc969337f28739a65dcbed6d3ca0e65d6e",
+            "file_path": "examples/playright-script-generator.py",
+            "diff": "diff --git a/examples/playright-script-generator.py b/examples/playright-script-generator.py\nindex f080b408c..9ab67f33f 100644\n--- a/examples/playright-script-generator.py\n+++ b/examples/playright-script-generator.py\n@@ -14,10 +14,10 @@ from langchain_anthropic import ChatAnthropic\n \n from browser_use import Agent\n \n-# Print the API key (first few characters) to verify it's loaded\n+# Check if the API key is available\n api_key = os.environ.get('ANTHROPIC_API_KEY', '')\n if api_key:\n-\tprint(f'API key loaded: {api_key[:10]}...')\n+\tprint('API key found and loaded')\n else:\n \tprint('API key not found!')\n \n"
+        }
+    ]
+}

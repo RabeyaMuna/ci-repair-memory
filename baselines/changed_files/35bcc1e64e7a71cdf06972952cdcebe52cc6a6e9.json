@@ -1,0 +1,10 @@
+{
+    "sha_fail": "35bcc1e64e7a71cdf06972952cdcebe52cc6a6e9",
+    "changed_files": [
+        {
+            "commit": "35bcc1e64e7a71cdf06972952cdcebe52cc6a6e9",
+            "file_path": "requirements.txt",
+            "diff": "diff --git a/requirements.txt b/requirements.txt\nindex 4e632b0f3..32834b0a9 100644\n--- a/requirements.txt\n+++ b/requirements.txt\n@@ -11,15 +11,15 @@ liger-kernel==0.5.9\n \n packaging==23.2\n \n-huggingface_hub==0.31.0\n+huggingface_hub==0.32.2\n peft==0.15.2\n-transformers==4.51.3\n+transformers==4.52.3\n tokenizers>=0.21.1\n-accelerate==1.6.0\n-datasets==3.5.1\n+accelerate==1.7.0\n+datasets==3.6.0\n deepspeed>=0.15.4\n-trl==0.17.0\n-hf_xet==1.1.0\n+trl==0.18.0\n+hf_xet==1.1.2\n hqq==0.2.5\n \n optimum==1.16.2\n"
+        }
+    ]
+}

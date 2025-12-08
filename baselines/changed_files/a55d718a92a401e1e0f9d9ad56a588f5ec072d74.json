@@ -1,0 +1,10 @@
+{
+    "sha_fail": "a55d718a92a401e1e0f9d9ad56a588f5ec072d74",
+    "changed_files": [
+        {
+            "commit": "a55d718a92a401e1e0f9d9ad56a588f5ec072d74",
+            "file_path": "src/axolotl/utils/data/shared.py",
+            "diff": "diff --git a/src/axolotl/utils/data/shared.py b/src/axolotl/utils/data/shared.py\nindex 5168e81df..17dabfb65 100644\n--- a/src/axolotl/utils/data/shared.py\n+++ b/src/axolotl/utils/data/shared.py\n@@ -282,7 +282,8 @@ def load_dataset_w_config(\n         )\n     if not ds:\n         raise ValueError(\n-            \"Cannot load dataset from the given config. Please check (if applicable) path / name / data_files. \"\n+            f\"Cannot load dataset from the given config (path: {config_dataset.path}). \"\n+            \"Please check (if applicable) path / name / data_files. \"\n             \"This is not from the dataset type.\"\n         )\n \n"
+        }
+    ]
+}

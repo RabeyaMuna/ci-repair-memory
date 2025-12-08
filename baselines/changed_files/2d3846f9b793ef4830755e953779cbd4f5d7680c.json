@@ -1,0 +1,40 @@
+{
+    "sha_fail": "2d3846f9b793ef4830755e953779cbd4f5d7680c",
+    "changed_files": [
+        {
+            "commit": "2d3846f9b793ef4830755e953779cbd4f5d7680c",
+            "file_path": "tests/backends/build_system/functional/test_aws_cli_venv.py",
+            "diff": "diff --git a/tests/backends/build_system/functional/test_aws_cli_venv.py b/tests/backends/build_system/functional/test_aws_cli_venv.py\nindex fc271a835..f19e09099 100644\n--- a/tests/backends/build_system/functional/test_aws_cli_venv.py\n+++ b/tests/backends/build_system/functional/test_aws_cli_venv.py\n@@ -23,8 +23,8 @@ import pytest\n from build_system.awscli_venv import AwsCliVenv\n from build_system.constants import ArtifactType\n \n-from awscli.testutils import if_windows, skip_if_windows\n from backends.build_system.constants import BIN_DIRNAME, PYTHON_EXE_NAME\n+from tests.markers import if_windows, skip_if_windows\n \n ROOT_DIR = pathlib.Path(__file__).parents[4]\n \n"
+        },
+        {
+            "commit": "2d3846f9b793ef4830755e953779cbd4f5d7680c",
+            "file_path": "tests/backends/build_system/functional/test_utils.py",
+            "diff": "diff --git a/tests/backends/build_system/functional/test_utils.py b/tests/backends/build_system/functional/test_utils.py\nindex 270b8dcc0..63a6882fa 100644\n--- a/tests/backends/build_system/functional/test_utils.py\n+++ b/tests/backends/build_system/functional/test_utils.py\n@@ -25,7 +25,7 @@ from build_system.utils import (\n     parse_requirements,\n )\n \n-from tests.backends.build_system.markers import if_windows, skip_if_windows\n+from tests.markers import if_windows, skip_if_windows\n \n \n @pytest.fixture\n"
+        },
+        {
+            "commit": "2d3846f9b793ef4830755e953779cbd4f5d7680c",
+            "file_path": "tests/backends/build_system/integration/test_makefile.py",
+            "diff": "diff --git a/tests/backends/build_system/integration/test_makefile.py b/tests/backends/build_system/integration/test_makefile.py\nindex 26b47f5f7..b67e02ad7 100644\n--- a/tests/backends/build_system/integration/test_makefile.py\n+++ b/tests/backends/build_system/integration/test_makefile.py\n@@ -12,11 +12,11 @@\n # language governing permissions and limitations under the License.\n import os\n \n-from awscli.testutils import skip_if_windows\n from tests.backends.build_system.integration import (\n     BaseArtifactTest,\n     VEnvWorkspace,\n )\n+from tests.markers import skip_if_windows\n \n WINDOWS_SKIP_REASON = \"./configure tests do not run nativly on windows\"\n \n"
+        },
+        {
+            "commit": "2d3846f9b793ef4830755e953779cbd4f5d7680c",
+            "file_path": "tests/backends/build_system/unit/test_install.py",
+            "diff": "diff --git a/tests/backends/build_system/unit/test_install.py b/tests/backends/build_system/unit/test_install.py\nindex 73d7be348..56caba873 100644\n--- a/tests/backends/build_system/unit/test_install.py\n+++ b/tests/backends/build_system/unit/test_install.py\n@@ -6,7 +6,7 @@ import pytest\n from build_system.install import Installer, Uninstaller\n \n from backends.build_system.utils import Utils\n-from tests.backends.build_system.markers import if_windows, skip_if_windows\n+from tests.markers import if_windows, skip_if_windows\n \n \n class FakeUtils(Utils):\n"
+        },
+        {
+            "commit": "2d3846f9b793ef4830755e953779cbd4f5d7680c",
+            "file_path": "tests/functional/test_telemetry.py",
+            "diff": "diff --git a/tests/functional/test_telemetry.py b/tests/functional/test_telemetry.py\nindex feb105256..f027aa353 100644\n--- a/tests/functional/test_telemetry.py\n+++ b/tests/functional/test_telemetry.py\n@@ -26,7 +26,7 @@ from awscli.telemetry import (\n     CLISessionOrchestrator,\n     add_session_id_component_to_user_agent_extra,\n )\n-from awscli.testutils import skip_if_windows\n+from tests.markers import skip_if_windows\n \n \n @pytest.fixture\n@@ -181,12 +181,12 @@ class TestCLISessionGenerator:\n         assert cache_key == 'b1ca2be0ffac12f172933b6777e06f2c'\n \n \n+@skip_if_windows\n @patch('sys.stdin')\n @patch('time.time', return_value=5555555555)\n @patch('socket.gethostname', return_value='my-hostname')\n @patch('os.ttyname', return_value='my-tty')\n class TestCLISessionOrchestrator:\n-    @skip_if_windows(\"No os.ttyname\")\n     def test_session_id_gets_cached(\n         self,\n         patched_tty_name,\n@@ -209,7 +209,6 @@ class TestCLISessionOrchestrator:\n         assert session_data.session_id == orchestrator.session_id\n         assert session_data.timestamp == 5555555555\n \n-    @skip_if_windows(\"No os.ttyname\")\n     def test_cached_session_id_gets_updated(\n         self,\n         patched_tty_name,\n"
+        },
+        {
+            "commit": "2d3846f9b793ef4830755e953779cbd4f5d7680c",
+            "file_path": "tests/markers.py",
+            "diff": "diff --git a/tests/markers.py b/tests/markers.py\nnew file mode 100644\nindex 000000000..2c0c9bdd9\n--- /dev/null\n+++ b/tests/markers.py\n@@ -0,0 +1,12 @@\n+import platform\n+\n+import pytest\n+\n+skip_if_windows = pytest.mark.skipif(\n+    platform.system() not in ['Darwin', 'Linux'],\n+    reason=\"This test does not run on windows.\",\n+)\n+if_windows = pytest.mark.skipif(\n+    platform.system() in ['Darwin', 'Linux'],\n+    reason=\"This test only runs on windows.\",\n+)\n"
+        },
+        {
+            "commit": "2d3846f9b793ef4830755e953779cbd4f5d7680c",
+            "file_path": "tests/unit/customizations/ec2instanceconnect/test_websocket.py",
+            "diff": "diff --git a/tests/unit/customizations/ec2instanceconnect/test_websocket.py b/tests/unit/customizations/ec2instanceconnect/test_websocket.py\nindex 427078493..fbbc162e9 100644\n--- a/tests/unit/customizations/ec2instanceconnect/test_websocket.py\n+++ b/tests/unit/customizations/ec2instanceconnect/test_websocket.py\n@@ -52,15 +52,7 @@ from awscli.customizations.ec2instanceconnect.websocket import (\n     WebsocketManager,\n     WindowsStdinStdoutIO,\n )\n-\n-skip_if_windows = pytest.mark.skipif(\n-    platform.system() not in ['Darwin', 'Linux'],\n-    reason=\"This test does not run on windows.\",\n-)\n-if_windows = pytest.mark.skipif(\n-    platform.system() in ['Darwin', 'Linux'],\n-    reason=\"This test only runs on windows.\",\n-)\n+from tests.markers import if_windows, skip_if_windows\n \n \n class TestWebsocketIO:\n"
+        }
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "sha_fail": "2f45919d3e7f5032b8c4690eedc5ddfc87fdc1ac",
+    "changed_files": [
+        {
+            "commit": "2f45919d3e7f5032b8c4690eedc5ddfc87fdc1ac",
+            "file_path": "taipy/gui/state.py",
+            "diff": "diff --git a/taipy/gui/state.py b/taipy/gui/state.py\nindex a7ff03ed8..c9a99b61d 100644\n--- a/taipy/gui/state.py\n+++ b/taipy/gui/state.py\n@@ -168,7 +168,16 @@ class State(SimpleNamespace, metaclass=ABCMeta):\n                 Defaults to None.\n \n         TODO: Add examples here.\n-        state.patch(\"data\", change={\"y\": 4: 50})\n+        state.patch(\"data\", change={\"y\": \"anything\"})\n+        state.patch(\"data\", change={\"a\": {\"b\": \"anything\"}})\n+        state.patch(\"data\", change={\"y\": {4: \"something\"}})\n+        state.patch(\"data\", change={\"y\": {4: [\"something\", \"else\"]}})\n+        state.patch(\"data\", change={\"y\": {4: [{\"b\": \"patch object in list\", \"c\": \"else\"}]}})\n+        state.patch(\"data\", remove={\"y\": None})\n+\n+        Not supported yet:\n+        patch dataframe on the back end (the data is patched on the front end)\n+        patch sorted data in a table (the wrong data will be patched if the table is sorted)\n         \"\"\"\n         ...\n \n"
+        }
+    ]
+}

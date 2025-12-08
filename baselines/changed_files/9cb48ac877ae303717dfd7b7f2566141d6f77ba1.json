@@ -1,0 +1,10 @@
+{
+    "sha_fail": "9cb48ac877ae303717dfd7b7f2566141d6f77ba1",
+    "changed_files": [
+        {
+            "commit": "9cb48ac877ae303717dfd7b7f2566141d6f77ba1",
+            "file_path": "src/axolotl/utils/schemas/enums.py",
+            "diff": "diff --git a/src/axolotl/utils/schemas/enums.py b/src/axolotl/utils/schemas/enums.py\nindex 77d246a77..509456fa5 100644\n--- a/src/axolotl/utils/schemas/enums.py\n+++ b/src/axolotl/utils/schemas/enums.py\n@@ -9,7 +9,7 @@ torch_version = str(torch.__version__).split(\"+\", maxsplit=1)[0]\n if version.parse(torch_version) < version.parse(\"2.6.0\"):\n     # no-op - config validation should handle erroring out. this guards a `torch.int4` import being\n     # unavailable in torch < 2.6\n-    class TorchIntDtype(Enum):\n+    class TorchIntDType(Enum):\n         \"\"\"Dummy class for import guarding\"\"\"\n \n else:\n"
+        }
+    ]
+}

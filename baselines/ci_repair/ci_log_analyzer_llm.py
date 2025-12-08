@@ -419,13 +419,15 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
 """
         try:
             response = self.llm.invoke([HumanMessage(content=prompt)]).content
+
             try:
                 summary = json.loads(response)
                 if summary["sha_fail"] is None:
                     print(f"[INFO] sha_fail was null/absent in LLM output, " f"forcing to ground-truth SHA: {self.sha_fail}")
-                    summary["sha_fail"] = self.sha_fail
             except json.JSONDecodeError:
                 summary = demjson3.decode(response)
+                
+            summary["sha_fail"] = self.sha_fail
 
             print(" Completed: _generate_summary")
             return summary

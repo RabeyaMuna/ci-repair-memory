@@ -643,6 +643,7 @@ then produce a structured, evidence-based JSON summary that explains:
         try:
             t0 = time.time()
             response = self.llm.invoke([HumanMessage(content=prompt)]).content
+
             elapsed = time.time() - t0
             print(
                 f"[LLM] full_content_summary: sha_fail={self.sha_fail} "

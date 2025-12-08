@@ -1,0 +1,15 @@
+{
+    "sha_fail": "ec5fbc16becebb97e5635f2522fcdad3e2340023",
+    "changed_files": [
+        {
+            "commit": "ec5fbc16becebb97e5635f2522fcdad3e2340023",
+            "file_path": "camel/agents/chat_agent.py",
+            "diff": "diff --git a/camel/agents/chat_agent.py b/camel/agents/chat_agent.py\nindex 32e37f1f..3ab7efc6 100644\n--- a/camel/agents/chat_agent.py\n+++ b/camel/agents/chat_agent.py\n@@ -13,13 +13,13 @@\n # ========= Copyright 2023-2024 @ CAMEL-AI.org. All Rights Reserved. =========\n from __future__ import annotations\n \n+import asyncio\n import json\n import logging\n import textwrap\n import threading\n-import uuid\n-import asyncio\n import time\n+import uuid\n from collections import defaultdict\n from pathlib import Path\n from typing import (\n"
+        },
+        {
+            "commit": "ec5fbc16becebb97e5635f2522fcdad3e2340023",
+            "file_path": "camel/societies/workforce/workforce.py",
+            "diff": "diff --git a/camel/societies/workforce/workforce.py b/camel/societies/workforce/workforce.py\nindex 669f9e3b..6d09cfeb 100644\n--- a/camel/societies/workforce/workforce.py\n+++ b/camel/societies/workforce/workforce.py\n@@ -407,7 +407,7 @@ class Workforce(BaseNode):\n         pause controls once managed by this workforce).\"\"\"\n         try:\n             if getattr(agent, \"pause_event\", None) is not self._pause_event:\n-                setattr(agent, \"pause_event\", self._pause_event)\n+                agent.pause_event = self._pause_event\n         except AttributeError:\n             # Should not happen, but guard against unexpected objects\n             pass\n@@ -1697,7 +1697,12 @@ class Workforce(BaseNode):\n                 model_config_dict={\"temperature\": 0},\n             )\n \n-            return ChatAgent(worker_sys_msg, model=model, tools=function_list, pause_event=self._pause_event)  # type: ignore[arg-type]\n+            return ChatAgent(\n+                worker_sys_msg,\n+                model=model,\n+                tools=function_list,\n+                pause_event=self._pause_event,\n+            )  # type: ignore[arg-type]\n \n     async def _get_returned_task(self) -> Optional[Task]:\n         r\"\"\"Get the task that's published by this node and just get returned\n"
+        }
+    ]
+}

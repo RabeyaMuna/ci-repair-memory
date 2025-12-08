@@ -1,0 +1,20 @@
+{
+    "sha_fail": "78b289243ec6c116209d27f3de4b11c211f97f91",
+    "changed_files": [
+        {
+            "commit": "78b289243ec6c116209d27f3de4b11c211f97f91",
+            "file_path": "src/axolotl/loaders/model.py",
+            "diff": "diff --git a/src/axolotl/loaders/model.py b/src/axolotl/loaders/model.py\nindex 2b5bd2471..9897399e3 100644\n--- a/src/axolotl/loaders/model.py\n+++ b/src/axolotl/loaders/model.py\n@@ -152,7 +152,7 @@ class ModelLoader:\n             A tuple with the loaded model and its LoRA configuration (if applicable).\n         \"\"\"\n         # Initial setup and patches\n-        self.patch_manager.apply_pre_model_load_patches(self.cfg.model_config_type)\n+        self.patch_manager.apply_pre_model_load_patches()\n         self._apply_pre_model_load_setup()\n \n         # Build the model\n"
+        },
+        {
+            "commit": "78b289243ec6c116209d27f3de4b11c211f97f91",
+            "file_path": "src/axolotl/loaders/patch_manager.py",
+            "diff": "diff --git a/src/axolotl/loaders/patch_manager.py b/src/axolotl/loaders/patch_manager.py\nindex 69133d81c..159903ec9 100644\n--- a/src/axolotl/loaders/patch_manager.py\n+++ b/src/axolotl/loaders/patch_manager.py\n@@ -47,7 +47,7 @@ class PatchManager:\n         \"\"\"Check if flash attention is installed.\"\"\"\n         return importlib.util.find_spec(\"flash_attn\") is not None\n \n-    def apply_pre_model_load_patches(self, model_type: str | None):\n+    def apply_pre_model_load_patches(self):\n         \"\"\"Apply pre-model load patches based on config.\"\"\"\n         self._apply_flash_attention_patches()\n         self._apply_chunked_cross_entropy_patch()\n@@ -66,8 +66,7 @@ class PatchManager:\n         self._apply_self_attention_lora_patch()\n         self._apply_gemma3_conditional_generation_forward_patch()\n         self._apply_sequence_parallel_patches()\n-        if model_type:\n-            self._apply_tiled_mlp(model_type)\n+        self._apply_tiled_mlp(self.cfg.model_config_type)\n \n     def apply_post_model_load_patches(self, model: PreTrainedModel):\n         \"\"\"Apply patches that require the model instance.\"\"\"\n"
+        },
+        {
+            "commit": "78b289243ec6c116209d27f3de4b11c211f97f91",
+            "file_path": "src/axolotl/utils/schemas/validation.py",
+            "diff": "diff --git a/src/axolotl/utils/schemas/validation.py b/src/axolotl/utils/schemas/validation.py\nindex 3a0c9cc9f..af1341cda 100644\n--- a/src/axolotl/utils/schemas/validation.py\n+++ b/src/axolotl/utils/schemas/validation.py\n@@ -476,6 +476,13 @@ class TrainingValidationMixin:\n \n         return data\n \n+    @model_validator(mode=\"before\")\n+    @classmethod\n+    def check_tiled_mlp_deepspeed(cls, data):\n+        if data.get(\"tiled_mlp\", False) and not data.get(\"deepspeed\"):\n+            raise ValueError(\"tiled_mlp requires deepspeed ZeRO to be enabled\")\n+        return data\n+\n \n class LoRAValidationMixin:\n     \"\"\"Validation methods related to LoRA/QLoRA configuration.\"\"\"\n"
+        }
+    ]
+}

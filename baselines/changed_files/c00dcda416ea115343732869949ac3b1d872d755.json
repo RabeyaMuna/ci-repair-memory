@@ -1,0 +1,10 @@
+{
+    "sha_fail": "c00dcda416ea115343732869949ac3b1d872d755",
+    "changed_files": [
+        {
+            "commit": "c00dcda416ea115343732869949ac3b1d872d755",
+            "file_path": "litellm/router.py",
+            "diff": "diff --git a/litellm/router.py b/litellm/router.py\nindex d824986da3..52d48fc71e 100644\n--- a/litellm/router.py\n+++ b/litellm/router.py\n@@ -6042,6 +6042,7 @@ class Router:\n             \"fallbacks\",\n             \"context_window_fallbacks\",\n             \"model_group_retry_policy\",\n+            \"model_group_alias\",\n         ]\n \n         _int_settings = [\n"
+        }
+    ]
+}
