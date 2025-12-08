@@ -16986,7 +16986,7 @@
                             1026,
                             1030
                         ],
-                        "reason": "Test failure: AssertionError in test_invalid_content_type_parses_to_text_plain at line 1029. Expected content_type 'text/plain' but got 'application/octet-stream' when constructing web.Response with invalid content_type='jpeg'.",
+                        "reason": "Test failure: AssertionError in test_invalid_content_type_parses_to_text_plain (line 1029). The test expects a web.Response object created with content_type='jpeg' to have content_type == 'text/plain', but it is 'application/octet-stream' instead. This indicates a bug in the web.Response constructor's handling of invalid content_type values.",
                         "issue_type": "test_failure",
                         "fault_localization_level": "method",
                         "code_snippet": "def test_invalid_content_type_parses_to_text_plain() -> None:\n    resp = web.Response(text=\"test test\", content_type=\"jpeg\")\n\n    assert resp.content_type == \"text/plain\"\n    assert resp.headers[\"content-type\"] == \"jpeg; charset=utf-8\""
@@ -16999,24 +16999,6 @@
         "sha_fail": "3a7e3367046eb22823eed815391d0845ff3c6835",
         "fault_localization_data": [
             {
-                "file_path": "aiohttp/web_protocol.py",
-                "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/aiohttp/aiohttp/web_protocol.py",
-                "faults": [
-                    {
-                        "file_path": "aiohttp/web_protocol.py",
-                        "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/aiohttp/aiohttp/web_protocol.py",
-                        "line_range": [
-                            1,
-                            46
-                        ],
-                        "reason": "Dependency error: The CI logs indicate a warning that 'propcache' version 0.4.0 was yanked from PyPI due to a reference leak issue. The file imports 'propcache' at line 27. This outdated/yanked dependency may cause runtime instability or test failures.",
-                        "issue_type": "dependency_error",
-                        "fault_localization_level": "import_block",
-                        "code_snippet": "import asyncio\nimport asyncio.streams\nimport sys\nimport traceback\nimport warnings\nfrom collections import deque\nfrom contextlib import suppress\nfrom html import escape as html_escape\nfrom http import HTTPStatus\nfrom logging import Logger\nfrom typing import (\n    TYPE_CHECKING,\n    Any,\n    Awaitable,\n    Callable,\n    Deque,\n    Optional,\n    Sequence,\n    Tuple,\n    Type,\n    Union,\n    cast,\n)\n\nimport attr\nimport yarl\nfrom propcache import under_cached_property\n\nfrom .abc import AbstractAccessLogger, AbstractStreamWriter\nfrom .base_protocol import BaseProtocol\nfrom .helpers import ceil_timeout\nfrom .http import (\n    HttpProcessingError,\n    HttpRequestParser,\n    HttpVersion10,\n    RawRequestMessage,\n    StreamWriter,\n)\nfrom .http_exceptions import BadHttpMethod\nfrom .log import access_logger, server_logger\nfrom .streams import EMPTY_PAYLOAD, StreamReader\nfrom .tcp_helpers import tcp_keepalive\nfrom .web_exceptions import HTTPException, HTTPInternalServerError\nfrom .web_log import AccessLogger\nfrom .web_request import BaseRequest\nfrom .web_response import Response, StreamResponse"
-                    }
-                ]
-            },
-            {
                 "file_path": "aiohttp/web_routedef.py",
                 "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/aiohttp/aiohttp/web_routedef.py",
                 "faults": [
@@ -17027,7 +17009,7 @@
                             59,
                             80
                         ],
-                        "reason": "slotscheck violation: 'subclasses RouteDef/StaticDef having slots while superclass AbstractRouteDef does not.' The class RouteDef (lines 59-80) is defined with `@attr.s(slots=True)` but its superclass AbstractRouteDef (lines 49-52) does not define `__slots__`. This can cause memory overhead and slot conflicts.",
+                        "reason": "Slots definition violation: 'aiohttp.web_routedef:RouteDef' has slots (via @attr.s decorator with slots=True) but its superclass 'AbstractRouteDef' does not define __slots__. This violates slotscheck rule.",
                         "issue_type": "linting",
                         "fault_localization_level": "class",
                         "code_snippet": "class RouteDef(AbstractRouteDef):\n    method: str\n    path: str\n    handler: _HandlerType\n    kwargs: Dict[str, Any]\n\n    def __repr__(self) -> str:\n        info = []\n        for name, value in sorted(self.kwargs.items()):\n            info.append(f\", {name}={value!r}\")\n        return \"<RouteDef {method} {path} -> {handler.__name__!r}{info}>\".format(\n            method=self.method, path=self.path, handler=self.handler, info=\"\".join(info)\n        )\n\n    def register(self, router: UrlDispatcher) -> List[AbstractRoute]:\n        if self.method in hdrs.METH_ALL:\n            reg = getattr(router, \"add_\" + self.method.lower())\n            return [reg(self.path, self.handler, **self.kwargs)]\n        else:\n            return [\n                router.add_route(self.method, self.path, self.handler, **self.kwargs)\n            ]"
@@ -17039,28 +17021,10 @@
                             84,
                             100
                         ],
-                        "reason": "slotscheck violation: 'subclasses RouteDef/StaticDef having slots while superclass AbstractRouteDef does not.' The class StaticDef (lines 84-100) is defined with `@attr.s(slots=True)` but its superclass AbstractRouteDef (lines 49-52) does not define `__slots__`. This can cause memory overhead and slot conflicts.",
+                        "reason": "Slots definition violation: 'aiohttp.web_routedef:StaticDef' has slots (via @attr.s decorator with slots=True) but its superclass 'AbstractRouteDef' does not define __slots__. This violates slotscheck rule.",
                         "issue_type": "linting",
                         "fault_localization_level": "class",
                         "code_snippet": "class StaticDef(AbstractRouteDef):\n    prefix: str\n    path: PathLike\n    kwargs: Dict[str, Any]\n\n    def __repr__(self) -> str:\n        info = []\n        for name, value in sorted(self.kwargs.items()):\n            info.append(f\", {name}={value!r}\")\n        return \"<StaticDef {prefix} -> {path}{info}>\".format(\n            prefix=self.prefix, path=self.path, info=\"\".join(info)\n        )\n\n    def register(self, router: UrlDispatcher) -> List[AbstractRoute]:\n        resource = router.add_static(self.prefix, self.path, **self.kwargs)\n        routes = resource.get_info().get(\"routes\", {})\n        return list(routes.values())"
-                    }
-                ]
-            },
-            {
-                "file_path": "aiohttp/base_protocol.py",
-                "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/aiohttp/aiohttp/base_protocol.py",
-                "faults": [
-                    {
-                        "file_path": "aiohttp/base_protocol.py",
-                        "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/aiohttp/aiohttp/base_protocol.py",
-                        "line_range": [
-                            9,
-                            100
-                        ],
-                        "reason": "slotscheck reported overlapping slot '_reading_paused' in RequestHandler/BaseProtocol. The slot '_reading_paused' is defined in BaseProtocol.__slots__ at line 15, but this may conflict with a slot of the same name in a subclass (e.g., RequestHandler), violating Python's slot inheritance rules.",
-                        "issue_type": "linting",
-                        "fault_localization_level": "class",
-                        "code_snippet": "class BaseProtocol(asyncio.Protocol):\n    __slots__ = (\n        \"_loop\",\n        \"_paused\",\n        \"_drain_waiter\",\n        \"_connection_lost\",\n        \"_reading_paused\",\n        \"transport\",\n    )\n\n    def __init__(self, loop: asyncio.AbstractEventLoop) -> None:\n        self._loop: asyncio.AbstractEventLoop = loop\n        self._paused = False\n        self._drain_waiter: Optional[asyncio.Future[None]] = None\n        self._reading_paused = False\n\n        self.transport: Optional[asyncio.Transport] = None\n\n    @property\n    def connected(self) -> bool:\n        \"\"\"Return True if the connection is open.\"\"\"\n        return self.transport is not None\n\n    @property\n    def writing_paused(self) -> bool:\n        return self._paused\n\n    def pause_writing(self) -> None:\n        assert not self._paused\n        self._paused = True\n\n    def resume_writing(self) -> None:\n        assert self._paused\n        self._paused = False\n\n        waiter = self._drain_waiter\n        if waiter is not None:\n            self._drain_waiter = None\n            if not waiter.done():\n                waiter.set_result(None)\n\n    def pause_reading(self) -> None:\n        if not self._reading_paused and self.transport is not None:\n            try:\n                self.transport.pause_reading()\n            except (AttributeError, NotImplementedError, RuntimeError):\n                pass\n            self._reading_paused = True\n\n    def resume_reading(self) -> None:\n        if self._reading_paused and self.transport is not None:\n            try:\n                self.transport.resume_reading()\n            except (AttributeError, NotImplementedError, RuntimeError):\n                pass\n            self._reading_paused = False\n\n    def connection_made(self, transport: asyncio.BaseTransport) -> None:\n        tr = cast(asyncio.Transport, transport)\n        tcp_nodelay(tr, True)\n        self.transport = tr\n\n    def connection_lost(self, exc: Optional[BaseException]) -> None:\n        # Wake up the writer if currently paused.\n        self.transport = None\n        if not self._paused:\n            return\n        waiter = self._drain_waiter\n        if waiter is None:\n            return\n        self._drain_waiter = None\n        if waiter.done():\n            return\n        if exc is None:\n            waiter.set_result(None)\n        else:\n            set_exception(\n                waiter,\n                ConnectionError(\"Connection lost\"),\n                exc,\n            )\n\n    async def _drain_helper(self) -> None:\n        if self.transport is None:\n            raise ClientConnectionResetError(\"Connection lost\")\n        if not self._paused:\n            return\n        waiter = self._drain_waiter\n        if waiter is None:\n            waiter = self._loop.create_future()\n            self._drain_waiter = waiter\n        await asyncio.shield(waiter)"
                     }
                 ]
             }
@@ -17084,10 +17048,22 @@
                             386,
                             397
                         ],
-                        "reason": "Mypy type mismatch: Argument 1 to 'HeaderParser' has incompatible type 'type[EnsureOctetStream]'; expected 'Callable[[], EmailMessage] | None' [arg-type] at line 393. The function 'parse_content_type' passes the class 'EnsureOctetStream' to HeaderParser, which expects a callable factory or None.",
+                        "reason": "Mypy type mismatch: Argument 1 to 'HeaderParser' has incompatible type 'type[EnsureOctetStream]'; expected 'Callable[[], EmailMessage] | None' [arg-type] at line 393:24. The function parse_content_type passes the class EnsureOctetStream as the first argument to HeaderParser, which expects a factory callable or None.",
                         "issue_type": "type_error",
                         "fault_localization_level": "method",
                         "code_snippet": "def parse_content_type(raw: str) -> tuple[str, MappingProxyType[str, str]]:\n    \"\"\"Parse Content-Type header.\n\n    Returns a tuple of the parsed content type and a\n    MappingProxyType of parameters. The default returned value\n    is `application/octet-stream`\n    \"\"\"\n    msg = HeaderParser(EnsureOctetStream, policy=HTTP).parsestr(f\"Content-Type: {raw}\")\n    content_type = msg.get_content_type()\n    params = msg.get_params(())\n    content_dict = dict(params[1:])  # First element is content type again\n    return content_type, MappingProxyType(content_dict)"
+                    },
+                    {
+                        "file_path": "aiohttp/helpers.py",
+                        "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/aiohttp/aiohttp/helpers.py",
+                        "line_range": [
+                            361,
+                            382
+                        ],
+                        "reason": "Runtime syntax error: 'String literal is not terminated' likely originates from a malformed string literal within the EnsureOctetStream class or its methods, causing the test job to fail. The error context indicates a syntax issue preventing execution.",
+                        "issue_type": "runtime_error",
+                        "fault_localization_level": "class",
+                        "code_snippet": "class EnsureOctetStream(Message):\n    def __init__(self) -> None:\n        super().__init__()\n        self.set_default_type(\"application/octet-stream\")\n\n    def get_content_type(self) -> Any:\n        \"\"\"Re-implementation from Message\n\n        Returns application/octet-stream in place of plain/text when\n        value is wrong.\n\n        The way this class is used guarantees that content-type will\n        be present so simplify the checks wrt to the base implementation.\n        \"\"\"\n        value = self.get(\"content-type\", \"\").lower()\n\n        # Based on the implementation of _splitparam in the standard library\n        ctype, sep, _ = value.partition(\";\")\n        ctype = ctype.strip()\n        if ctype.count(\"/\") != 1:\n            return self.get_default_type()\n        return ctype"
                     }
                 ]
             }

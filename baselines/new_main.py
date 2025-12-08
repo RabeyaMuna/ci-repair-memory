@@ -4,16 +4,10 @@
 import os
 import pandas as pd
 import json
-import subprocess
 from omegaconf import OmegaConf
 from dotenv import load_dotenv
-from datasets import load_dataset  # (unused right now but kept)
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
 
-from utilities.fetch_failed_commit_changed_files import (
-    collect_changed_files_for_fail_and_parent,
-)
+from utilities.fetch_failed_commit_changed_files import collect_changed_files_for_fail_and_parent
 from utilities.llm_provider import get_llm
 from ci_repair.ci_log_analyzer_bm25 import CILogAnalyzerBM25
 from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
@@ -23,168 +17,124 @@ from utilities.ensure_repo import ensure_repo_at_commit
 
 load_dotenv()
 
-# ----------------------------------------------------------------------
-# Helper functions: load + ordered save (by dataset sha_fail order)
-# ----------------------------------------------------------------------
-def _load_results_index(path: str, key_field: str = "sha_fail") -> dict:
-    """
-    Load an existing JSON file that contains a list of dicts
-    and build an index { key_field: record }.
 
-    If file does not exist or is invalid, returns an empty dict.
-    """
+# --------------------- Helper functions ---------------------
+def sanitize_dict(d):
+    """Recursively sanitize dictionary to handle JSON-unfriendly characters."""
+    if isinstance(d, dict):
+        return {k: sanitize_dict(v) for k, v in d.items()}
+    elif isinstance(d, list):
+        return [sanitize_dict(v) for v in d]
+    elif isinstance(d, str):
+        # Replace problematic backticks with single quotes (or other replacements)
+        return d.replace('`', "'")
+    else:
+        return d
+
+
+def _load_results_index_safe(path: str, key_field: str = "sha_fail") -> dict:
+    """Load JSON file safely and return dict indexed by key_field."""
     if not os.path.exists(path):
         return {}
 
     try:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-    except Exception:
-        # If something is wrong with the file, don't crash the whole run
+        if not isinstance(data, list):
+            return {}
+        index = {}
+        for item in data:
+            if isinstance(item, dict) and key_field in item:
+                # Sanitize to avoid JSON issues
+                item = sanitize_dict(item)
+                index[item[key_field]] = item
+        return index
+    except Exception as e:
+        print(f"[WARN] Failed to load {path}, starting fresh: {e}")
         return {}
 
-    if not isinstance(data, list):
-        return {}
 
-    index = {}
-    for item in data:
-        if isinstance(item, dict) and key_field in item:
-            index[item[key_field]] = item
-    return index
-
-
-def _save_results_index_ordered(
-    path: str,
-    index: dict,
-    dataset: list,
-    key_field: str = "sha_fail",
-) -> None:
-    """
-    Save an index { key_field: record } to a JSON file as a list,
-    ordered according to the dataset's order of `key_field` (sha_fail).
-
-    - dataset is the full dataset (or same ordering you want to follow)
-    - index holds { sha_fail: record }
-    """
+def _save_results_index_ordered(path: str, index: dict, dataset: list, key_field: str = "sha_fail") -> None:
+    """Save index dict to JSON ordered according to dataset order."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
-
-    # Order keys based on dataset order
-    sha_order = []
     seen = set()
+    ordered = []
+
+    # First, order according to dataset
     for dp in dataset:
         sha = dp.get(key_field)
-        if sha and sha not in seen:
-            sha_order.append(sha)
+        if sha and sha in index:
+            ordered.append(index[sha])
             seen.add(sha)
 
-    ordered = []
-    # First, in dataset order
-    for sha in sha_order:
-        if sha in index:
-            ordered.append(index[sha])
-
-    # If there are any extra keys not in the dataset (unlikely, but safe):
+    # Then add any extra items not in dataset
     for sha, rec in index.items():
         if sha not in seen:
             ordered.append(rec)
 
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(ordered, f, indent=4)
+        json.dump(ordered, f, indent=4, ensure_ascii=False)
 
 
+# --------------------- Main processing ---------------------
 def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm"):
-    """
-    Process the dataset incrementally.
-
-    - Before saving, we always:
-        1) Load existing data from JSON
-        2) Keep everything keyed by sha_fail
-        3) When saving, order by dataset's sha_fail order
-        4) If a sha_fail already exists, replace it with the new one
-    """
-
-    # Folder to store one JSON per sha_fail with changed file info
+    """Process dataset incrementally and update JSONs safely."""
+    # Folders and paths
     changed_files_dir = config.changed_files_folder
     os.makedirs(changed_files_dir, exist_ok=True)
 
-    # Per-model result directory
     result_dir = os.path.join(config.project_result_dir, f"{model_key}_{log_analyzer_type}")
     os.makedirs(result_dir, exist_ok=True)
 
-    # Paths for incremental result files
     log_details_path = os.path.join(result_dir, "log_details.json")
     fault_loc_path = os.path.join(result_dir, "fault_localization.json")
     patches_path = os.path.join(result_dir, "generated_patches.json")
 
-    # Load existing results as {sha_fail: record}
-    log_details_index = _load_results_index(log_details_path, key_field="sha_fail")
-    fault_loc_index = _load_results_index(fault_loc_path, key_field="sha_fail")
-    patches_index = _load_results_index(patches_path, key_field="sha_fail")
+    # Load existing data safely
+    log_details_index = _load_results_index_safe(log_details_path)
+    fault_loc_index = _load_results_index_safe(fault_loc_path)
+    patches_index = _load_results_index_safe(patches_path)
 
-    # Use the full dataset order as the canonical order
-    # If you want a subset for processing, change here:
-    subset = dataset[550:]  # or dataset[start:end], etc.
+    subset = dataset[550:]  # Adjust subset as needed
 
     for datapoint in subset:
-        task_id = datapoint["id"]
-        repo_name = datapoint["repo_name"]
-        repo_owner = datapoint["repo_owner"]
-        repo_path = os.path.join(config.baseline_repo_folder, repo_name)
-        head_branch = datapoint["head_branch"]
         sha_fail = datapoint["sha_fail"]
+        repo_name = datapoint["repo_name"]
+        repo_path = os.path.join(config.baseline_repo_folder, repo_name)
         benchmark_owner = config.benchmark_owner
         repo_url = f"https://github.com/{benchmark_owner}/{repo_name}.git"
         logs = datapoint["logs"]
         workflow = datapoint["workflow"]
         workflow_path = datapoint["workflow_path"]
-        sha_success = datapoint["sha_success"]
+        task_id = datapoint["id"]
 
-        print(f"\n[MAIN] Proceeding with failed commit: {sha_fail}")
+        print(f"\n[MAIN] Processing failed commit: {sha_fail}")
 
-        # Make sure repo is cloned and at sha_fail
+        # Ensure repo is at the failed commit
         ensure_repo_at_commit(repo_url, repo_path, sha_fail)
 
-        # ------------------------------------------------------------------
-        # 1) CI LOG ANALYSIS
-        # ------------------------------------------------------------------
+        # --------------------- CI LOG ANALYSIS ---------------------
         try:
             if log_analyzer_type == "llm":
                 log_analysis_result = CILogAnalyzerLLM(
-                    repo_path,
-                    logs,
-                    sha_fail,
-                    workflow,
-                    workflow_path,
-                    llm=llm,
-                    model_name=model_key,
+                    repo_path, logs, sha_fail, workflow, workflow_path, llm=llm, model_name=model_key
                 ).run()
             else:
                 log_analysis_result = CILogAnalyzerBM25(
-                    repo_path,
-                    logs,
-                    sha_fail,
-                    workflow,
-                    workflow_path,
-                    llm=llm,
-                    model_name=model_key,
+                    repo_path, logs, sha_fail, workflow, workflow_path, llm=llm, model_name=model_key
                 ).run()
 
             if isinstance(log_analysis_result, dict):
-                log_analysis_result.setdefault("sha_fail", sha_fail)
-                # Replace old entry (if any) with new one
+                log_analysis_result = sanitize_dict(log_analysis_result)
+                log_analysis_result["sha_fail"] = sha_fail
                 log_details_index[sha_fail] = log_analysis_result
-                # Save in dataset order
-                _save_results_index_ordered(
-                    log_details_path, log_details_index, dataset, key_field="sha_fail"
-                )
+                _save_results_index_ordered(log_details_path, log_details_index, dataset)
 
         except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
+            print(f"[ERROR] CI log analysis failed for {sha_fail}: {e}")
             continue
 
-        # ------------------------------------------------------------------
-        # 2) CHANGED FILES COLLECTION
-        # ------------------------------------------------------------------
+        # --------------------- CHANGED FILES ---------------------
         try:
             changed_files_info = collect_changed_files_for_fail_and_parent(
                 owner=benchmark_owner,
@@ -195,19 +145,15 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                 workflow_yaml_from_dataset=workflow,
             )
 
-            # Save to per-commit JSON file in baselines/changed_files/{sha_fail}.json
+            changed_files_info = sanitize_dict(changed_files_info)
             changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
             with open(changed_files_path, "w", encoding="utf-8") as f:
-                json.dump(changed_files_info, f, indent=4)
-
-            print(f"[MAIN] Saved changed files info to {changed_files_path}")
+                json.dump(changed_files_info, f, indent=4, ensure_ascii=False)
 
         except Exception as e:
-            print(f"[ERROR] Failed to collect/save changed files for {sha_fail}: {e}")
+            print(f"[ERROR] Failed collecting changed files for {sha_fail}: {e}")
 
-        # ------------------------------------------------------------------
-        # 3) FAULT LOCALIZATION
-        # ------------------------------------------------------------------
+        # --------------------- FAULT LOCALIZATION ---------------------
         try:
             fault_localizer = FaultLocalization(
                 sha_fail=sha_fail,
@@ -220,24 +166,20 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
             ).run()
 
             if isinstance(fault_localizer, dict):
-                fault_localizer.setdefault("sha_fail", sha_fail)
+                fault_localizer = sanitize_dict(fault_localizer)
+                fault_localizer["sha_fail"] = sha_fail
                 fault_loc_index[sha_fail] = fault_localizer
-                _save_results_index_ordered(
-                    fault_loc_path, fault_loc_index, dataset, key_field="sha_fail"
-                )
+                _save_results_index_ordered(fault_loc_path, fault_loc_index, dataset)
 
             if not fault_localizer.get("fault_localization_data"):
-                print(f"[MAIN] No suspicious files found for {sha_fail}, skipping patch generation...")
+                print(f"[MAIN] No suspicious files found for {sha_fail}, skipping patch generation")
                 continue
 
         except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during fault localization: {e}")
+            print(f"[ERROR] Fault localization failed for {sha_fail}: {e}")
             continue
 
-        # ------------------------------------------------------------------
-        # 4) PATCH GENERATION
-        # ------------------------------------------------------------------
-
+        # --------------------- PATCH GENERATION ---------------------
         try:
             patch_generator = PatchGeneration(
                 bug_report=fault_localizer,
@@ -249,71 +191,45 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                 llm=llm,
                 model_name=model_key,
             ).run()
-            
-            import pdb; pdb.set_trace()
-            if not isinstance(patch_generator, dict):
-                print(f"[MAIN] Patch generator returned non-dict for {sha_fail}, skipping...")
-                continue
 
-            if not patch_generator.get("diff"):
-                print(f"[MAIN] No patch generated for {sha_fail}")
-                # Keep behavior consistent with your original code:
-                # don't store entries without a diff in generated_patches.json
-                continue
-
-            patch_generator.setdefault("sha_fail", sha_fail)
-            patches_index[sha_fail] = patch_generator
-            _save_results_index_ordered(
-                patches_path, patches_index, dataset, key_field="sha_fail"
-            )
+            if isinstance(patch_generator, dict) and patch_generator.get("diff"):
+                patch_generator = sanitize_dict(patch_generator)
+                patch_generator["sha_fail"] = sha_fail
+                patches_index[sha_fail] = patch_generator
+                _save_results_index_ordered(patches_path, patches_index, dataset)
 
         except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during patch generation: {e}")
+            print(f"[ERROR] Patch generation failed for {sha_fail}: {e}")
             continue
 
-    # Final in-memory list of generated patches (deduped, ordered)
-    # NOTE: they are still ordered if we rebuild using dataset
-    ordered_patches = []
-    sha_order = [dp.get("sha_fail") for dp in dataset if dp.get("sha_fail")]
-    seen = set()
-    for sha in sha_order:
-        if sha in patches_index and sha not in seen:
-            ordered_patches.append(patches_index[sha])
-            seen.add(sha)
-    for sha, rec in patches_index.items():
-        if sha not in seen:
-            ordered_patches.append(rec)
-
+    # Return final ordered list of patches
+    ordered_patches = [patches_index[dp["sha_fail"]] for dp in dataset if dp["sha_fail"] in patches_index]
     return ordered_patches
 
 
+# --------------------- MAIN ---------------------
 if __name__ == "__main__":
-    # Load config
     config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
     config = OmegaConf.load(config_path)
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    model_key = "deepseek-coder"   # or "gpt4o", "deepseek-chat", etc.
+    model_key = "deepseek-coder"
     llm = get_llm(model_key)
 
-    # Load dataset (this is the canonical order)
+    # Load dataset
     dataset_df = pd.read_parquet(dataset_path)
     dataset = dataset_df.to_dict(orient="records")
 
-    # Run processing (incrementally updates per-model JSON files)
+    # Process dataset
     results = process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="bm25")
 
-    # Optional: also maintain a global generated_patches.json
-    # in config.project_result_dir, with same ordered-by-dataset behavior
+    # Maintain global generated_patches.json safely
     global_output_file = os.path.join(config.project_result_dir, "generated_patches.json")
-    global_index = _load_results_index(global_output_file, key_field="sha_fail")
+    global_index = _load_results_index_safe(global_output_file)
     for item in results:
-        if isinstance(item, dict) and "sha_fail" in item:
-            global_index[item["sha_fail"]] = item
-    _save_results_index_ordered(
-        global_output_file, global_index, dataset, key_field="sha_fail"
-    )
+        global_index[item["sha_fail"]] = item
+    _save_results_index_ordered(global_output_file, global_index, dataset)
 
     print(f"[MAIN] Global results saved in {global_output_file}")
