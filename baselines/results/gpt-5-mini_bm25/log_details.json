@@ -24679,69 +24679,57 @@
     {
         "sha_fail": "459cfd9a9110080f68d50b9ae3b63fa17b0f2f0c",
         "error_context": [
-            "The job failed because the functional test run (pytest) aborted many test setups due to missing external build tools; the logs repeatedly show messages like \"Failed: Required 'premake' tool version 'Any' is not available\" and \"Required 'cmake' tool 'Any' is not available\" which blocked test setup and caused pytest to report many ERROR at setup entries.",
-            "Several tests also produced AssertionError failures unrelated to missing tools, notably Meson-related assertions and apt/dpkg output checks; examples include \"AssertionError: 'main __GNUC__9' not found\" and asserts expecting \"dpkg-query: no packages found matching non-existing1\" which indicate functional test expectations did not match the runtime output during the test run.",
-            "The workflow's Install dependencies step installed Python requirements and meson via pip but did not provide system-level tools or specific cmake versions required by tests; evidence in logs shows required cmake versions (3.19, 3.23, 3.27) were not available which caused the conftest.py to call pytest.fail and abort many test setups, leading to overall exit code 1."
+            "The Linux Functional test job failed because the pytest functional suite aborted many tests at setup time due to missing external build/tooling dependencies, primarily CMake (various minimum versions), premake, and emscripten/emcc; evidence: numerous \"ERROR at setup of ...\" lines citing missing CMake version requirements and an explicit failure \"Failed: Required 'premake' tool version 'Any' is not available\". Several individual test assertion failures also occurred (e.g. package_manager tests expecting dpkg-query output and Meson-related assertions about compiler macros), but the dominant root cause is missing external tools causing 238 setup errors and tests to be skipped or error out. The failing step is the test run invoked by the workflow step that uses the local action ./.github/actions/test-coverage, which ran pytest (log shows pytest session start and pytest short test summary), and the CI process ended with \"Process completed with exit code 1\"."
         ],
         "relevant_files": [
             {
                 "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/conftest.py",
                 "line_number": null,
-                "reason": "conftest.py is cited in the logs as raising pytest.fail when required external tools (cmake, premake, emcc) or versions are missing, which directly caused many ERROR at setup entries in pytest."
+                "reason": "conftest.py is referenced in the logs as performing tool availability checks; the logs show conftest aborted tests with messages such as \"Failed: Required 'premake' tool version 'Any' is not available\", which indicates conftest raised test setup errors when required external tools were missing."
             },
             {
                 "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/conan/tools/meson/meson.py",
                 "line_number": null,
-                "reason": "meson.py is relevant because multiple Meson-related tests failed with assertions like 'main __GNUC__9' not found and meson toolchain expectations, indicating this module is involved in the failing Meson toolchain logic exercised by the tests."
+                "reason": "meson.py implements Meson tool integration; logs contain many Meson-related test setup errors and assertions (e.g. Meson emscripten tests failed because emscripten/cmake/emcc were not available and Meson output differences caused assertion failures), tying this file to the failing Meson test paths."
             },
             {
                 "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/functional/toolchains/meson/test_meson.py",
                 "line_number": null,
-                "reason": "The functional Meson test file is referenced by the log failures and assertion messages, showing Meson-specific tests failed or were blocked by missing tools and version mismatches."
+                "reason": "This functional test file is directly matched by the failure context for Meson toolchain tests; logs show \"ERROR at setup of test_cmake_emscripten\" and \"ERROR at setup of test_meson_emscripten\" indicating tests in this area failed due to missing emscripten/emcc or cmake integration issues."
             },
             {
                 "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/functional/tools/system/package_manager_test.py",
                 "line_number": 56,
-                "reason": "The logs reference an AssertionError at test/functional/tools/system/package_manager_test.py:56 where dpkg-query related assertions failed, showing this file contains the apt/dpkg checks that produced assertion failures."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/integration/remote/broken_download_test.py",
-                "line_number": null,
-                "reason": "This integration test file matched tokens in the failure context and may be involved in remote/download related failure modes reported in the test summaries; it was highly scored by token matching to the logs."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/setup_server.py",
-                "line_number": null,
-                "reason": "setup_server.py appears in the matched file list and is relevant because test setup and server-related initialization in functional tests can influence availability of external tools and test environment expectations."
+                "reason": "A failing assertion is shown with the file and line \"test/functional/tools/system/package_manager_test.py:56: AssertionError\"; logs show expected dpkg-query output was not found, causing assertion failures in package_manager tests."
             }
         ],
         "error_types": [
             {
-                "category": "Dependency Error",
-                "subcategory": "Missing external build tools (cmake, premake, emcc)",
-                "evidence": "Logs contain messages like \"Failed: Required 'premake' tool version 'Any' is not available\" and \"Required 'cmake' tool 'Any' is not available\" which indicate missing tools caused pytest setup to fail."
-            },
-            {
-                "category": "Dependency Error",
-                "subcategory": "Missing specific tool versions",
-                "evidence": "Multiple log lines state specific cmake versions are required but not available, for example tests requiring cmake 3.19, 3.23, and 3.27 reported unmet version requirements and caused setup errors."
+                "category": "Configuration Error",
+                "subcategory": "Missing external tooling/dependencies (CMake/premake/emscripten/emcc)",
+                "evidence": "Multiple log lines show \"ERROR at setup of ...\" for many tests with contexts saying required cmake version 3.19/3.23/3.27 not available and an explicit message \"Failed: Required 'premake' tool version 'Any' is not available\"; Meson/emscripten tests also failed because emcc was not available."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "AssertionError in functional tests",
-                "evidence": "The logs show assertion failures such as \"AssertionError: 'main __GNUC__9' not found\" and \"AssertionError: assert 'dpkg-query: no packages found matching non-existing1' in ...\" which are concrete test assertion failures observed in pytest output."
+                "subcategory": "Pytest setup errors causing many tests to error",
+                "evidence": "Pytest produced many \"ERROR at setup of ...\" entries and the short test summary reported 238 errors, indicating tests could not complete setup due to missing tools or environment configuration."
             },
             {
-                "category": "Configuration Error",
-                "subcategory": "CI step/installation incomplete for system deps",
-                "evidence": "Workflow 'Install dependencies' step installs meson via pip but logs show missing system-level tools (cmake, premake, emcc) causing failures, indicating the CI does not provision required system binaries in the install step."
+                "category": "Test Assertion Failure",
+                "subcategory": "AssertionError in functional tests (package manager and Meson output expectations)",
+                "evidence": "Logs include assertion failures such as \"AssertionError: assert 'dpkg-query: no packages found matching non-existing1' in ...\" and Meson tests asserting older compiler macros but seeing GCC 13 instead, causing test assertions to fail."
+            },
+            {
+                "category": "CI Failure",
+                "subcategory": "Process exited non-zero",
+                "evidence": "Final log line shows \"##[error]Process completed with exit code 1.\" and pytest short summary with 7 failed, 385 passed, 326 skipped, 238 errors, causing the job to fail overall."
             }
         ],
         "failed_job": [
             {
                 "job": "Linux Functional (3.10)",
                 "step": "Run tests",
-                "command": "pytest (invoked by the ./.github/actions/test-coverage action)"
+                "command": "uses: ./.github/actions/test-coverage (invoked pytest; logs show pytest session start and pytest short test summary)"
             }
         ]
     },
