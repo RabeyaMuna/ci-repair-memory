@@ -22586,40 +22586,40 @@
     {
         "sha_fail": "eb221b759b0e89f3dfbde6689cc49040721998aa",
         "error_context": [
-            "The CI step 'Linux Functional (3.10)' failed due to widespread test failures caused by missing required build tools (cmake, premake, emcc, qbs, scons) in the environment. Many functional tests, especially those for cmakedeps, cmakedeps_versions, cmakedeps_aliases, and cmakedeps_build_modules, failed with the error 'Failed: Required ... tool version ... is not available'. Additionally, there were assertion failures related to compiler detection, where the detected compiler was 'None' instead of 'gcc', and a GCC version mismatch where '__GNUC__13' was found but 'main __GNUC__9' was expected. A ConanException for an invalid 'None' compiler setting also occurred."
+            "The CI job 'Linux Functional (3.10)' failed due to widespread test failures. The root cause is that required build tools (cmake, premake, emcc, qbs, scons) are not available in the test environment, causing 241 errors and 6 test failures. A pytest fixture in test/conftest.py at line 352 failed because required tools with specific or 'Any' versions were not available. Additional failures include a compiler detection issue (AssertionError: None != 'gcc') and several Meson test failures where the expected GCC version 9 output was not found (actual GCC version is 13)."
         ],
         "relevant_files": [
             {
                 "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/conftest.py",
                 "line_number": 352,
-                "reason": "The log indicates the error 'Failed: Required ... tool version ... is not available' originates from this file, causing many test setup failures."
+                "reason": "The pytest fixture at line 352 failed because required tools (cmake, premake, emcc, qbs, scons) with specific or 'Any' versions were not available in the environment, causing numerous test failures."
             },
             {
                 "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/functional/command/profile_test.py",
                 "line_number": 94,
-                "reason": "An AssertionError occurred here where the detected compiler was None but 'gcc' was expected, as per the log summary."
+                "reason": "An AssertionError occurred: 'AssertionError: None != 'gcc'' because the compiler detection returned None instead of 'gcc'."
             },
             {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/conan/tools/cmake/cmake.py",
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/functional/toolchains/meson/test_test.py",
                 "line_number": null,
-                "reason": "The file is highly relevant (score 6506.85) due to the CMake tool missing errors and CMake-related test failures described in the log."
+                "reason": "AssertionError indicated 'main __GNUC__9' was not found in the output; the actual GCC version was 13."
             }
         ],
         "error_types": [
             {
-                "category": "Dependency Error",
-                "subcategory": "Missing build tool (cmake, premake, emcc, qbs, scons)",
-                "evidence": "Log states 'Failed: Required ... tool version ... is not available' for tools like cmake (versions 'Any', '3.19', '3.23'), premake, emcc, qbs, and scons."
+                "category": "Test Failure",
+                "subcategory": "Missing Dependency in Test Environment",
+                "evidence": "Failed: Required ... tool version ... is not available' message for cmake, premake, emcc, qbs, and scons."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "AssertionError in functional test (compiler detection/version mismatch)",
-                "evidence": "AssertionError in test/functional/command/profile_test.py:94 where detected compiler was None but expected 'gcc'; another AssertionError expected 'main __GNUC__9' but found '__GNUC__13'."
+                "subcategory": "AssertionError in unit test",
+                "evidence": "AssertionError: None != 'gcc' in test/functional/command/profile_test.py:94."
             },
             {
-                "category": "Configuration Error",
-                "subcategory": "Invalid compiler setting (ConanException)",
-                "evidence": "Traceback showed a ConanException for an invalid 'None' compiler setting."
+                "category": "Test Failure",
+                "subcategory": "AssertionError in unit test",
+                "evidence": "AssertionError in test/functional/toolchains/meson/test_test.py indicated 'main __GNUC__9' was not found in the output; the actual GCC version was 13."
             }
         ],
         "failed_job": [
@@ -22633,37 +22633,1105 @@
     {
         "sha_fail": "eb4acbc53a79e2747c5c1e33875be3e8d1acf943",
         "error_context": [
-            "The Linux Integration (3.10) test suite failed with 28 test failures. The failures are primarily in remote package listing, removal, and search operations. Evidence shows AssertionErrors where the set of package IDs after removal did not match expected sets, and where custom settings, options, or special characters in conaninfo were not found in remote list query outputs. A KeyError: 'content' occurred in a REST API search test, and a package count mismatch (3 packages vs. expected 1) was reported. The failures indicate issues with remote query output parsing, package ID filtering, and conaninfo handling."
+            "The Linux Integration (3.10) test suite failed with 28 test failures, causing the process to exit with code 1. Failures are concentrated in tests for the 'remove' command with package revision expressions, 'list' command queries for remote packages, and remote API search functionality. This indicates issues with remote package metadata filtering, search result parsing, and conaninfo handling. Evidence includes multiple AssertionErrors in remove_test.py where actual package IDs did not match expected sets after remove commands, and assertion failures in list_test.py for remote list queries involving custom settings and options."
         ],
         "relevant_files": [
             {
                 "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/integration/command/remove_test.py",
                 "line_number": null,
-                "reason": "Multiple failures occurred in this file; log shows captured stderr during test_new_remove_package_expressions runs and AssertionErrors where package ID sets after removal did not match expected sets."
+                "reason": "Multiple test failures involve AssertionErrors when removing packages with revision expressions against a remote; lines 656, 710, 765, 817, 869, 921, 973, and 1025 show assertion failures where actual package IDs did not match expected sets after remove commands."
             },
             {
                 "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/integration/command/list/list_test.py",
                 "line_number": null,
-                "reason": "Log mentions multiple list test failures, including assertions that custom setting 'newsetting: value1' and option 'myoption: 1' were not present in remote list outputs, and a package count mismatch."
+                "reason": "Several list command test failures occurred; for example, line 1592 shows an assertion that 'arch: kk=kk' is in remote list output failed, and line 1562 had an AssertionError for package count in JSON output."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/integration/command/test_remote_users.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains tests related to remote API search functionality which is indicated as a failure area."
             }
         ],
         "error_types": [
             {
                 "category": "Test Failure",
                 "subcategory": "AssertionError in integration test",
-                "evidence": "AssertionErrors in remove_test.py where the set of package IDs after removal did not match expected sets; assertions in list tests where expected formatted output was not found."
+                "evidence": "Multiple test failures in test/integration/command/remove_test.py involve AssertionErrors when removing packages with revision expressions against a remote; lines 656, 710, 765, 817, 869, 921, 973, and 1025 show the assertion failures where actual package IDs did not match expected sets after remove commands."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "KeyError in REST API test",
-                "evidence": "KeyError: 'content' occurred in a REST API search test at line 1664."
+                "subcategory": "KeyError in integration test",
+                "evidence": "Line 1664 shows a KeyError: 'content' in rest_api_test.py, indicating an issue with remote API search result parsing."
             }
         ],
         "failed_job": [
             {
                 "job": "linux_tests",
                 "step": "Linux Integration (3.10)",
-                "command": "pytest (or similar test runner invoked by the 'Run tests' action)"
+                "command": "pytest"
+            }
+        ]
+    },
+    {
+        "sha_fail": "f603530d80641556da3229743731dcf3715c2bca",
+        "error_context": [
+            "The CI job failed due to two primary issues. First, 233 test setup failures occurred because the required CMake tool version was not available in the environment, preventing CMake-dependent tests from running. Second, four Meson-related tests failed due to an assertion expecting a specific GCC version (__GNUC__9) that did not match the actual compiler (GCC 13.3.0). The step ultimately exited with code 1."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/conftest.py",
+                "line_number": 350,
+                "reason": "The error context indicates pytest.fail is called at line 350 in conftest.py when the CMake tool is missing, causing the 233 test setup failures."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/test/functional/toolchains/meson/test_meson.py",
+                "line_number": null,
+                "reason": "The log mentions assertion failures in Meson tests (test_reuse, test_build) expecting __GNUC__9 but finding __GNUC__13, linking to this test file."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conan/conan/tools/meson/meson.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context related to Meson toolchain failures, indicating this file is involved in the Meson test errors."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Dependency Error",
+                "subcategory": "Missing dependency x",
+                "evidence": "Required 'cmake' tool version is not available, causing 233 test setup failures."
+            },
+            {
+                "category": "Test Failure",
+                "subcategory": "AssertionError in unit test",
+                "evidence": "AssertionError where 'main __GNUC__9' was not found in the output (actual output showed __GNUC__13) in Meson tests."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "linux_tests",
+                "step": "Run tests",
+                "command": "pytest"
+            }
+        ]
+    },
+    {
+        "sha_fail": "22b2dc09d8b433af142e26614c7642a8be87c41d",
+        "error_context": [
+            "Two distinct root causes caused multiple CI job failures. First, a test assertion failure occurred in the conda plugin settings test suite. The test 'test_conda_config_describe_not_included_without_plugins' failed with an AssertionError because a plugin-provided settings banner incorrectly appeared in the verbose output of 'conda config --describe' when plugins were disabled. This caused failures in jobs 'windows (3.10, defaults, unit, 2)', 'windows (3.13, defaults, unit, 2)', 'linux (ubuntu-latest, 3.12, defaults, unit, 1)', and 'linux (ubuntu-latest, 3.11, defaults, unit, 1)'. Second, a configuration error occurred where pytest was invoked with an invalid argument 'least_duration' for the --splitting-algorithm option. This caused the pytest command to exit with code 1 before any tests could run. This affected all Windows jobs using Python 3.13 with the conda-forge channel, across both unit and integration test types."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conda/conda/base/context.py",
+                "line_number": null,
+                "reason": "Repeatedly appears as a top-scoring relevant file across test assertion failures, indicating it is likely involved in the configuration description logic that the failing test validates."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conda/conda/common/configuration.py",
+                "line_number": null,
+                "reason": "Appears as a high-scoring relevant file in test assertion failures; the test 'test_conda_config_describe_not_included_without_plugins' directly concerns configuration output, tying this file to the failure."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conda/tests/common/test_configuration.py",
+                "line_number": null,
+                "reason": "Appears as a relevant file in multiple failures, including the pytest argument error jobs; this is the test module where the failing configuration test likely resides."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/conda/conda/testing/fixtures.py",
+                "line_number": null,
+                "reason": "Consistently appears as a top-scoring file in jobs failing due to the pytest argument error, suggesting it may contain pytest configuration or splitting logic that uses the invalid 'least_duration' algorithm."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "AssertionError in unit test",
+                "evidence": "Log summaries state 'test_conda_config_describe_not_included_without_plugins failed with an AssertionError' where the expected plugin settings banner was unexpectedly found in the config output."
+            },
+            {
+                "category": "Configuration Error",
+                "subcategory": "Invalid command-line argument",
+                "evidence": "Log summaries state 'pytest usage error indicates an invalid choice 'least_duration' for --splitting-algorithm', causing the process to exit with code 1."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "windows",
+                "step": "Run Tests",
+                "command": "python -m pytest --cov=conda --basetemp=${{ runner.temp }} --durations-path=durations\\${{ runner.os }}.json --group=${{ matrix.test-group }} --splits=${{ env.PYTEST_SPLITS }} -m \"${{ env.PYTEST_MARKER }}\""
+            },
+            {
+                "job": "linux",
+                "step": "Run Tests",
+                "command": "python -m pytest --cov=conda --durations-path=durations/${{ runner.os }}.json --group=${{ matrix.test-group }} --splits=${{ env.PYTEST_SPLITS }} -m \"${{ env.PYTEST_MARKER }}\""
+            }
+        ]
+    },
+    {
+        "sha_fail": "2c31790d093ee0dfdc27aa49c7f8b5018aa16bdb",
+        "error_context": [
+            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/'. This resulted in exit code 4, indicating a missing test path or configuration issue. The error context shows the file or directory was not found, causing no tests to run."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
+                "line_number": null,
+                "reason": "File matched tokens from error context with high score (189.13), suggesting it is part of the test suite structure that may be related to the path resolution issue."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
+                "line_number": null,
+                "reason": "File matched tokens from error context with high score (189.13), indicating it is part of the test integrations potentially affected by the missing directory."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
+                "line_number": null,
+                "reason": "File matched tokens from error context (score=163.83), possibly referenced during test setup or teardown."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Configuration Error",
+                "subcategory": "Missing test path or directory",
+                "evidence": "Pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4 and no tests run."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "test",
+                "step": "Run tests",
+                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
+            }
+        ]
+    },
+    {
+        "sha_fail": "39acebb1e9a1ed40d4707bfa5bb731a94ac2436f",
+        "error_context": [
+            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4. The error context indicates the directory was not found and no tests ran."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_core/test_datasets/",
+                "line_number": null,
+                "reason": "The error context explicitly states the directory 'tests/test_core/test_datasets/' was not found, causing pytest to fail."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Missing test directory or file",
+                "evidence": "pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "test",
+                "step": "Run tests",
+                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
+            }
+        ]
+    },
+    {
+        "sha_fail": "405a68ca74619681c6be38a1e4fb8b9fe90e5bff",
+        "error_context": [
+            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/'. The error context states 'the file or directory 'tests/test_core/test_datasets/' was not found, leading to no tests running'. This caused pytest to exit with code 4, indicating no tests were collected."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_core/test_datasets/",
+                "line_number": null,
+                "reason": "The error context explicitly states the file or directory 'tests/test_core/test_datasets/' was not found, which is the root cause of the pytest failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Test Collection Error",
+                "evidence": "Pytest exit code 4 and error context: 'the file or directory 'tests/test_core/test_datasets/' was not found, leading to no tests running'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "test",
+                "step": "Run tests",
+                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
+            }
+        ]
+    },
+    {
+        "sha_fail": "ae079d8bb4562600e3625571bda17626c90d2608",
+        "error_context": [
+            "The 'test' job failed because the pytest command could not find the test directory 'tests/test_core/test_datasets/'. The process exited with code 4, indicating no tests were collected. The workflow step 'Run tests' attempted to run pytest with an explicit ignore flag for that directory, but the error suggests the directory path was referenced incorrectly or is missing."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_core/test_datasets/",
+                "line_number": null,
+                "reason": "The error context states pytest could not find the test directory 'tests/test_core/test_datasets/', which is the direct cause of the failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Configuration Error",
+                "subcategory": "Missing or incorrect test directory path",
+                "evidence": "Pytest reported the file or directory 'tests/test_core/test_datasets/' was not found, resulting in exit code 4 and no tests running."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "test",
+                "step": "Run tests",
+                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
+            }
+        ]
+    },
+    {
+        "sha_fail": "b9b36350bfdf5ff34ba20076fa39096a59fdf0d5",
+        "error_context": [
+            "The 'test' job failed because pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4. The error context indicates the file or directory was not found, causing no tests to run. This occurred during the 'Run tests' step, which uses a pytest command that explicitly ignores that directory, suggesting the failure might be due to a misconfigured path or a missing directory in the repository at this commit."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_core/test_datasets/",
+                "line_number": null,
+                "reason": "The error context directly states pytest could not find the test directory 'tests/test_core/test_datasets/', causing the failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Missing test directory or path configuration error",
+                "evidence": "The log summary states: 'pytest could not find the test directory tests/test_core/test_datasets/, resulting in exit code 4' and 'the file or directory tests/test_core/test_datasets/ was not found, causing no tests to run.'"
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "test",
+                "step": "Run tests",
+                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
+            }
+        ]
+    },
+    {
+        "sha_fail": "f8e6b16b6037a90fc1e332e009d421c23c4bcada",
+        "error_context": [
+            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/'. The error context indicates the process failed with exit code 4, and the file or directory was not found, so no tests ran."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_core/test_datasets/",
+                "line_number": null,
+                "reason": "The error context states pytest could not find the test directory 'tests/test_core/test_datasets/', causing exit code 4."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Configuration Error",
+                "subcategory": "Missing test directory or path",
+                "evidence": "Error context indicates pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "test",
+                "step": "Run tests",
+                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
+            }
+        ]
+    },
+    {
+        "sha_fail": "85f0f7ceebed4535aa57f512f7f5e2b132f09142",
+        "error_context": [
+            "The test suite failed on Windows, macOS, and Ubuntu due to a single test failure: test_user_config_recurse_submodules in test_cli.py. The test mocks the cookiecutter function and expects a specific call signature, but the actual call includes an extra keyword argument 'keep_project_on_failure=False' and a different argument order, causing an AssertionError. This mismatch leads the entire pytest run to exit with code 1."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/cookiecutter/tests/test_cli.py",
+                "line_number": null,
+                "reason": "The failure originates from test_user_config_recurse_submodules, where a mock assertion fails because the actual call to cookiecutter includes an unexpected 'keep_project_on_failure' parameter."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/cookiecutter/cookiecutter/main.py",
+                "line_number": null,
+                "reason": "The mocked cookiecutter function is likely defined or called from main.py, as the test verifies its invocation with specific arguments."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "AssertionError in unit test",
+                "evidence": "AssertionError because a mocked function call's keyword arguments did not match the expected order and included an extra parameter 'keep_project_on_failure'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "test-all",
+                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
+                "command": "just test-all"
+            },
+            {
+                "job": "test-all",
+                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"macos-latest\" (via just, uv, pytest, pytest-pretty)",
+                "command": "just test-all"
+            },
+            {
+                "job": "test-all",
+                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"ubuntu-latest\" (via just, uv, pytest, pytest-pretty)",
+                "command": "just test-all"
+            }
+        ]
+    },
+    {
+        "sha_fail": "7c11d60d46f01ad42384ed940d924a3196b8595f",
+        "error_context": [
+            "The CI run failed for three distinct reasons across different Python version environments. For Python 3.15 and 3.15t (experimental), the build step failed because pip could not build wheels for packages with Rust extensions (libcst, bcrypt, cryptography). The underlying cause is that the PyO3 library, used to build these extensions, does not yet support Python 3.15, causing Rust compilation errors and exit code 1. For Python 3.10 (non-experimental), the build step failed due to extensive static analysis and type-checking errors. This includes a linting failure from ruff (unused import), a mypyc compilation error (AssertionError), a pyre command-line issue, numerous pytype attribute errors, and thousands of pyright errors reporting missing type arguments, unknown types, and invalid exception handling, leading to a final exit code 255."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/cowrie/src/cowrie/shell/protocol.py",
+                "line_number": 27,
+                "reason": "The log indicates a mypyc AssertionError for an unexpected DeletedType in this file at line 27."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/cowrie/src/cowrie/commands/base.py",
+                "line_number": null,
+                "reason": "Multiple pytype failures reported attribute errors in this module, such as missing '__iter__' attribute."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/cowrie/src/cowrie/output/abuseipdb.py",
+                "line_number": null,
+                "reason": "Pytype reported attribute errors (e.g., missing 'logbook'), and pyright flagged deprecated datetime.utcfromtimestamp usage."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/cowrie/src/cowrie/commands/find.py",
+                "line_number": null,
+                "reason": "Pytype reported an attribute error where 'maxdepth' was missing or unknown in this module."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/cowrie/src/cowrie/ssh_proxy/protocols/ssh.py",
+                "line_number": null,
+                "reason": "Numerous pyright errors were reported for this file, including missing type arguments for generic classes and unknown argument types."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Dependency Error",
+                "subcategory": "Incompatible Python Version for Rust Extension",
+                "evidence": "Log states 'the Python interpreter version 3.15 is newer than PyO3's maximum supported version 3.14', causing cargo build failure for libcst, bcrypt, and cryptography."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Import",
+                "evidence": "Log states 'ruff check failed with one fixable error about an unused import of twisted.internet.protocol'."
+            },
+            {
+                "category": "Type Checking",
+                "subcategory": "Mypyc Compilation Error",
+                "evidence": "Log shows a traceback with 'AssertionError for an unexpected DeletedType in src/cowrie/shell/protocol.py:27'."
+            },
+            {
+                "category": "Type Checking",
+                "subcategory": "Pytype Attribute Error",
+                "evidence": "Log lists multiple 'pytype failures... reported attribute errors in various modules where attributes like '__iter__', 'callbacks', etc. were missing or unknown'."
+            },
+            {
+                "category": "Type Checking",
+                "subcategory": "Pyright Missing Type Annotations",
+                "evidence": "Log describes 'pyright errors... highlighted missing type arguments for generic classes like Deferred, Callable, Match, and dict across many command files' and 'pyright cannot infer types for many parameters, attributes, and return values'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "build",
+                "step": "build (3.15, true)",
+                "command": "tox"
+            },
+            {
+                "job": "build",
+                "step": "build (3.15t, true)",
+                "command": "tox"
+            },
+            {
+                "job": "build",
+                "step": "build (3.10, false)",
+                "command": "tox"
+            }
+        ]
+    },
+    {
+        "sha_fail": "033df9f74d897a258ccc62d712bdcf192308be62",
+        "error_context": [
+            "The CI job failed because a shell command attempted to change directory to 'lib/crewai', but that directory does not exist. This caused the 'Run tests (group ${{ matrix.group }} of 8)' step to exit with code 1. The error message is 'cd: lib/crewai: No such file or directory'."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/cli/git.py",
+                "line_number": null,
+                "reason": "File was matched from error context with a high score (161.98), indicating potential relevance to the workflow or project structure."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/agent_test.py",
+                "line_number": null,
+                "reason": "File was matched from error context with a high score (125.26), indicating it is likely a test file that would be run by the failing pytest command."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Configuration Error",
+                "subcategory": "Incorrect working directory or path",
+                "evidence": "Shell error: 'cd: lib/crewai: No such file or directory'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests (3.10)",
+                "step": "Run tests (group ${{ matrix.group }} of 8)",
+                "command": "cd lib/crewai && uv run pytest ..."
+            }
+        ]
+    },
+    {
+        "sha_fail": "051820b73ce053cdbb73101445cd203c156813e1",
+        "error_context": [
+            "The lint job failed because the Ruff linter detected multiple code style violations across many Python source and test files. The primary failures are unused imports (F401), an unused variable (F841), and a bare except clause (E722). The linter reported these violations and exited with code 123, causing the CI step to fail."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/serialization.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/llm_utils.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/tools/tool_usage.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/cli/utils.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/utilities/test_converter.py",
+                "line_number": 1211,
+                "reason": "Log indicates an unused variable `uuid_obj` in a test file within a pytest.raises block for ValueError."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/cli/git.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/cli/cli_test.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/test_task_guardrails.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/flow_test.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Import",
+                "evidence": "Log shows multiple unused import violations (F401), e.g., unused import of `langchain_core.messages.ToolMessage`, `crewai.utilities.converter.Converter`, `typing.Optional`, `re`, `typing.Tuple`, `pathlib.Path`, `typing.AsyncIterable`, `os`, `typing.List`, `typing.Union`, `typing.Callable`, `warnings`, `logging.Logger`, `typing.Any`, `pytest`, `unittest.mock.Mock`, `unittest.mock.patch`, `unittest.mock.ANY`."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Variable",
+                "evidence": "Log indicates an unused variable `uuid_obj` (F841) in a test file within a pytest.raises block for ValueError; also mentions unused variables `result`, `output`, `exc_info`, and `e` in other test blocks."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Bare Except Clause",
+                "evidence": "Log mentions a bare except clause (E722) as one of the code style violations detected by the linter."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "uv run ruff check"
+            }
+        ]
+    },
+    {
+        "sha_fail": "06e2683fd889129c12e6bd818a3b4a5bd880444a",
+        "error_context": [
+            "The lint job failed because the Ruff linter detected multiple code quality violations across source and test files, primarily unused imports (F401) and a bare except (E722). The step 'Run Ruff on All Python Files' exited with code 123, indicating the presence of linting errors that need to be fixed."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/tools/base_tool.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains one of the flagged unused imports."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains one of the flagged unused imports."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/tools/tool_usage.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains one of the flagged unused imports."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/llm_utils.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains one of the flagged unused imports."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/serialization.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains one of the flagged unused imports."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Import",
+                "evidence": "The linter flagged unused imports such as `langchain_core.messages.ToolMessage`, `crewai.utilities.converter.Converter`, `typing.Optional`, `os`, and `typing.Union` across multiple files."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Bare Except",
+                "evidence": "The error context mentions a bare except (E722) violation was detected among the code quality issues."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "uv run ruff check"
+            }
+        ]
+    },
+    {
+        "sha_fail": "0b704756f6d392dc02a8e2ce3dda9d719f128690",
+        "error_context": [
+            "The type-checker job failed because mypy reported 2 type errors in the file src/crewai/utilities/events/event_listener.py, causing the process to exit with code 1. The errors are a value not being indexable and an incompatible argument to len."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/utilities/events/event_listener.py",
+                "line_number": null,
+                "reason": "The log summary states mypy found 2 type errors in this specific file, which caused the failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Type Checking",
+                "subcategory": "Mypy type mismatch",
+                "evidence": "The log summary states 'mypy found 2 type errors' including 'a value not being indexable and an incompatible argument to len'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "type-checker",
+                "step": "Run type checks",
+                "command": "mypy src"
+            }
+        ]
+    },
+    {
+        "sha_fail": "0bef3aba9a6f8b20804f2234ab6392359091e965",
+        "error_context": [
+            "The CI failure occurred because a Pydantic validation error was raised during the test run. Specifically, when emitting an LLMStreamChunkEvent, the required 'response_id' field was missing. This caused the test 'test_streaming_fallback_to_non_streaming' to fail, leading the overall pytest process to exit with code 1."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/lib/crewai/tests/agents/test_lite_agent.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context with high score (354.88); likely contains the failing test or related code."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/lib/crewai/tests/llms/bedrock/test_bedrock.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context with high score (353.41); may be related to LLM streaming tests."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/lib/crewai/src/crewai/task.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context with high score (335.65); likely contains event emission or Pydantic model definitions."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Pydantic Validation Error in Unit Test",
+                "evidence": "Log shows a Pydantic validation error for LLMStreamChunkEvent, missing the required 'response_id' field, causing test failure."
+            },
+            {
+                "category": "Runtime Error",
+                "subcategory": "Serialization Warning / Schema Mismatch",
+                "evidence": "Log shows Pydantic serialization warnings about expected 10 fields but got 5 or 7 for a Message object."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests (3.13)",
+                "step": "Run tests (group ${{ matrix.group }} of 8)",
+                "command": "cd lib/crewai && uv run pytest --block-network --timeout=30 -vv --splits 8 --group ${{ matrix.group }} $DURATIONS_ARG --durations=10 -n auto --maxfail=3"
+            }
+        ]
+    },
+    {
+        "sha_fail": "0ca45f6bc5636846b3aeaf10321cb07218bc23f3",
+        "error_context": [
+            "The test suite failed due to a critical MRO (Method Resolution Order) error during test collection for a Pydantic compatibility test, causing pytest to exit with code 2. The specific error is a TypeError: Cannot create a consistent method resolution order (MRO) for bases BaseModel and FlowTrackable in the file test_pydantic_compatibility.py. This prevented the collection and execution of any tests. A preceding cache restoration failure for the uv dependency cache was non-critical and did not cause the test failure."
+        ],
+        "relevant_files": [
+            {
+                "file": "test_pydantic_compatibility.py",
+                "line_number": null,
+                "reason": "The log details explicitly state the MRO error occurred in test_pydantic_compatibility.py, involving bases BaseModel and FlowTrackable."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Test Collection Error",
+                "evidence": "Log shows 'collected 908 items / 1 error' and a TypeError due to an inconsistent MRO for bases BaseModel and FlowTrackable in test_pydantic_compatibility.py."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests",
+                "step": "Run tests",
+                "command": "uv run pytest --block-network --timeout=60 -vv"
+            }
+        ]
+    },
+    {
+        "sha_fail": "0d95b133ddb0fa253ec05ebaeef9ec901c6f7237",
+        "error_context": [
+            "The test suite failed because a specific test 'test_failed_evaluation' in test_agent_evaluator.py raised a KeyError: 'Test Agent'. This indicates a missing key in a data structure used by a goal_alignment evaluator. The test step exited with code 1, causing the overall CI job to fail."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/lib/crewai/tests/agents/test_agent.py",
+                "line_number": null,
+                "reason": "File is highly relevant (score 252.31) as the failure involves an agent evaluation test; the error context mentions a KeyError in a goal_alignment evaluator, which is likely tested in this file."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/lib/crewai/tests/agents/test_lite_agent.py",
+                "line_number": null,
+                "reason": "File is relevant (score 249.56) as the error context includes a PytestReturnNotNoneWarning about a test returning a LiteAgentOutput, linking to lite agent tests."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Runtime Error (KeyError) in unit test",
+                "evidence": "Log shows test 'test_failed_evaluation' failed with KeyError: 'Test Agent' in a goal_alignment evaluator."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests (3.13)",
+                "step": "Run tests (group ${{ matrix.group }} of 8)",
+                "command": "cd lib/crewai && uv run pytest --block-network --timeout=30 -vv --splits 8 --group ${{ matrix.group }} --durations=10 -n auto --maxfail=3"
+            }
+        ]
+    },
+    {
+        "sha_fail": "10a55bd2102c1f482ef8f7a0d6efd2f3776d3cf2",
+        "error_context": [
+            "The lint job failed because multiple Python style violations were detected by flake8 and pycodestyle, causing the linting process to exit with code 123. The primary issues are unused imports (F401) across several source files and a bare except clause (E722) in a test file. The step 'Run Ruff on All Python Files' in the workflow executed a command that triggered these linter checks."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
+                "line_number": null,
+                "reason": "Contains an unused import 'langchain_core.messages.ToolMessage' flagged by flake8 F401."
+            },
+            {
+                "file": "src/crewai/agents/agent_builder/base_agent.py",
+                "line_number": null,
+                "reason": "Contains an unused import 'crewai.utilities.converter.Converter' flagged by flake8 F401."
+            },
+            {
+                "file": "src/crewai/agents/agent_builder/utilities/base_output_converter.py",
+                "line_number": null,
+                "reason": "Contains an unused import 'typing.Optional' flagged by flake8 F401."
+            },
+            {
+                "file": "src/crewai/flow/path_utils.py",
+                "line_number": null,
+                "reason": "Contains an unused import 'os' flagged by flake8 F401."
+            },
+            {
+                "file": "src/crewai/flow/utils.py",
+                "line_number": null,
+                "reason": "Contains an unused import 'typing.Union' flagged by flake8 F401."
+            },
+            {
+                "file": "src/crewai/cli/run_crew.py",
+                "line_number": null,
+                "reason": "Contains unused imports 'typing.List' and 'typing.Optional' flagged by flake8 F401."
+            },
+            {
+                "file": "src/crewai/flow/flow_visualizer.py",
+                "line_number": null,
+                "reason": "Contains an unused import 'crewai.flow.path_utils.validate_path_exists' flagged by flake8 F401."
+            },
+            {
+                "file": "src/crewai/flow/html_template_handler.py",
+                "line_number": null,
+                "reason": "Contains an unused import 'crewai.flow.path_utils.safe_path_join' flagged by flake8 F401."
+            },
+            {
+                "file": "src/crewai/knowledge/source/excel_knowledge_source.py",
+                "line_number": null,
+                "reason": "Contains an unused import 'urllib.parse.urlparse' flagged by flake8 F401."
+            },
+            {
+                "file": "tests/security/test_fingerprint.py",
+                "line_number": null,
+                "reason": "Contains an unused variable 'uuid_obj' flagged by flake8 F841 within a pytest.raises(ValueError) block."
+            },
+            {
+                "file": "tests/tools/test_tool_usage.py",
+                "line_number": null,
+                "reason": "Contains an unused variable 'exc_info' flagged by flake8 F841 within a pytest.raises(Exception) block."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Import",
+                "evidence": "Multiple flake8 F401 violations for unused imports, e.g., 'langchain_core.messages.ToolMessage', 'crewai.utilities.converter.Converter'."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Variable",
+                "evidence": "Flake8 F841 violations for unused variables 'uuid_obj' and 'exc_info' in test files."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Bare Except Clause",
+                "evidence": "Pycode style E722 violation for a bare except clause mentioned in the error context."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "uv run ruff check"
+            }
+        ]
+    },
+    {
+        "sha_fail": "130a7fc1e0a80a2f0f25f03663afd7fe38493e2c",
+        "error_context": [
+            "The lint job failed because the Ruff linter detected multiple code style violations, primarily unused imports (F401) across several source files. The process exited with code 123, indicating a failure due to these violations. The linter also reported that fixes were available for many of these issues."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
+                "line_number": null,
+                "reason": "File matched tokens from the error context with a high score (1571.63), indicating it is likely one of the files containing lint violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/serialization.py",
+                "line_number": null,
+                "reason": "File matched tokens from the error context with a high score (1569.71), indicating it is likely one of the files containing lint violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/llm_utils.py",
+                "line_number": null,
+                "reason": "File matched tokens from the error context with a high score (1515.98), indicating it is likely one of the files containing lint violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/tools/tool_usage.py",
+                "line_number": null,
+                "reason": "File matched tokens from the error context with a high score (1504.33), indicating it is likely one of the files containing lint violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/utilities/test_converter.py",
+                "line_number": null,
+                "reason": "File matched tokens from the error context with a high score (1416.08), indicating it is likely one of the files containing lint violations."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Import",
+                "evidence": "Log details mention 'multiple code style violations, primarily unused imports (F401)' and list specific unused imports like 'langchain_core.messages.ToolMessage' and 'crewai.utilities.converter.Converter'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "uv run ruff check"
+            }
+        ]
+    },
+    {
+        "sha_fail": "14579a7861ec02a3c8f497fcc7113eae9341dccf",
+        "error_context": [
+            "The lint job failed because the Ruff linter reported multiple import organization errors (I001) across several Python files. The errors indicate unsorted or unformatted import blocks that are automatically fixable. The step exited with code 123, and the log shows repeated messages '[ *] 1 fixable with the `--fix` option.' for multiple __init__.py files and a test file."
+        ],
+        "relevant_files": [
+            {
+                "file": "tests/utilities/test_converter.py",
+                "line_number": null,
+                "reason": "Log line 1954 shows a linter message 'Organize imports' for a test file, indicating an unsorted import block."
+            },
+            {
+                "file": "src/crewai/flow/__init__.py",
+                "line_number": null,
+                "reason": "Log line 2027 shows a similar import organization error for this file."
+            },
+            {
+                "file": "src/crewai/memory/__init__.py",
+                "line_number": null,
+                "reason": "Log line 2084 shows an import organization error for this file; line 206 also mentions a specific import block line from memory __init__.py."
+            },
+            {
+                "file": "src/crewai/utilities/__init__.py",
+                "line_number": null,
+                "reason": "Log line 2169 shows an import organization error for this file; line 169 also mentions a specific import block line from utilities __init__.py."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Import Organization",
+                "evidence": "Log details state 'multiple import organization errors (I001) flagged by a linter (likely Ruff)' and show messages 'Organize imports' for several files."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "uv run ruff check"
+            }
+        ]
+    },
+    {
+        "sha_fail": "148c3bae1aa467fb5a22a91f7fa6e4f434032ba1",
+        "error_context": [
+            "The lint job failed because the Ruff linter found multiple style and code quality violations across Python source and test files. The primary failures are unused imports (F401) and a bare except clause, which are flagged as fixable errors. The process exited with code 123, indicating linting failures."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/serialization.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/llm_utils.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/tools/tool_usage.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/cli/utils.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/utilities/test_converter.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; contains test lines with pytest.raises and unused variables, which are flagged as fixable errors."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/test_task_guardrails.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/cli/git.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/cli/cli_test.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/flow_test.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains unused imports or style violations flagged by Ruff."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Import",
+                "evidence": "Log details show multiple flake8 (F401) violations for unused imports, e.g., 'unused import of langchain_core.messages.ToolMessage' and 'unused import of crewai.utilities.converter.Converter'."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Bare Except Clause",
+                "evidence": "Log details mention 'style violations across many source and test files, primarily unused imports and a bare except clause'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "uv run ruff check"
+            }
+        ]
+    },
+    {
+        "sha_fail": "166bfec208af6891791f6eb63f13d346b460b0a6",
+        "error_context": [
+            "The lint job failed because the Ruff linter detected multiple code style violations across many Python files. The primary issues are unused imports (F401), a bare except (E722), and unused local variables (F841). The process exited with code 123, indicating linting failures. Many of these errors are reported as automatically fixable with the `--fix` option."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
+                "line_number": null,
+                "reason": "File matched tokens from error context with high score (1508.41), indicating it likely contains lint violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/llm_utils.py",
+                "line_number": null,
+                "reason": "File matched tokens from error context with high score (1467.27), indicating it likely contains lint violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/serialization.py",
+                "line_number": null,
+                "reason": "File matched tokens from error context with high score (1465.10), indicating it likely contains lint violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/tools/tool_usage.py",
+                "line_number": null,
+                "reason": "File matched tokens from error context with high score (1441.54), indicating it likely contains lint violations."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/flow_test.py",
+                "line_number": null,
+                "reason": "File matched tokens from error context with high score (1373.33), indicating it likely contains lint violations."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Import",
+                "evidence": "Log mentions 'unused imports (F401)' and specific examples like unused import of `langchain_core.messages.ToolMessage` and `crewai.utilities.converter.Converter`."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Unused Local Variable",
+                "evidence": "Log mentions 'unused local variables (F841)' and an example of an unused local variable `uuid_obj` in a test file."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Bare Except",
+                "evidence": "Log mentions 'a bare except (E722)' as one of the primary issues."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "uv run ruff check"
+            }
+        ]
+    },
+    {
+        "sha_fail": "189b3bfbf49628da389450b64d98d2be2f45f8d9",
+        "error_context": [
+            "The test suite failed due to a critical AttributeError in a Pydantic config processing function, causing the test 'test_task_context_validation_rejects_invalid_types' to fail. The error occurred because a 'str' object had no 'get' attribute in src/crewai/utilities/config.py. Additionally, numerous PytestUnhandledThreadExceptionWarning errors occurred from background threads in the agentops library, and VCR cassette mismatches were detected during HTTP request recording."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/config.py",
+                "line_number": null,
+                "reason": "The AttributeError causing the test failure originated here, where a 'str' object had no 'get' attribute."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/custom_llm_test.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains tests affected by the failures."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/tests/test_lite_agent.py",
+                "line_number": null,
+                "reason": "Matched tokens from error context; likely contains tests affected by the failures."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "AttributeError in unit test",
+                "evidence": "AttributeError with a 'str' object having no 'get' attribute in src/crewai/utilities/config.py, causing test_task_context_validation_rejects_invalid_types to fail."
+            },
+            {
+                "category": "Runtime Error",
+                "subcategory": "Unhandled thread exception",
+                "evidence": "Multiple PytestUnhandledThreadExceptionWarning errors from threads named check_agentops_update in agentops/helpers.py during various test events."
+            },
+            {
+                "category": "Test Failure",
+                "subcategory": "VCR cassette mismatch",
+                "evidence": "CannotOverwriteExistingCassetteException because HTTP GET requests to https://pypi.org/pypi/agentops/json did not match recorded cassettes in 'none' record mode."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests",
+                "step": "tests (3.11)",
+                "command": "uv run pytest --block-network --timeout=60 -vv"
+            }
+        ]
+    },
+    {
+        "sha_fail": "18ec9967ccaf892188f1d7275dc36ec6b1b0e06e",
+        "error_context": [
+            "The test suite failed due to a missing import of 'Optional' from the typing module in the codebase, causing 57 test collection errors and a final exit code 2. The root cause is in the file src/crewai/tools/base_tool.py, line 21, where the class EnvVar defines a field 'default: Optional[str] = None' without importing Optional. This NameError cascades to all test modules that import crewai, preventing test collection and execution."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/tools/base_tool.py",
+                "line_number": 21,
+                "reason": "The error context states the class EnvVar at line 21 uses 'Optional[str]' without the necessary import, causing a NameError that propagates through all test imports."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Runtime Error",
+                "subcategory": "ImportError: NameError due to missing import",
+                "evidence": "The log summary identifies a NameError because 'Optional' is not imported from typing in src/crewai/tools/base_tool.py, line 21."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests",
+                "step": "Run tests",
+                "command": "uv run pytest --block-network --timeout=60 -vv"
             }
         ]
     }

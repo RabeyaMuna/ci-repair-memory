@@ -248,8 +248,37 @@ class PatchGeneration:
     # ---------------- AUTOMATED TOOL FIX ---------------------
     # =========================================================
 
+
+    def _load_pyproject(self) -> str:
+        """
+        Read pyproject.toml as plain text and return its contents.
+        No TOML parsing, no tomllib/tomli – just raw text.
+
+        Returns:
+            The file content as a string, or "" if the file does not
+            exist or cannot be read.
+        """
+        path = os.path.join(self.repo_path, "pyproject.toml")
+
+        if not os.path.exists(path):
+            logger.info("No pyproject.toml found for this repo.")
+            return ""
+
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+                logger.info("Loaded pyproject.toml successfully.")
+                return content
+        except Exception as e:
+            logger.warning(f"Failed to read pyproject.toml: {e}")
+            return ""
+
+            
     def _try_automated_fix(self, faults: List[Dict[str, Any]], full_path: str) -> bool:
         """Try to fix the file automatically using appropriate tools (ruff, black, isort, etc.)"""
+        pyproject_cfg = self._load_pyproject()
+        
+        
         prompt = f"""
 You are a **CI Repair Analyst AI**, specialized in automated build and validation repair.
 
@@ -279,11 +308,20 @@ Below is a verified reference of all available automated tools and their valid f
 You must select only those that align with the CI workflow and detected error type.
 {json.dumps(automated_commands_available, indent=2)}
 
+#### 6. PROJECT CONFIG (pyproject.toml – raw content)
+Below is the raw content of pyproject.toml (if present). If there are any special rules for
+linting or formatting (e.g., Ruff `select`/`ignore`, Black line length, isort profiles, tool-specific
+include/exclude paths), you MUST base your automated fix strategy on those rules and avoid
+proposing commands that contradict them.
+
+{pyproject_cfg}
+
 ---
 
 ### OBJECTIVE
 Select the most accurate automated fix strategy that:
 - Matches the actual **tools used in the CI workflow**.
+- Respects any **project-specific linting/formatting rules** found in pyproject.toml.
 - Addresses the specific **errors found in fault localization or CI logs**.
 - Uses **correct and compatible CLI syntax** for each tool (from the provided command reference).
 - Ensures the commands target the provided file path only.
@@ -295,32 +333,40 @@ Select the most accurate automated fix strategy that:
 1. First, infer which tools are available in this project by inspecting the workflow commands
    in section 4. For example, if any command string contains "ruff", then Ruff is available.
 
-2. If **Ruff is available** and the issues are related to formatting, style, imports, or
+2. Inspect the pyproject.toml content (section 6) for any special configuration of the tools
+   (for example, Ruff `lint.select` or `lint.ignore`, Black settings, mypy config, per-file
+   ignores, or limited target paths). Your suggested commands must be consistent with those
+   settings (e.g., do not lint paths that are excluded, do not enable rules that are disabled).
+
+3. If **Ruff is available** and the issues are related to formatting, style, imports, or
    other lintable errors (flake8-like, pycodestyle-like, isort-like), you MUST prefer a
    **Ruff-only strategy**:
-   - Use: `ruff check --fix {full_path}` followed by `ruff format {full_path}`.
+   - Use: `ruff check --fix {full_path}` followed by `ruff format {full_path}` (or an
+     equivalent path that matches the project configuration).
    - In this case, DO NOT also use `black`, `isort`, `autopep8`, or `yapf` on this file.
    - Ruff is treated as the unified linter/formatter for Python.
 
-3. Only when Ruff is NOT available or clearly does NOT cover the error type
+4. Only when Ruff is NOT available or clearly does NOT cover the error type
    (e.g., purely type-checking, complex logic bug, etc.), you may fall back to
    other tools like:
    - `black` / `isort` for formatting/imports,
    - `flake8` / `pylint` for linting,
    - or other tools from the reference.
 
-4. Provide the **installation commands** as a list of shell commands
+5. Provide the **installation commands** as a list of shell commands
    (e.g., `["pip install ruff"]`).
 
-5. Provide the **automated fix commands** as a list of shell commands
-   (e.g., `["ruff check --fix {full_path}", "ruff format {full_path}"]`).
+6. Provide the **automated fix commands** as a list of shell commands
+   (e.g., `["ruff check --fix {full_path}", "ruff format {full_path}"]`), making sure they
+   respect any special lint/format rules from pyproject.toml.
 
-6. Avoid redundant tools when a single tool is sufficient. If Ruff can fix it, use only Ruff.
+7. Avoid redundant tools when a single tool is sufficient. If Ruff can fix it, use only Ruff.
 
-7. Only return tools that are explicitly mentioned in the CI workflow or are clearly compatible with it.
+8. Only return tools that are explicitly mentioned in the CI workflow or are clearly compatible with it.
 
-8. If no tool can fix the issue automatically (e.g., logical errors, missing return statements),
-   return empty lists for both `installation_commands` and `fix_commands`.
+9. If no tool can fix the issue automatically (e.g., logical errors, missing return statements,
+   or configuration errors that require manual editing of pyproject.toml), return empty lists for
+   both `installation_commands` and `fix_commands`, and explain why.
 
 ---
 
@@ -335,9 +381,10 @@ Select the most accurate automated fix strategy that:
     "<command1>",
     "<command2>"
   ],
-  "tool_explanation": "Briefly explain which tools were chosen, why they apply to this error type, and how they align with the CI workflow."
+  "tool_explanation": "Briefly explain which tools were chosen, how project-specific rules from pyproject.toml influenced the choice, and how they align with the CI workflow."
 }}
 """.strip()
+
 
         try:
             result = self._call_llm_directly(prompt)

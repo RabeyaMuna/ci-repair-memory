@@ -347,6 +347,7 @@ print(f"  failure: {len(failure)}  → {failure_file}")
 print(f"  error:   {len(errors)}   → {errors_file}")
 print(f"  waiting: {len(waiting)}  → {awaiting_file}")
 
+accuracy = len(success)/(len(success)+ len(failure)+len(errors)+len(waiting))
 # -----------------------------
 # Build combined results (success + failure) for analysis
 # -----------------------------
@@ -355,4 +356,6 @@ save_overwrite(results_file, combined_results)
 
 print(f"\nCombined results (success+failure) written → {results_file}")
 print(f"[Sanity] Combined row count: {len(combined_results)}")
+
+print(f"  Accuracy (success / total_jobs): {accuracy:.4f} ({accuracy*100:.2f}%)")
 

@@ -426,9 +426,7 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
                     print(f"[INFO] sha_fail was null/absent in LLM output, " f"forcing to ground-truth SHA: {self.sha_fail}")
             except json.JSONDecodeError:
                 summary = demjson3.decode(response)
-                
             summary["sha_fail"] = self.sha_fail
-
             print(" Completed: _generate_summary")
             return summary
 
@@ -455,6 +453,7 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
         print(f"Fully Autonomous Execution for Commit: {self.sha_fail}")
         log_details = self.ci_log_analysis()
         generated_summary = self.full_content_summary(log_details, workflow_details=self.workflow)
+        generated_summary["sha_fail"] = self.sha_fail
         return generated_summary
 
     # ------------------------------------------------------------------

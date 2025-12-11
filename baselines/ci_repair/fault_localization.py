@@ -155,7 +155,7 @@ class FaultLocalization:
                 continue
 
             ext = Path(file_path).suffix.lower()
-            if ext not in {".py", ".txt"}:
+            if ext not in {".py", ".txt", ".toml"}:
                 continue
 
             suspecious_files.append({"file": file_path})

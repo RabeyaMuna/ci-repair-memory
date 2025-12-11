@@ -123,7 +123,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
     # Use the full dataset order as the canonical order
     # If you want a subset for processing, change here:
-    subset = dataset[318:]  # or dataset[start:end], etc.
+    subset = dataset[200:]  # or dataset[start:end], etc.
 
     for datapoint in subset:
         task_id = datapoint["id"]
@@ -294,7 +294,7 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    model_key = "gpt-5-mini"   # or "gpt4o", "deepseek-chat", etc.
+    model_key = "deepseek-coder"   # or "gpt4o", "deepseek-chat", etc.
     llm = get_llm(model_key)
 
     # Load dataset (this is the canonical order)
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     dataset = dataset_df.to_dict(orient="records")
 
     # Run processing (incrementally updates per-model JSON files)
-    results = process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm")
+    results = process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="bm25")
 
     # Optional: also maintain a global generated_patches.json
     # in config.project_result_dir, with same ordered-by-dataset behavior
