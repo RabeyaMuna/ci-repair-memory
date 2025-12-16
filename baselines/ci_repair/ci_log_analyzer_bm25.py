@@ -32,6 +32,7 @@ class CILogAnalyzerBM25:
         workflow_path: str,
         llm: ChatOpenAI,
         model_name: str,
+        task_id: str
     ):
         self.config = load_config()
         self.repo_path = repo_path
@@ -40,6 +41,7 @@ class CILogAnalyzerBM25:
         self.workflow = workflow
         self.workflow_path = workflow_path
         self.llm = llm
+        self. task_id= task_id
         self.model_name = model_name
         self._encoder = self._get_encoder()
 

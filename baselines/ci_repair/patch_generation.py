@@ -308,7 +308,7 @@ Below is a verified reference of all available automated tools and their valid f
 You must select only those that align with the CI workflow and detected error type.
 {json.dumps(automated_commands_available, indent=2)}
 
-#### 6. PROJECT CONFIG (pyproject.toml – raw content)
+#### 6. PROJECT CONFIG (pyproject.toml – raw content) If available
 Below is the raw content of pyproject.toml (if present). If there are any special rules for
 linting or formatting (e.g., Ruff `select`/`ignore`, Black line length, isort profiles, tool-specific
 include/exclude paths), you MUST base your automated fix strategy on those rules and avoid
@@ -383,6 +383,9 @@ Select the most accurate automated fix strategy that:
   ],
   "tool_explanation": "Briefly explain which tools were chosen, how project-specific rules from pyproject.toml influenced the choice, and how they align with the CI workflow."
 }}
+
+## Important Note:
+You must output ONLY valid JSON. No markdown, no headings, no extra text.
 """.strip()
 
 

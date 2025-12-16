@@ -7,7 +7,7 @@ import shutil
 import requests
 from omegaconf import OmegaConf
 from benchmark_utils import save_jsonl
-from benhmark_functions import get_results
+from benchmark_functions import get_results
 from benchmark import CIFixBenchmark
 
 # -----------------------------

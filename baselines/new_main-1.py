@@ -123,7 +123,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
     # Use the full dataset order as the canonical order
     # If you want a subset for processing, change here:
-    subset = dataset[560:]  # or dataset[start:end], etc.
+    subset = dataset[26:27]  # or dataset[start:end], etc.
 
     for datapoint in subset:
         task_id = datapoint["id"]

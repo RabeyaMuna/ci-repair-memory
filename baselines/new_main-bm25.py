@@ -123,7 +123,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
     # Use the full dataset order as the canonical order
     # If you want a subset for processing, change here:
-    subset = dataset[200:]  # or dataset[start:end], etc.
+    subset = dataset[74:]  # or dataset[start:end], etc.
 
     for datapoint in subset:
         task_id = datapoint["id"]
@@ -157,6 +157,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     workflow_path,
                     llm=llm,
                     model_name=model_key,
+                    task_id=task_id
                 ).run()
             else:
                 log_analysis_result = CILogAnalyzerBM25(
@@ -167,6 +168,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     workflow_path,
                     llm=llm,
                     model_name=model_key,
+                    task_id=task_id
                 ).run()
 
             if isinstance(log_analysis_result, dict):
@@ -294,7 +296,7 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    model_key = "deepseek-coder"   # or "gpt4o", "deepseek-chat", etc.
+    model_key = "deepseek-chat"   # or "gpt4o", "deepseek-chat", etc.
     llm = get_llm(model_key)
 
     # Load dataset (this is the canonical order)

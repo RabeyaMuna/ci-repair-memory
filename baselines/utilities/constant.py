@@ -25,6 +25,7 @@ ERROR_KEYWORDS = {
     "ModuleNotFoundError",
     "TypeError",
     "ValueError",
+    "ValueError()"
     "AttributeError",
     "RuntimeError",
     "IndexError",

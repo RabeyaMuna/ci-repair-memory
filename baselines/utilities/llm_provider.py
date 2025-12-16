@@ -68,14 +68,16 @@ LLM_REGISTRY: Dict[str, LLMInfo] = {
         api_key=DEEPSEEK_API_KEY,
     ),
 
-    # Local Llama (OpenAI-compatible server)
-    "local-llama": LLMInfo(
-        provider="local",
-        model_name="llama-3-8b-instruct",
-        temperature=0.0,
-        base_url="http://localhost:8000/v1",
-        api_key=LOCAL_LLM_API_KEY,    # usually just some dummy/token for your local server
+    
+    "deepseek-chat": LLMInfo(
+        provider="deepseek",
+        model_name="deepseek-chat",
+        temperature=0.1,
+        base_url="https://api.deepseek.com/v1",
+        api_key=DEEPSEEK_API_KEY,
     ),
+
+
 }
 
 

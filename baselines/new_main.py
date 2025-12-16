@@ -123,7 +123,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
     # Use the full dataset order as the canonical order
     # If you want a subset for processing, change here:
-    subset = dataset[318:]  # or dataset[start:end], etc.
+    subset = dataset[548:]  # or dataset[start:end], etc.
 
     for datapoint in subset:
         task_id = datapoint["id"]
@@ -157,6 +157,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     workflow_path,
                     llm=llm,
                     model_name=model_key,
+                    task_id=task_id,
                 ).run()
             else:
                 log_analysis_result = CILogAnalyzerBM25(
@@ -167,6 +168,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     workflow_path,
                     llm=llm,
                     model_name=model_key,
+                    task_id=task_id,
                 ).run()
 
             if isinstance(log_analysis_result, dict):

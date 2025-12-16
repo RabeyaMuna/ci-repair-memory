@@ -10,7 +10,7 @@ from tqdm import tqdm
 from typing import List
 from fast_fail_detail import finalize_after_last_poll
 from benchmark_utils import read_jsonl, save_jsonl
-from benhmark_functions import get_results, process_datapoint
+from benchmark_functions import get_results, process_datapoint
 
 load_dotenv()
 

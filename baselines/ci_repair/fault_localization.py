@@ -353,8 +353,9 @@ FAILED JOBS (CI context):
 You are a **Strict Fault Localization Agent**.
 
 Your task:
-Given a numbered source-code CHUNK, the CI error context, workflow jobs, and a file outline, identify **all** distinct faults that explain the CI failure — not just the first one. 
-Use the outline to expand detected faults to full method/class/import/file scopes where appropriate. 
+Given a numbered source-code CHUNK, the CI error context, workflow jobs, and a file outline, identify **all** distinct faults that explain the CI failure — not just the first one.
+Use the outline only to determine the correct "fault_localization_level" (method/class/import_block/file/line) and to understand broader structure beyond the chunk.
+Do NOT expand "line_range" to outline boundaries. Return ALL distinct faults present in this chunk that directly explain CI failures (do not stop at the first fault).
 Output must be **valid JSON only** (array or empty array). No markdown, no commentary, no extra text.
 
 ==============================================================================
@@ -368,7 +369,9 @@ Each outline entry contains:
   - type: one of "method" | "class" | "import_block"
   - start_line: first numbered line of the element
   - end_line: last numbered line of the element
-Use this outline to determine which scope a fault belongs to and to expand line ranges correctly.
+
+Use this outline ONLY to determine which scope a fault belongs to ("fault_localization_level").
+Do NOT expand "line_range" to outline boundaries.
 
 FAILED JOBS:
 {self.failed_jobs}
@@ -378,9 +381,6 @@ ERROR TYPES:
 
 ERROR CONTEXT:
 {self.error_context}
-
-WORKFLOW (high-level summary):
-{self.workflow}
 
 ALREADY DETECTED FAULTS (skip/avoid duplicates):
 {faults}
@@ -394,39 +394,45 @@ R1. Detect All Matches
   - Read every numbered line between {valid_start}–{valid_end}.
   - Add every new fault that directly explains CI messages or rule codes (ruff, pylint, mypy, pytest, etc.).
   - Include formatting, linting, typing, runtime, and test failures if indicated by the logs.
+  - Do NOT stop after finding one issue; return every distinct fault in the chunk that matches CI evidence.
 
 R2. Verify in Code
   - Each fault must be observable in these lines or provably absent (for missing imports/symbols).
   - Confirm CI log claims (missing symbol, unused import, annotation absence, etc.) against code shown.
 
-R3. Outline-Based Scope Expansion
-  - For each detected fault, check the file outline to identify which structural element it belongs to.
-  - Expand the line_range to cover the full element boundaries:
-      • If inside a method: return the full method range.
-      • If inside a class: return the full class range.
-      • If within an import block: return all contiguous import lines + 2 lines after.
-      • If spanning multiple non-overlapping outline elements, escalate to "file".
-  - If faults occur in the same outline element, merge them into one JSON object and combine reasons.
+R3. Outline-Based Scope Classification (NO expansion)
+  - For each detected fault, choose a "line_range" that covers the faulty line(s) and any necessary adjacent lines
+    to show the complete faulty statement (it does NOT need to be the smallest possible range).
+  - "line_range" MUST remain within the CHUNK WINDOW {valid_start}–{valid_end}.
+  - Determine "fault_localization_level" by finding the smallest outline entry (tightest [start_line–end_line]) that fully contains the provided "line_range":
+      • If contained by a method/function entry → set "fault_localization_level" to "method".
+      • Else if contained by a class entry → set "fault_localization_level" to "class".
+      • Else if contained by an import_block entry → set "fault_localization_level" to "import_block".
+      • Else if the provided line_range spans multiple non-overlapping outline elements OR no outline entry contains it → set "fault_localization_level" to "file".
+  - If outline is missing/empty/unusable, you may fall back to "line" when appropriate.
+  - If multiple faults occur in the SAME outline element, you may merge them into one JSON object and combine reasons,
+    BUT do NOT merge unrelated faults and do NOT expand "line_range" to the element boundary.
 
-R4. Reason–Snippet Consistency
+R4. Reason–Evidence Consistency
   - Each "reason" must cite concrete CI evidence (messages or rule codes such as F401, E1101, I001, etc.).
-  - Reference actual code or confirm omission explicitly. Avoid vague speculation.
-  - If unable to find code evidence for a claimed fault, do NOT include it.
+  - Reference actual code shown in this chunk or explicitly confirm an omission (e.g., missing import/symbol) when CI evidence indicates it.
+  - Avoid vague speculation. If unable to find code evidence for a claimed fault, do NOT include it.
 
-R5. Line Range Integrity
-  - "line_range" must match **exact first and last lines** of the chosen scope according to the outline.
+R5. Line Range Integrity (Issue Range, not outline range)
+  - "line_range" must include the faulty line(s). It does NOT need to match outline boundaries.
   - Always use the displayed (numbered) line indices, not inferred offsets.
 
 R6. Fault Type & Level
   - Choose "issue_type" precisely (formatting, linting, type_error, runtime_error, test_failure, dependency_error, docstring, complexity, other).
-  - Set "fault_localization_level" to reflect the expanded scope: line | method | class | import_block | file.
+  - Set "fault_localization_level" based on the outline containment rules in R3: line | method | class | import_block | file.
 
 R7. Extended Reason Context
   - In "reason", you may mention related decorators, helper calls, or affected functions that clarify the cause.
-  - Do NOT expand snippet scope beyond the chosen element — just mention those links textually.
+  - Do NOT claim you inspected code outside this chunk. You may reference the outline structurally only.
 
 R8. Missing Elements
-  - If CI cites a missing construct (e.g., import, symbol, type hint), confirm absence and record it with the correct scope, usually "import_block" or "method".
+  - If CI cites a missing construct (e.g., import, symbol, type hint), confirm it is missing in the shown chunk scope if applicable,
+    and record it with the correct "fault_localization_level" using outline-based classification.
 
 R9. Output Contract (Hard)
   - Return **strict JSON only**:
@@ -452,7 +458,7 @@ OUTPUT SCHEMA (JSON array)
     "file_path": "{file_path}",
     "full_file_path": "{full_file_path}",
     "line_range": [start_line, end_line],
-    "reason": "Comprehensive explanation citing CI log messages and rule codes. If merged, include concise bullet-like sub-fault summaries. Mention lines or absence of code as needed if required and also mention line numbers which contains the issues.",
+    "reason": "Comprehensive explanation citing CI log messages and rule codes. If merged, include concise bullet-like sub-fault summaries. Mention relevant line numbers that contain the issue(s).",
     "issue_type": "formatting | linting | type_error | runtime_error | test_failure | dependency_error | docstring | complexity | other",
     "fault_localization_level": "line | method | class | import_block | file"
   }},
@@ -462,14 +468,15 @@ OUTPUT SCHEMA (JSON array)
 ==============================================================================
 CHECKLIST BEFORE RETURNING
 ------------------------------------------------------------------------------
-1) All new faults in {valid_start}–{valid_end} are included.
-2) Overlapping or nested faults are merged under a common expanded scope.
-3) "line_range" matches the exact outline boundaries for the chosen scope.
-4) Each "reason" references concrete CI evidence or rule code.
+1) All new faults in {valid_start}–{valid_end} are included (do not stop at first).
+2) Duplicates are avoided; only merge faults when they are the SAME underlying issue in the SAME outline element.
+3) "line_range" includes the faulty line(s) (and needed statement context) and stays within {valid_start}–{valid_end}.
+4) Each "reason" references concrete CI evidence or rule code AND points to specific line numbers in this chunk.
 5) No duplicates of ALREADY DETECTED FAULTS.
-6) Output is valid JSON only — no markdown, prose, or trailing commas. Return **only valid JSON** — no markdown, commentary, or code fences.
+6) Output is valid JSON only — no markdown, prose, or trailing commas.
 7) If nothing new is found, return [].
 """
+
         print(f"[Chunk {chunk_idx+1}/{num_chunks}] Analyzing lines {valid_start}-{valid_end}...")
 
         try:
@@ -733,13 +740,20 @@ CHECKLIST BEFORE RETURNING
         return error_info
 
     def _expand_line_range_with_outline(
-        self,
-        line_range: List[int],
-        outline: List[dict],
-        fault_level: Optional[str] = None,
-    ) -> List[int]:
+    self,
+    line_range: List[int],
+    outline: List[dict],
+    fault_level: Optional[str] = None,
+) -> List[int]:
         """
-        Expand the given [start, end] line_range using the file outline.
+        Expand/normalize [start, end] using the file outline.
+
+        Hard guarantee:
+        - Returned range ALWAYS contains the originally detected fault range [start, end].
+
+        Special behavior:
+        - fault_level == "class": return a class-level segment that EXCLUDES method bodies,
+            but still MUST contain [start, end]. If that's not possible, fall back safely.
         """
 
         if not outline or not line_range:
@@ -757,17 +771,80 @@ CHECKLIST BEFORE RETURNING
         for node in outline:
             visit(node)
 
+        # Candidates that fully contain the entire detected fault range
         candidates = [
             n
             for n in flat
             if isinstance(n.get("start"), int)
             and isinstance(n.get("end"), int)
-            and n["start"] <= start <= n["end"]
+            and n["start"] <= start
+            and end <= n["end"]
         ]
 
         if not candidates:
+            # Can't safely expand while containing the fault range
             return line_range
 
+        # ---------------------------
+        # SPECIAL CASE: CLASS LEVEL
+        # ---------------------------
+        if fault_level == "class":
+            class_candidates = [c for c in candidates if c.get("kind") == "class"]
+            if class_candidates:
+                # Tightest containing class
+                class_node = min(
+                    class_candidates,
+                    key=lambda n: (n["end"] - n["start"], n["start"]),
+                )
+                cls_start, cls_end = int(class_node["start"]), int(class_node["end"])
+
+                # Collect ALL method/function descendants inside this class
+                method_nodes: List[dict] = []
+
+                def collect_methods(node: dict):
+                    for ch in node.get("children") or []:
+                        if ch.get("kind") in {"func", "method"} and isinstance(ch.get("start"), int) and isinstance(ch.get("end"), int):
+                            method_nodes.append(ch)
+                        collect_methods(ch)
+
+                collect_methods(class_node)
+                method_nodes.sort(key=lambda n: n["start"])
+
+                # If the entire fault range is inside a method, return that method (still contains the fault)
+                for m in method_nodes:
+                    m_start, m_end = int(m["start"]), int(m["end"])
+                    if m_start <= start and end <= m_end:
+                        return [m_start, m_end]
+
+                # Build non-method gaps inside the class: segments that are NOT inside any method body
+                methods = [(int(m["start"]), int(m["end"])) for m in method_nodes]
+                methods.sort()
+
+                gaps: List[List[int]] = []
+                cursor = cls_start
+
+                for m_start, m_end in methods:
+                    if cursor <= m_start - 1:
+                        gaps.append([cursor, m_start - 1])
+                    cursor = max(cursor, m_end + 1)
+
+                if cursor <= cls_end:
+                    gaps.append([cursor, cls_end])
+
+                # Choose the gap that fully contains the fault range
+                for g_start, g_end in gaps:
+                    if g_start <= start and end <= g_end:
+                        return [g_start, g_end]
+
+                # If no gap contains the full range, we must NOT return a gap that would drop part of the fault.
+                # Safest fallback: return the original detected range.
+                return [start, end]
+
+            # If no containing class node, fall through to default behavior
+
+        # ---------------------------
+        # DEFAULT BEHAVIOR
+        # ---------------------------
         preferred_kinds_by_level = {
             "method": {"func", "method"},
             "class": {"class"},
@@ -780,15 +857,13 @@ CHECKLIST BEFORE RETURNING
         else:
             preferred = []
 
-        if preferred:
-            chosen = min(
-                preferred,
-                key=lambda n: (n["end"] - n["start"], n["start"]),
-            )
-        else:
-            chosen = min(
-                candidates,
-                key=lambda n: (n["end"] - n["start"], n["start"]),
-            )
+        chosen_pool = preferred if preferred else candidates
 
-        return [chosen["start"], chosen["end"]]
+        # Choose the tightest containing node from the chosen pool
+        chosen = min(
+            chosen_pool,
+            key=lambda n: (n["end"] - n["start"], n["start"]),
+        )
+
+        return [int(chosen["start"]), int(chosen["end"])]
+
