@@ -2,6 +2,7 @@
 #  run_benchmark.py — CI-Builds-Repair Benchmark Runner
 # ============================================================
 import os
+from huggingface_hub import hf_hub_download
 from omegaconf import OmegaConf
 from benchmark import CIFixBenchmark
 from load_config import load_config
@@ -26,13 +27,23 @@ CIBenchPython = CIFixBenchmark(model_name, config_path)
 # ---------- OPTION 1: Local Dataset ----------
 # Uncomment this block if you already have a dataset locally
 
-dataset_info = os.path.join(config.get("base_dir"), "dataset", "lca_dataset.parquet")
+# Locally can load dataset from base_dir/dataset
+# dataset_info = os.path.join(config.get("base_dir"), "dataset", "lca_dataset.parquet")
+
+# Can load dataset from online from huggingface hub
+dataset_info = hf_hub_download(
+    repo_id="ci-benchmark-user/ci-repair-bench",
+    filename="lca_dataset.parquet",
+    repo_type="dataset",
+    token=config.get("HUGGINGFACE_TOKEN"),  # optional if you've done `huggingface-cli login`
+)
+
 
 # Load dataset once
 all_ids = [row["id"] for row in CIBenchPython.get_dataset(dataset_info=dataset_info)]
 
 # Select datapoints from 327 to end
-selected_ids = all_ids[0:68]
+# selected_ids = all_ids[0:]
 
 # ---------- OPTION 2: Online Dataset ----------
 # Uncomment this block if you want to fetch dataset from an online source (e.g., Hugging Face)
@@ -47,7 +58,7 @@ CIBenchPython.eval_dataset(
     fix_repo_function=fix_apply_generated_patch,
     dataset_info=dataset_info,
     num_dp=None,           # Limit number of datapoints (optional)
-    ids_list=selected_ids,         # Provide specific IDs if needed
+    ids_list= None,         # Provide specific IDs if needed
     force_download=False   # Set True to re-download from online
 )
 

@@ -123,7 +123,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
     # Use the full dataset order as the canonical order
     # If you want a subset for processing, change here:
-    subset = dataset[74:]  # or dataset[start:end], etc.
+    subset = dataset[151:]  # or dataset[start:end], etc.
 
     for datapoint in subset:
         task_id = datapoint["id"]
@@ -296,7 +296,7 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    model_key = "deepseek-chat"   # or "gpt4o", "deepseek-chat", etc.
+    model_key = "gpt-4o-mini"   # or "gpt4o", "deepseek-chat", etc.
     llm = get_llm(model_key)
 
     # Load dataset (this is the canonical order)

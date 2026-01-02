@@ -12,6 +12,7 @@ def _name_of_decorator(dec) -> str:
             base = _name(n.value)
             return f"{base}.{n.attr}" if base else n.attr
         return ""
+
     if isinstance(dec, ast.Call):
         return _name(dec.func)
     return _name(dec)
@@ -54,10 +55,7 @@ def _method_info(fn: ast.AST) -> Dict[str, Any]:
 def _merge_import_blocks_in_list(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Merge consecutive items with kind == 'import_block' into a single block.
-
-    We assume `items` are in source order. We merge runs of adjacent import_block
-    entries, regardless of small gaps from blank lines/comments (they don't
-    appear in the outline).
+    Items are assumed to be in source order.
     """
     merged: List[Dict[str, Any]] = []
     i = 0
@@ -70,12 +68,10 @@ def _merge_import_blocks_in_list(items: List[Dict[str, Any]]) -> List[Dict[str, 
             i += 1
             continue
 
-        # Start of an import run
         start = node["start"]
         end = node["end"]
         j = i + 1
 
-        # Merge all immediately following import_block nodes
         while j < n and items[j].get("kind") == "import_block":
             end = max(end, items[j]["end"])
             j += 1
@@ -92,10 +88,26 @@ def _merge_import_blocks_in_list(items: List[Dict[str, Any]]) -> List[Dict[str, 
     return merged
 
 def _class_children(c: ast.ClassDef) -> List[Dict[str, Any]]:
+    """
+    Return GitHub-style class children:
+    - nested classes (recursively)
+    - methods/functions
+    - const assignments
+    - import blocks inside the class
+    """
     items: List[Dict[str, Any]] = []
-    # Build children in source order
+
     for n in c.body:
-        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        if isinstance(n, ast.ClassDef):
+            s, e = _node_span(n)
+            items.append({
+                "kind": "class",
+                "name": n.name,
+                "start": s,
+                "end": e,
+                "children": _class_children(n),
+            })
+        elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
             items.append(_method_info(n))
         elif isinstance(n, (ast.Assign, ast.AnnAssign)):
             for nm in _var_targets(n):
@@ -108,7 +120,6 @@ def _class_children(c: ast.ClassDef) -> List[Dict[str, Any]]:
                     "children": [],
                 })
         elif isinstance(n, (ast.Import, ast.ImportFrom)):
-            # Imports inside classes → treat as import_block as well
             s, e = _node_span(n)
             items.append({
                 "kind": "import_block",
@@ -117,9 +128,7 @@ def _class_children(c: ast.ClassDef) -> List[Dict[str, Any]]:
                 "end": e,
                 "children": [],
             })
-        # (Inner classes/other statements omitted for GitHub-like parity)
 
-    # Merge consecutive import_blocks within the class
     items = _merge_import_blocks_in_list(items)
     items.sort(key=lambda d: d["start"])
     return items
@@ -137,7 +146,7 @@ def build_outline(src: str) -> List[Dict[str, Any]]:
         return []
 
     outline: List[Dict[str, Any]] = []
-    # Build in source order
+
     for node in tree.body:
         if isinstance(node, ast.ClassDef):
             s, e = _node_span(node)
@@ -161,7 +170,6 @@ def build_outline(src: str) -> List[Dict[str, Any]]:
                     "children": [],
                 })
         elif isinstance(node, (ast.Import, ast.ImportFrom)):
-            # Top-level imports → treat as import_block
             s, e = _node_span(node)
             outline.append({
                 "kind": "import_block",
@@ -170,9 +178,7 @@ def build_outline(src: str) -> List[Dict[str, Any]]:
                 "end": e,
                 "children": [],
             })
-        # others are ignored to match the sidebar
 
-    # 🔹 Merge consecutive top-level import blocks into one big block.
     outline = _merge_import_blocks_in_list(outline)
     outline.sort(key=lambda d: d["start"])
     return outline
@@ -203,26 +209,32 @@ def format_outline(outline: List[Dict[str, Any]], *, max_lines: int = 2000) -> s
 
 def filter_outline_to_range(outline: List[Dict[str, Any]], start: int, end: int) -> List[Dict[str, Any]]:
     """
-    Keep only items that overlap [start, end]. For classes, keep class if it overlaps,
-    but drop child items outside the range.
+    Keep only items that overlap [start, end].
+    For classes, keep the class if it overlaps, and keep only children that overlap.
     """
     filt: List[Dict[str, Any]] = []
 
     def overlaps(a: int, b: int) -> bool:
         return not (b < start or a > end)
 
-    for it in outline:
+    def filter_item(it: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         a, b = it["start"], it["end"]
         if not overlaps(a, b):
-            continue
+            return None
         if it["kind"] == "class":
             kids = []
             for ch in it.get("children", []):
-                if overlaps(ch["start"], ch["end"]):
-                    kids.append(ch)
-            filt.append({**it, "children": kids})
-        else:
-            filt.append(it)
+                kept = filter_item(ch) if ch.get("kind") == "class" else (ch if overlaps(ch["start"], ch["end"]) else None)
+                if kept:
+                    kids.append(kept)
+            return {**it, "children": kids}
+        return it
+
+    for it in outline:
+        kept = filter_item(it)
+        if kept:
+            filt.append(kept)
+
     return filt
 
 # ---------- File IO helpers (no caching) ----------
@@ -242,8 +254,11 @@ def render_outline_header(src: str, chunk_range: Optional[Tuple[int, int]] = Non
         outline = filter_outline_to_range(outline, chunk_range[0], chunk_range[1])
     return format_outline(outline)
 
-def render_outline_header_for_file(path: str, chunk_range: Optional[Tuple[int, int]] = None,
-                                   encoding: str = "utf-8") -> str:
+def render_outline_header_for_file(
+    path: str,
+    chunk_range: Optional[Tuple[int, int]] = None,
+    encoding: str = "utf-8",
+) -> str:
     with open(path, "r", encoding=encoding) as f:
         src = f.read()
     return render_outline_header(src, chunk_range)

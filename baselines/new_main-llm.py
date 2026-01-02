@@ -123,7 +123,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
     # Use the full dataset order as the canonical order
     # If you want a subset for processing, change here:
-    subset = dataset[542:]  # or dataset[start:end], etc. , 442:
+    subset = dataset[426:]  # or dataset[start:end], etc. , 442:
 
     for datapoint in subset:
         task_id = datapoint["id"]
@@ -157,6 +157,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     workflow_path,
                     llm=llm,
                     model_name=model_key,
+                    task_id=task_id,
                 ).run()
             else:
                 log_analysis_result = CILogAnalyzerBM25(
@@ -167,6 +168,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     workflow_path,
                     llm=llm,
                     model_name=model_key,
+                    task_id=task_id,
                 ).run()
 
             if isinstance(log_analysis_result, dict):
@@ -238,37 +240,37 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         # ------------------------------------------------------------------
         # 4) PATCH GENERATION
         # ------------------------------------------------------------------
-        try:
-            patch_generator = PatchGeneration(
-                bug_report=fault_localizer,
-                repo_path=repo_path,
-                task_id=task_id,
-                error_details=log_analysis_result,
-                workflow_path=workflow_path,
-                workflow=workflow,
-                llm=llm,
-                model_name=model_key,
-            ).run()
+        # try:
+        #     patch_generator = PatchGeneration(
+        #         bug_report=fault_localizer,
+        #         repo_path=repo_path,
+        #         task_id=task_id,
+        #         error_details=log_analysis_result,
+        #         workflow_path=workflow_path,
+        #         workflow=workflow,
+        #         llm=llm,
+        #         model_name=model_key,
+        #     ).run()
 
-            if not isinstance(patch_generator, dict):
-                print(f"[MAIN] Patch generator returned non-dict for {sha_fail}, skipping...")
-                continue
+        #     if not isinstance(patch_generator, dict):
+        #         print(f"[MAIN] Patch generator returned non-dict for {sha_fail}, skipping...")
+        #         continue
 
-            if not patch_generator.get("diff"):
-                print(f"[MAIN] No patch generated for {sha_fail}")
-                # Keep behavior consistent with your original code:
-                # don't store entries without a diff in generated_patches.json
-                continue
+        #     if not patch_generator.get("diff"):
+        #         print(f"[MAIN] No patch generated for {sha_fail}")
+        #         # Keep behavior consistent with your original code:
+        #         # don't store entries without a diff in generated_patches.json
+        #         continue
 
-            patch_generator.setdefault("sha_fail", sha_fail)
-            patches_index[sha_fail] = patch_generator
-            _save_results_index_ordered(
-                patches_path, patches_index, dataset, key_field="sha_fail"
-            )
+        #     patch_generator.setdefault("sha_fail", sha_fail)
+        #     patches_index[sha_fail] = patch_generator
+        #     _save_results_index_ordered(
+        #         patches_path, patches_index, dataset, key_field="sha_fail"
+        #     )
 
-        except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during patch generation: {e}")
-            continue
+        # except Exception as e:
+        #     print(f"[ERROR] Failed processing {sha_fail} during patch generation: {e}")
+        #     continue
 
     # Final in-memory list of generated patches (deduped, ordered)
     # NOTE: they are still ordered if we rebuild using dataset
@@ -294,7 +296,7 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    model_key = "deepseek-coder"   # or "gpt4o", "deepseek-chat", etc.
+    model_key = "deepseek-chat"   # or "gpt4o", "deepseek-chat", etc.
     llm = get_llm(model_key)
 
     # Load dataset (this is the canonical order)

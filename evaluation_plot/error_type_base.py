@@ -47,15 +47,59 @@ def extract_labels(x):
     return [str(x)]
 
 
+def _load_jsonl_rows(path: Path) -> list[dict]:
+    """Load a JSONL file into a list of dict rows. Safe against bad lines."""
+    path = Path(path)
+    if not path.exists():
+        return []
+    rows: list[dict] = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                if isinstance(obj, dict):
+                    rows.append(obj)
+            except Exception:
+                continue
+    return rows
+
+
+def _ids_from_list(rows: list | None) -> set[str]:
+    """
+    Extract ids from common formats.
+    Supports keys: id, job_id, run_id (extend if needed).
+    """
+    out: set[str] = set()
+    if not rows:
+        return out
+
+    for r in rows:
+        if not isinstance(r, dict):
+            continue
+        for k in ("id", "job_id", "run_id"):
+            if k in r and r[k] is not None:
+                out.add(str(r[k]))
+                break
+    return out
+
+
 def _load_success_ids(success_path: Path) -> set[str]:
     success_ids: set[str] = set()
+    if not Path(success_path).exists():
+        return success_ids
     with open(success_path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            obj = json.loads(line)
-            if "id" in obj:
+            try:
+                obj = json.loads(line)
+            except Exception:
+                continue
+            if isinstance(obj, dict) and "id" in obj and obj["id"] is not None:
                 success_ids.add(str(obj["id"]))
     return success_ids
 
@@ -77,22 +121,14 @@ def _load_stream_conclusions(stream_results_path: Path | None) -> dict[str, str]
                 obj = json.loads(line)
             except Exception:
                 continue
+            if not isinstance(obj, dict):
+                continue
             rid = obj.get("id")
             conc = obj.get("conclusion")
             if rid is None:
                 continue
             id_to_conc[str(rid)] = str(conc or "").lower()
     return id_to_conc
-
-
-def _ids_from_list(rows: list | None) -> set[str]:
-    out = set()
-    if not rows:
-        return out
-    for r in rows:
-        if isinstance(r, dict) and "id" in r:
-            out.add(str(r["id"]))
-    return out
 
 
 def compute_overall_outcomes(
@@ -102,35 +138,49 @@ def compute_overall_outcomes(
     jobs_results: list | None = None,
     jobs_ids_invalid: list | None = None,
     jobs_ids_await: list | None = None,
+    jobs_ids_failure: list | None = None,
+    jobs_ids_error: list | None = None,
     stream_results_path: str | Path | None = None,
 ) -> dict:
     """
-    NEW behavior:
-    - Only count pass/fail/invalid/error/waiting over "attempted/pushed" ids.
-    - Anything in dataset but never attempted is "not_pushed" and NOT counted as failed.
+    Fixed behavior:
+    - Auto counts "attempted" using any evidence of an attempt:
+      results/invalid/waiting/stream OR success/failure/error files.
+    - "not_pushed" = dataset - attempted.
+    - passed from success_ids, failed from failure_ids (plus fallback).
     """
     total_dataset = len(dataset_ids)
 
     results_ids = _ids_from_list(jobs_results)
     invalid_ids = _ids_from_list(jobs_ids_invalid)
     waiting_ids = _ids_from_list(jobs_ids_await)
+    failure_ids = _ids_from_list(jobs_ids_failure)
+    error_file_ids = _ids_from_list(jobs_ids_error)
 
     id_to_conc = _load_stream_conclusions(Path(stream_results_path) if stream_results_path else None)
     stream_ids = set(id_to_conc.keys())
 
-    attempted_ids = (results_ids | invalid_ids | waiting_ids | stream_ids) & dataset_ids
+    # IMPORTANT: success/failure/error also imply an attempt
+    attempted_ids = (
+        results_ids
+        | invalid_ids
+        | waiting_ids
+        | stream_ids
+        | set(success_ids)
+        | failure_ids
+        | error_file_ids
+    ) & dataset_ids
+
     not_pushed_ids = dataset_ids - attempted_ids
 
-    # Passed strictly from success file, but only among attempted
-    passed_ids = (success_ids & attempted_ids)
+    passed_ids = success_ids & attempted_ids
 
-    # Error IDs: stream says error, plus invalid list (your invalid list is essentially error-like)
     stream_error_ids = {rid for rid, c in id_to_conc.items() if c == "error"}
-    error_ids = ((stream_error_ids | invalid_ids) & attempted_ids)
+    error_ids = (stream_error_ids | invalid_ids | error_file_ids) & attempted_ids
 
-    # Restrict invalid/waiting to attempted
     invalid_ids &= attempted_ids
     waiting_ids &= attempted_ids
+    failure_ids &= attempted_ids
 
     # Precedence within attempted
     final_status: dict[str, str] = {}
@@ -143,7 +193,10 @@ def compute_overall_outcomes(
             final_status[rid] = "error"
         elif rid in passed_ids:
             final_status[rid] = "passed"
+        elif rid in failure_ids:
+            final_status[rid] = "failed"
         else:
+            # attempted but not categorized -> treat as failed
             final_status[rid] = "failed"
 
     attempted = len(attempted_ids)
@@ -188,8 +241,23 @@ def run_error_type_accuracy_evaluation(
     output_dir = Path(output_dir) if output_dir else (repo_root / "evaluation_plot")
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    results_dir = repo_root / "results"
+
+    # Auto-load fallbacks if caller didn't pass lists
+    if jobs_results is None:
+        jobs_results = _load_jsonl_rows(results_dir / "jobs_results_diff.jsonl")
+    if jobs_ids_invalid is None:
+        jobs_ids_invalid = _load_jsonl_rows(results_dir / "jobs_invalid_diff.jsonl")
+    if jobs_ids_await is None:
+        jobs_ids_await = _load_jsonl_rows(results_dir / "jobs_awaiting_diff.jsonl")
+
+    # Always load these as evidence of attempt
+    jobs_ids_failure = _load_jsonl_rows(results_dir / "jobs_failure_diff.jsonl")
+    jobs_ids_error = _load_jsonl_rows(results_dir / "jobs_error_diff.jsonl")
+
     accuracy_plot_path = output_dir / "error_type_accuracy_lollipop.png"
     accuracy_table_path = output_dir / "error_type_accuracy_table.png"
+    overall_path = output_dir / "overall.json"
 
     df = pd.read_parquet(dataset_path)
     if "id" not in df.columns or "error_type" not in df.columns:
@@ -207,6 +275,8 @@ def run_error_type_accuracy_evaluation(
         jobs_results=jobs_results,
         jobs_ids_invalid=jobs_ids_invalid,
         jobs_ids_await=jobs_ids_await,
+        jobs_ids_failure=jobs_ids_failure,
+        jobs_ids_error=jobs_ids_error,
         stream_results_path=stream_results_path,
     )
 
@@ -222,10 +292,12 @@ def run_error_type_accuracy_evaluation(
     print(f"Waiting: {overall['waiting']}")
     print(f"Accuracy (passed/attempted*100): {overall['accuracy_percent_attempted']}%")
 
-    # -------- Per-error-type accuracy (still uses dataset + success_ids) ----------
-    # This stays as before, because you want to know "what can be solved" by error type
-    # based on dataset labels and success list.
+    # Write overall JSON
+    with open(overall_path, "w", encoding="utf-8") as f:
+        json.dump(overall, f, indent=2)
+    print(f"\nSaved overall JSON → {overall_path}")
 
+    # -------- Per-error-type accuracy (dataset labels + success list) ----------
     total_counter = defaultdict(int)
     success_counter = defaultdict(int)
 
@@ -323,6 +395,7 @@ def run_error_type_accuracy_evaluation(
         "success_path": str(success_path),
         "output_dir": str(output_dir),
         "overall": overall,
+        "overall_path": str(overall_path),
         "total_error_labels": total_error_labels,
         "unique_error_types": unique_error_types,
         "accuracy_plot_path": str(accuracy_plot_path),

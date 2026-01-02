@@ -683,6 +683,7 @@ then produce a structured, evidence-based JSON summary that explains:
         log_details = self.ci_log_analysis()
         generated_summary = self._generate_summary(log_details)
         generated_summary["sha_fail"] = self.sha_fail
+        generated_summary["id"] = self.task_id
         
         return generated_summary
 

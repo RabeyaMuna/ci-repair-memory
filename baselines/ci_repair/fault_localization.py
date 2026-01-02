@@ -15,10 +15,12 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
 
+from utilities.model_token_limits import get_prompt_token_budget
 from utilities.load_config import load_config
 from utilities.snippet_extractor import extract_snippet_from_line_range, find_line_range
-from utilities.chunking_logic import chunk_log_by_tokens
 from utilities.symbols_outline import build_outline, format_outline
+from utilities.chunking_logic import chunk_log_by_tokens, chunk_lines_with_overlap, estimate_tokens
+
 
 load_dotenv()
 
@@ -81,6 +83,7 @@ class FaultLocalization:
         self.workflow = workflow
         self.repo_path = repo_path
         self.failed_commit = sha_fail
+        self.id = self.error_logs.get("id", "")
 
         self.model_name = model_name
         self.llm = llm
@@ -99,6 +102,7 @@ class FaultLocalization:
             suspecious_files = self.select_suspecious_files()
 
             result = self._final_fault_localization(suspecious_files)
+            result["id"] = self.id 
             return result
 
         except Exception as e:
@@ -251,7 +255,6 @@ FAILED JOBS (CI context):
         print("[Tool] read_error_file called")
 
         fault_localization: List[Dict[str, Any]] = []
-
         for item in suspecious_files:
             file_path = (item.get("file") or item.get("path") or "").strip()
             if not file_path:
@@ -275,6 +278,7 @@ FAILED JOBS (CI context):
             file_type = self.detect_file_type(file_path)
             outline = build_outline(content) if file_type == "python" else ""
             numbered_full_content = self._numbered_file_content(content)
+
             chunks = self._chunk_file(numbered_full_content)
             num_chunks = len(chunks)
 
@@ -298,11 +302,12 @@ FAILED JOBS (CI context):
                     file_summary=file_summary,
                     valid_start=ch["valid_start"],
                     valid_end=ch["valid_end"],
-                    original_content=content,  # unnumbered
+                    original_content=content,
                     chunk_idx=idx,
                     num_chunks=num_chunks,
                     faults=all_faults,
                     outline=outline,
+                    chunk=ch["content"]
                 )
 
                 if faults:
@@ -327,29 +332,23 @@ FAILED JOBS (CI context):
     # ------------------------------------------------------------------ #
     # Core FL for one chunk
     # ------------------------------------------------------------------ #
-
-    def fault_localization_based_on_ci_log(
-        self,
-        *,
-        file_path: str,
-        full_file_path: str,
-        file_summary: str,
-        valid_start: int,
-        valid_end: int,
-        original_content: str,
-        chunk_idx: int,
-        num_chunks: int,
-        faults: list,
-        outline: List[Dict[str, Any]],
-    ) -> list:
+    
+    def prompt_for_fault_localization(
+    self,
+    *,
+    file_summary: str,
+    valid_start: int,
+    valid_end: int,
+    faults: list,
+    ) -> str:
         """
-        Runs the strict FL prompt for a single chunk and returns a list of fault objects.
-        Expects the LLM to return [] or [ { ... }, ... ] per your original schema.
+        Build the strict fault-localization prompt for a single (sub)chunk.
+
+        - file_summary: includes file metadata + outline + the code chunk (already fenced).
+        - valid_start/valid_end: absolute (file-level) line numbers for this chunk window.
+        - faults: previously detected faults (used only to avoid duplicates).
         """
-
-        fault_locations: List[Dict[str, Any]] = []
-
-        prompt = f"""
+        return f"""
 You are a **Strict Fault Localization Agent**.
 
 Your task:
@@ -365,10 +364,10 @@ SOURCE CODE (numbered lines; 1-based) with Outline of the file is given:
 {file_summary}
 
 Each outline entry contains:
-  - name: symbol or construct name (function/class/import)
-  - type: one of "method" | "class" | "import_block"
-  - start_line: first numbered line of the element
-  - end_line: last numbered line of the element
+- name: symbol or construct name (function/class/import)
+- type: one of "method" | "class" | "import_block"
+- start_line: first numbered line of the element
+- end_line: last numbered line of the element
 
 Use this outline ONLY to determine which scope a fault belongs to ("fault_localization_level").
 Do NOT expand "line_range" to outline boundaries.
@@ -382,87 +381,121 @@ ERROR TYPES:
 ERROR CONTEXT:
 {self.error_context}
 
-ALREADY DETECTED FAULTS (skip/avoid duplicates):
-{faults}
-
 CHUNK WINDOW: lines {valid_start}–{valid_end}
 
 ==============================================================================
 RULES
 ------------------------------------------------------------------------------
 R1. Detect All Matches
-  - Read every numbered line between {valid_start}–{valid_end}.
-  - Add every new fault that directly explains CI messages or rule codes (ruff, pylint, mypy, pytest, etc.).
-  - Include formatting, linting, typing, runtime, and test failures if indicated by the logs.
-  - Do NOT stop after finding one issue; return every distinct fault in the chunk that matches CI evidence.
+- Read every numbered line between {valid_start}–{valid_end}.
+- Add every new fault that directly explains CI messages or rule codes (ruff, pylint, mypy, pytest, etc.) or reasons of Failed Jobs.
+- Include formatting, linting, typing, runtime, and test failures if indicated by the logs.
+- Do NOT stop after finding one issue; return every distinct fault in the chunk that matches CI evidence.
 
 R2. Verify in Code
-  - Each fault must be observable in these lines or provably absent (for missing imports/symbols).
-  - Confirm CI log claims (missing symbol, unused import, annotation absence, etc.) against code shown.
+- Each fault must be observable in these lines or provably absent (for missing imports/symbols).
+- Confirm CI log claims (missing symbol, unused import, annotation absence, etc.) against code shown.
 
 R3. Outline-Based Scope Classification (NO expansion)
-  - For each detected fault, choose a "line_range" that covers the faulty line(s) and any necessary adjacent lines
+- For each detected fault, choose a "line_range" that covers the faulty line(s) and any necessary adjacent lines
     to show the complete faulty statement (it does NOT need to be the smallest possible range).
-  - "line_range" MUST remain within the CHUNK WINDOW {valid_start}–{valid_end}.
-  - Determine "fault_localization_level" by finding the smallest outline entry (tightest [start_line–end_line]) that fully contains the provided "line_range":
-      • If contained by a method/function entry → set "fault_localization_level" to "method".
-      • Else if contained by a class entry → set "fault_localization_level" to "class".
-      • Else if contained by an import_block entry → set "fault_localization_level" to "import_block".
-      • Else if the provided line_range spans multiple non-overlapping outline elements OR no outline entry contains it → set "fault_localization_level" to "file".
-  - If outline is missing/empty/unusable, you may fall back to "line" when appropriate.
-  - If multiple faults occur in the SAME outline element, you may merge them into one JSON object and combine reasons,
+- "line_range" MUST remain within the CHUNK WINDOW {valid_start}–{valid_end}.
+- Determine "fault_localization_level" by finding the smallest outline entry (tightest [start_line–end_line]) that fully contains the provided "line_range", with LINE-FIRST rules:
+
+    • If the "line_range" is fully contained by a method/function outline entry
+      → set "fault_localization_level" to "method".
+
+    • Else if the "line_range" is fully contained by a class outline entry
+      AND the faulty lines are NOT inside any method/function child of that class
+      (i.e., the fault is at class scope: class docstring / decorators / class vars)
+      → set "fault_localization_level" to "class".
+
+    • Else if the "line_range" is fully contained by an import_block outline entry
+      (or the faulty lines are import statements)
+      → set "fault_localization_level" to "import_block".
+
+    • Else
+      → set "fault_localization_level" to "line".
+
+  Hard constraints:
+    - Do NOT use "file" as a fault_localization_level.
+    - "line_range" MUST stay minimal (only the faulty statement + a little context), never the entire class/file.
+    - If you cannot point to exact faulty line(s) within this chunk, do NOT return the fault.
+
+- If outline is missing/empty/unusable, you may fall back to "line" when appropriate.
+- If multiple faults occur in the SAME outline element, you may merge them into one JSON object and combine reasons,
     BUT do NOT merge unrelated faults and do NOT expand "line_range" to the element boundary.
 
-R4. Reason–Evidence Consistency
-  - Each "reason" must cite concrete CI evidence (messages or rule codes such as F401, E1101, I001, etc.).
-  - Reference actual code shown in this chunk or explicitly confirm an omission (e.g., missing import/symbol) when CI evidence indicates it.
-  - Avoid vague speculation. If unable to find code evidence for a claimed fault, do NOT include it.
+R4. Evidence-Based Reasoning — MUST include WHAT + FIX + WHERE (Hard Requirement)
+For EACH returned fault object, the "reason" field MUST include ALL of the following:
+
+(1) WHAT (exact issue description)
+- Describe precisely what is wrong in the code.
+- Tie the issue to CI evidence when available (error message and/or rule code such as F401, E1101, mypy error, pytest failure).
+
+(2) FIX (concrete action required)
+- State exactly what needs to be changed using imperative language.
+- Examples:
+    • "Remove the unused import X"
+    • "Add the missing import for Y"
+    • "Change the argument type from X to Y"
+    • "Update the function call to use Z"
+    • "Fix formatting to satisfy rule E501"
+
+(3) WHERE (exact line numbers)
+- Explicitly state the exact line number(s) in THIS chunk where the issue occurs.
+- Use ONLY one of these formats:
+    • "Fault at line N"
+    • "Fault at lines N–M"
+    • "Fault at line N (and line K)"
+- The referenced line numbers MUST fall within the returned "line_range".
+
+DO NOT be vague or generic. DO NOT say "the class has a problem" or "there is a docstring issue". Provide specific details citing CI evidence and exact line numbers. If you cannot identify the exact faulty line(s) in this chunk, DO NOT return the fault.
+
 
 R5. Line Range Integrity (Issue Range, not outline range)
-  - "line_range" must include the faulty line(s). It does NOT need to match outline boundaries.
-  - Always use the displayed (numbered) line indices, not inferred offsets.
+- "line_range" must include the faulty line(s). It does NOT need to match outline boundaries.
+- Always use the displayed (numbered) line indices, not inferred offsets.
 
 R6. Fault Type & Level
-  - Choose "issue_type" precisely (formatting, linting, type_error, runtime_error, test_failure, dependency_error, docstring, complexity, other).
-  - Set "fault_localization_level" based on the outline containment rules in R3: line | method | class | import_block | file.
+- Choose "issue_type" precisely (formatting, linting, type_error, runtime_error, test_failure, dependency_error, docstring, complexity, other).
+- Set "fault_localization_level" based on the outline containment rules in R3: line | method | class | import_block | file.
 
 R7. Extended Reason Context
-  - In "reason", you may mention related decorators, helper calls, or affected functions that clarify the cause.
-  - Do NOT claim you inspected code outside this chunk. You may reference the outline structurally only.
+- In "reason", you may mention related decorators, helper calls, or affected functions that clarify the cause.
+- Do NOT claim you inspected code outside this chunk. You may reference the outline structurally only.
 
 R8. Missing Elements
-  - If CI cites a missing construct (e.g., import, symbol, type hint), confirm it is missing in the shown chunk scope if applicable,
+- If CI cites a missing construct (e.g., import, symbol, type hint), confirm it is missing in the shown chunk scope if applicable,
     and record it with the correct "fault_localization_level" using outline-based classification.
 
 R9. Output Contract (Hard)
-  - Return **strict JSON only**:
-      • Either [] or a JSON array of objects matching the schema below.
-      • No markdown fences, comments, or trailing commas.
-  - Do NOT include "code_snippet" — it will be added later by the caller.
+- Return **strict JSON only**:
+    • Either [] or a JSON array of objects matching the schema below.
+    • No markdown fences, comments, or trailing commas.
+- Do NOT include "code_snippet" — it will be added later by the caller.
 
 R10. Line Number Formatting (Critical)
-  - The "line_range" array MUST contain plain decimal integers with NO leading zeros.
-  - If the source shows "0007:" or "0042:", you MUST output 7 or 42 in JSON.
-  - Examples:
-      • Correct: "line_range": [1, 15]
-      • Correct: "line_range": [7, 42]
-      • INCORRECT: "line_range": [0001, 0015]
-      • INCORRECT: "line_range": ["0001", "0015"]   (do NOT quote them)
-  - Always map the zero-padded display index NNNN to its integer value.
+- The "line_range" array MUST contain plain decimal integers with NO leading zeros.
+- If the source shows "0007:" or "0042:", you MUST output 7 or 42 in JSON.
+- Examples:
+    • Correct: "line_range": [1, 15]
+    • Correct: "line_range": [7, 42]
+    • INCORRECT: "line_range": [0001, 0015]
+    • INCORRECT: "line_range": ["0001", "0015"]   (do NOT quote them)
+- Always map the zero-padded display index NNNN to its integer value.
 
 ==============================================================================
 OUTPUT SCHEMA (JSON array)
 ------------------------------------------------------------------------------
 [
-  {{
-    "file_path": "{file_path}",
-    "full_file_path": "{full_file_path}",
+{{
     "line_range": [start_line, end_line],
     "reason": "Comprehensive explanation citing CI log messages and rule codes. If merged, include concise bullet-like sub-fault summaries. Mention relevant line numbers that contain the issue(s).",
     "issue_type": "formatting | linting | type_error | runtime_error | test_failure | dependency_error | docstring | complexity | other",
     "fault_localization_level": "line | method | class | import_block | file"
-  }},
-  ...
+}},
+...
 ]
 
 ==============================================================================
@@ -475,82 +508,175 @@ CHECKLIST BEFORE RETURNING
 5) No duplicates of ALREADY DETECTED FAULTS.
 6) Output is valid JSON only — no markdown, prose, or trailing commas.
 7) If nothing new is found, return [].
-"""
+""".strip()
+
+                                      
+    def fault_localization_based_on_ci_log(
+    self,
+    *,
+    file_path: str,
+    full_file_path: str,
+    file_summary: str,
+    valid_start: int,
+    valid_end: int,
+    original_content: str,
+    chunk_idx: int,
+    num_chunks: int,
+    faults: list,
+    outline: List[Dict[str, Any]],
+    chunk: str,
+    ) -> list:
+        fault_locations: List[Dict[str, Any]] = []
+        token_limit = get_prompt_token_budget(self.model_name)
+
+        prompt = self.prompt_for_fault_localization(
+            file_summary=file_summary,
+            valid_start=valid_start,
+            valid_end=valid_end,
+            faults=faults,
+        )
 
         print(f"[Chunk {chunk_idx+1}/{num_chunks}] Analyzing lines {valid_start}-{valid_end}...")
 
-        try:
-            raw_response = self.llm.invoke(prompt).content.strip()
-            # Clean any markdown fences
+        def _invoke_and_parse(p: str):
+            raw_response = self.llm.invoke([HumanMessage(content=p)]).content.strip()
             if raw_response.startswith("```"):
                 raw_response = raw_response.strip("` \n")
 
             try:
-                parsed_result = json.loads(raw_response)
+                parsed = json.loads(raw_response)
             except json.JSONDecodeError:
-                parsed_result = demjson3.decode(raw_response)
+                parsed = demjson3.decode(raw_response)
 
-            if not isinstance(parsed_result, list) or not parsed_result:
+            if not isinstance(parsed, list) or not parsed:
+                return []
+            return parsed
+
+        model_for_count = self.model_name or "gpt-4o-mini"
+
+        # -----------------------------
+        # Case 1: prompt fits -> normal path
+        # -----------------------------
+        if estimate_tokens(prompt, model=model_for_count) <= token_limit:
+            try:
+                parsed_result = _invoke_and_parse(prompt)
+            except Exception as e:
+                self._save_fault_localization_error(
+                    self.failed_commit,
+                    e,
+                    tool_name="fault_localization_based_on_ci_log",
+                    prompt_name="llm_invocation",
+                )
+                print(f"[Chunk {chunk_idx}] LLM invocation error: {e}")
+                return []
+        else:
+            # -----------------------------
+            # Case 2: prompt too big -> subchunk the PROVIDED chunk only
+            # sub_lines = (n_lines // 2) + 50 ; overlap stays 50
+            # -----------------------------
+            n_lines = len((chunk or "").splitlines())
+            sub_lines = max(1, (n_lines // 2) + 50)
+
+            print(
+                f"[Chunk {chunk_idx+1}] Prompt too large "
+                f"({estimate_tokens(prompt, model=model_for_count)} > {token_limit}). "
+                f"Sub-chunking chunk content: {n_lines} lines -> {sub_lines} lines/chunk with 50 overlap."
+            )
+
+            subchunks = chunk_lines_with_overlap(
+                chunk,
+                lines_per_chunk=sub_lines,
+                overlap=50,
+            )
+
+            parsed_result = []
+
+            for sub_i, (sub_start_1b, sub_end_1b, sub_text) in enumerate(subchunks):
+                # sub_start_1b/sub_end_1b are line numbers *within this chunk* (1-based)
+                abs_start = (valid_start - 1) + sub_start_1b
+                abs_end = (valid_start - 1) + sub_end_1b
+
+                sub_file_summary = (
+                    f"File: {file_path}\n"
+                    f"Full Path: {full_file_path}\n\n"
+                    f"**File Outline (symbol → [start–end] lines)**\n{outline}\n\n"
+                    f"Chunk index: {chunk_idx+1} of {num_chunks} (sub {sub_i+1} of {len(subchunks)})\n"
+                    f"Chunk lines ({abs_start}–{abs_end}):\n\n"
+                    f"```text\n{sub_text}\n```"
+                )
+
+                sub_prompt = self.prompt_for_fault_localization(
+                    file_summary=sub_file_summary,
+                    valid_start=abs_start,
+                    valid_end=abs_end,
+                    faults=faults,
+                )
+
+                if estimate_tokens(sub_prompt, model=model_for_count) > token_limit:
+                    print(
+                        f"[Chunk {chunk_idx+1}] Skipping subchunk {sub_i+1}: "
+                        f"prompt still too large ({estimate_tokens(sub_prompt, model=model_for_count)} > {token_limit})."
+                    )
+                    continue
+
+                try:
+                    sub_parsed = _invoke_and_parse(sub_prompt)
+                except Exception as e:
+                    self._save_fault_localization_error(
+                        self.failed_commit,
+                        e,
+                        tool_name="fault_localization_based_on_ci_log",
+                        prompt_name="llm_invocation_subchunk",
+                    )
+                    print(f"[Chunk {chunk_idx+1}] Subchunk LLM error: {e}")
+                    continue
+
+                parsed_result.extend(sub_parsed)
+
+            if not parsed_result:
                 print(f"[Chunk {chunk_idx}] No faults found.")
                 return []
 
-            for fault in parsed_result:
-                line_range = fault.get("line_range")
-                fault_level = fault.get("fault_localization_level")
+        # -----------------------------
+        # Process parsed_result (unchanged)
+        # -----------------------------
+        for fault in parsed_result:
+            line_range = fault.get("line_range")
+            fault_level = fault.get("fault_localization_level")
 
-                if not line_range:
-                    continue  # Skip if no snippet present
+            if not line_range:
+                continue
 
-                start, end = line_range
-                if valid_start <= start and end <= valid_end:
-                    extended_range = self._expand_line_range_with_outline(
-                        line_range=line_range,
-                        outline=outline,
-                        fault_level=fault_level,
-                    )
-                    fault["line_range"] = extended_range
-                    print("\n--- After Extended Line range ---", extended_range)
+            start, end = line_range
+            if valid_start <= start and end <= valid_end:
+                extended_range = self._expand_line_range_with_outline(
+                    line_range=line_range,
+                    outline=outline,
+                    fault_level=fault_level,
+                )
+                print("\n--- Before Line range ---", line_range)
+                fault["line_range"] = extended_range
 
-                    snippet = extract_snippet_from_line_range(
-                        original_file_content=original_content,
-                        line_range=extended_range,
-                    )
-                    fault["code_snippet"] = snippet
+                snippet = extract_snippet_from_line_range(
+                    original_file_content=original_content,
+                    line_range=extended_range,
+                )
+                fault["code_snippet"] = snippet
 
-                    fault_locations.append(fault)
-                    print("\n--- Fault Detected ---")
-                    print("Code Snippet:\n", snippet)
-                    print("Line Range:", extended_range)
-                    print("---------------------\n")
-                else:
-                    # Fault outside this chunk
-                    print(
-                        f"[Chunk {chunk_idx+1}] Skipping fault outside chunk range "
-                        f"{valid_start}-{valid_end}: {line_range}"
-                    )
-
-        except json.JSONDecodeError as e:
-            self._save_fault_localization_error(
-                self.failed_commit,
-                e,
-                tool_name="fault_localization_based_on_ci_log",
-                prompt_name="json_parsing",
-            )
-            print(f"[Chunk {chunk_idx}] JSON parse error: {e}")
-            print(f"[Chunk {chunk_idx}] Raw response:\n{raw_response}")
-            return []
-
-        except Exception as e:
-            self._save_fault_localization_error(
-                self.failed_commit,
-                e,
-                tool_name="fault_localization_based_on_ci_log",
-                prompt_name="chunk_processing",
-            )
-            print(f"[Chunk {chunk_idx}] Error processing chunk: {e}")
-            return []
+                fault_locations.append(fault)
+                print("\n--- Fault Detected ---")
+                print("Code Snippet:\n", snippet)
+                print("After Extending, Line Range:", extended_range)
+                print("---------------------\n")
+            else:
+                print(
+                    f"[Chunk {chunk_idx+1}] Skipping fault outside chunk range "
+                    f"{valid_start}-{valid_end}: {line_range}"
+                )
 
         return fault_locations
+
+
 
     # ------------------------------------------------------------------ #
     # Path & file helpers
@@ -671,7 +797,7 @@ CHECKLIST BEFORE RETURNING
         return mapping.get(ext, "text")
 
     def _chunk_file(self, file_content: str) -> List[Dict[str, Any]]:
-        chunk_size = 500
+        chunk_size = 300
         overlap = 50
         lines = file_content.splitlines()
         total_lines = len(lines)
@@ -744,126 +870,132 @@ CHECKLIST BEFORE RETURNING
     line_range: List[int],
     outline: List[dict],
     fault_level: Optional[str] = None,
-) -> List[int]:
+    ) -> List[int]:
         """
-        Expand/normalize [start, end] using the file outline.
+        Expand/normalize [start, end] using the outline.
 
-        Hard guarantee:
-        - Returned range ALWAYS contains the originally detected fault range [start, end].
-
-        Special behavior:
-        - fault_level == "class": return a class-level segment that EXCLUDES method bodies,
-            but still MUST contain [start, end]. If that's not possible, fall back safely.
+        Contract by fault_level:
+        - "method": return the entire containing function/method (tightest).
+        - "import_block": return the containing import block (tightest).
+        - "line": return [start-4, end+4] (clamp start to >= 1).
+        - "class": return the dedicated class per rules (as before).
+        - anything else / None: return tightest containing node of any kind.
         """
-
-        if not outline or not line_range:
+        if not line_range:
             return line_range
 
         start, end = line_range
-
-        flat: List[dict] = []
-
-        def visit(node: dict):
-            flat.append(node)
-            for child in node.get("children") or []:
-                visit(child)
-
-        for node in outline:
-            visit(node)
-
-        # Candidates that fully contain the entire detected fault range
-        candidates = [
-            n
-            for n in flat
-            if isinstance(n.get("start"), int)
-            and isinstance(n.get("end"), int)
-            and n["start"] <= start
-            and end <= n["end"]
-        ]
-
-        if not candidates:
-            # Can't safely expand while containing the fault range
+        if not (isinstance(start, int) and isinstance(end, int)):
             return line_range
 
+        # Normalize ordering defensively
+        if end < start:
+            start, end = end, start
+
         # ---------------------------
-        # SPECIAL CASE: CLASS LEVEL
+        # LINE LEVEL: +/- 4 lines context
+        # ---------------------------
+        if fault_level == "line":
+            s = max(1, start - 4)
+            e = end + 4
+            # guarantee original is contained
+            return [s, e] if s <= start and end <= e else [start, end]
+
+        # If outline missing/unusable, we can't expand to method/class/import boundaries
+        if not outline:
+            return [start, end]
+
+        # Flatten with parent pointers (without mutating the original outline dicts).
+        flat: List[dict] = []
+
+        def visit(node: dict, parent: Optional[dict] = None):
+            if not isinstance(node, dict):
+                return
+            n = dict(node)  # copy to avoid side effects
+            n["_parent"] = parent
+            children = node.get("children") or []
+            n["children"] = children
+            flat.append(n)
+            for child in children:
+                visit(child, n)
+
+        for node in outline:
+            visit(node, None)
+
+        def contains(node: dict, s: int, e: int) -> bool:
+            a, b = node.get("start"), node.get("end")
+            return isinstance(a, int) and isinstance(b, int) and a <= s and e <= b
+
+        candidates = [n for n in flat if contains(n, start, end)]
+        if not candidates:
+            return [start, end]
+
+        def tightest(nodes: List[dict]) -> dict:
+            return min(nodes, key=lambda n: (int(n["end"]) - int(n["start"]), int(n["start"])))
+
+        # ---------------------------
+        # METHOD LEVEL: tightest containing function/method
+        # ---------------------------
+        if fault_level == "method":
+            funcs = [c for c in candidates if c.get("kind") in {"func", "method"}]
+            if funcs:
+                chosen = tightest(funcs)
+                expanded = [int(chosen["start"]), int(chosen["end"])]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+            return [start, end]
+
+        # ---------------------------
+        # IMPORT BLOCK LEVEL: tightest containing import block
+        # ---------------------------
+        if fault_level == "import_block":
+            imps = [c for c in candidates if c.get("kind") == "import_block"]
+            if imps:
+                chosen = tightest(imps)
+                expanded = [int(chosen["start"]), int(chosen["end"])]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+            return [start, end]
+
+        # ---------------------------
+        # CLASS LEVEL: dedicated class per rules (your existing logic)
         # ---------------------------
         if fault_level == "class":
             class_candidates = [c for c in candidates if c.get("kind") == "class"]
-            if class_candidates:
-                # Tightest containing class
-                class_node = min(
-                    class_candidates,
-                    key=lambda n: (n["end"] - n["start"], n["start"]),
-                )
-                cls_start, cls_end = int(class_node["start"]), int(class_node["end"])
-
-                # Collect ALL method/function descendants inside this class
-                method_nodes: List[dict] = []
-
-                def collect_methods(node: dict):
-                    for ch in node.get("children") or []:
-                        if ch.get("kind") in {"func", "method"} and isinstance(ch.get("start"), int) and isinstance(ch.get("end"), int):
-                            method_nodes.append(ch)
-                        collect_methods(ch)
-
-                collect_methods(class_node)
-                method_nodes.sort(key=lambda n: n["start"])
-
-                # If the entire fault range is inside a method, return that method (still contains the fault)
-                for m in method_nodes:
-                    m_start, m_end = int(m["start"]), int(m["end"])
-                    if m_start <= start and end <= m_end:
-                        return [m_start, m_end]
-
-                # Build non-method gaps inside the class: segments that are NOT inside any method body
-                methods = [(int(m["start"]), int(m["end"])) for m in method_nodes]
-                methods.sort()
-
-                gaps: List[List[int]] = []
-                cursor = cls_start
-
-                for m_start, m_end in methods:
-                    if cursor <= m_start - 1:
-                        gaps.append([cursor, m_start - 1])
-                    cursor = max(cursor, m_end + 1)
-
-                if cursor <= cls_end:
-                    gaps.append([cursor, cls_end])
-
-                # Choose the gap that fully contains the fault range
-                for g_start, g_end in gaps:
-                    if g_start <= start and end <= g_end:
-                        return [g_start, g_end]
-
-                # If no gap contains the full range, we must NOT return a gap that would drop part of the fault.
-                # Safest fallback: return the original detected range.
+            if not class_candidates:
                 return [start, end]
 
-            # If no containing class node, fall through to default behavior
+            owning = tightest(class_candidates)
+            cls_start, cls_end = int(owning["start"]), int(owning["end"])
+
+            parent = owning.get("_parent")
+            if parent and parent.get("kind") == "class":
+                expanded = [cls_start, cls_end]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+
+            direct_nested = [
+                ch for ch in (owning.get("children") or [])
+                if isinstance(ch, dict)
+                and ch.get("kind") == "class"
+                and isinstance(ch.get("start"), int)
+                and isinstance(ch.get("end"), int)
+            ]
+            direct_nested.sort(key=lambda n: int(n["start"]))
+
+            if not direct_nested:
+                expanded = [cls_start, cls_end]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+
+            first_child_start = int(direct_nested[0]["start"])
+            header_end = first_child_start - 1
+
+            if cls_start <= start and end <= header_end:
+                expanded = [cls_start, header_end]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+
+            return [start, end]
 
         # ---------------------------
-        # DEFAULT BEHAVIOR
+        # DEFAULT: tightest containing node of any kind
         # ---------------------------
-        preferred_kinds_by_level = {
-            "method": {"func", "method"},
-            "class": {"class"},
-            "import_block": {"import_block", "const"},
-        }
-        preferred_kinds = preferred_kinds_by_level.get(fault_level or "", set())
-
-        if preferred_kinds:
-            preferred = [c for c in candidates if c.get("kind") in preferred_kinds]
-        else:
-            preferred = []
-
-        chosen_pool = preferred if preferred else candidates
-
-        # Choose the tightest containing node from the chosen pool
-        chosen = min(
-            chosen_pool,
-            key=lambda n: (n["end"] - n["start"], n["start"]),
-        )
-
-        return [int(chosen["start"]), int(chosen["end"])]
-
+        chosen = tightest(candidates)
+        expanded = [int(chosen["start"]), int(chosen["end"])]
+        return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]

@@ -8,7 +8,7 @@ from datasets import load_dataset
 from omegaconf import OmegaConf
 from tqdm import tqdm
 from typing import List
-from fast_fail_detail import finalize_after_last_poll
+from fast_fail_detail import finalize_after_last_poll, _read_jsonl
 from benchmark_utils import read_jsonl, save_jsonl
 from benchmark_functions import get_results, process_datapoint
 
@@ -23,7 +23,7 @@ def filter_by_id(example, ids):
 class CIFixBenchmark:
     def __init__(self, model_name, config_path):
 
-        self.dataset_id = "JetBrains-Research/lca-ci-builds-repair"
+        self.dataset_id = "ci-benchmark-user/ci-repair-bench"
 
         # Loads a YAML/JSON configuration file using OmegaConf, a part of the Hydra library.
         self.config = OmegaConf.load(config_path)
@@ -205,14 +205,6 @@ class CIFixBenchmark:
 
         result_file.close()
         success_file.close()
-        
-        finalize_after_last_poll(
-            self,
-            jobs_results=jobs_results,
-            jobs_ids_await=jobs_ids_await,
-            jobs_ids_invalid=jobs_ids_invalid,
-            stream_results_path=jobs_results_file_path,
-        )
 
         print("\nFinal summary:")
         print(f"Completed: {len(jobs_results)}")
@@ -223,57 +215,38 @@ class CIFixBenchmark:
         return jobs_results
 
     def get_results(self, job_ids_file=None, result_filename=None):
-        if job_ids_file is None:
-            job_ids_file = os.path.join(
-                self.config.out_folder, f"jobs_ids_{self.model_name}.jsonl"
-            )
-        
-        if result_filename is None:
-            result_filename = f"jobs_results_{self.model_name}.jsonl"
-            result_file = os.path.join(self.config.out_folder, result_filename)
-            
-        self.analyze_results(jobs_results_file=result_file)
+        out_dir = self.config.out_folder
+        model = self.model_name
 
-    def analyze_results(self, jobs_results=None, jobs_results_file=None):
-        """
-        Analyze benchmark results and print summary:
-        1. Pass/fail summary for evaluated subset
-        2. Pass ratio relative to total dataset size (if dataset loaded)
-        """
-        # Load results
-        if jobs_results_file is not None:
-            jobs_results = read_jsonl(jobs_results_file)
-        if jobs_results is None:
-            jobs_results = self.jobs_ids
+        jobs_ids_path = job_ids_file or os.path.join(out_dir, f"jobs_ids_{model}.jsonl")
+        jobs_results_path = os.path.join(out_dir, f"jobs_results_{model}.jsonl")
+        jobs_inv_path = os.path.join(out_dir, f"jobs_invalid_{model}.jsonl")
 
-        results_df = pd.DataFrame(jobs_results)
-        
-        if "conclusion" not in results_df.columns:
-            print("No completed jobs yet. 'conclusion' column not found.")
-            return
-        total_evaluated = len(results_df)
-        total_dataset_size = len(self.dataset) if hasattr(self, "dataset") and self.dataset is not None else None
+        # SOURCE OF TRUTH: all pushed jobs
+        all_jobs = _read_jsonl(jobs_ids_path)
 
-        total_counts = results_df["conclusion"].value_counts()
-        total_pass = total_counts.get("success", 0)
-        total_fail = total_counts.get("failure", 0)
-        total_ratio = total_pass / total_evaluated if total_evaluated > 0 else 0
+        # previously known completed jobs
+        jobs_results = _read_jsonl(jobs_results_path)
 
-        print("\n===============================")
-        print("Evaluation Summary")
-        print("===============================")
-        print(f"Evaluated datapoints: {total_evaluated}")
-        print(f"Passed: {total_pass}")
-        print(f"Failed: {total_fail}")
-        print(f"Pass ratio (subset): {total_ratio:.2%}")
+        # previously known invalid/error jobs
+        jobs_ids_invalid = _read_jsonl(jobs_inv_path)
 
-        # Global dataset context
-        if total_dataset_size:
-            global_ratio = total_pass / total_dataset_size
-            print("\nOverall Context")
-            print(f"Total dataset size: {total_dataset_size}")
-            print(f"Passes relative to full dataset: {total_pass}/{total_dataset_size}")
-            print(f"Global pass ratio: {global_ratio:.2%}")
+        # derive "await" as: all_jobs - already_completed - already_invalid
+        done_ids = {str(r.get("id")) for r in jobs_results}
+        invalid_ids = {str(r.get("id")) for r in jobs_ids_invalid}
+        jobs_ids_await = [j for j in all_jobs if str(j.get("id")) not in done_ids | invalid_ids]
+
+        finalize_after_last_poll(
+            self,
+            jobs_results=jobs_results,
+            jobs_ids_await=jobs_ids_await,
+            jobs_ids_invalid=jobs_ids_invalid,
+            stream_results_path=jobs_results_path,
+            out_dir=out_dir,
+            model_name=model,
+            jobs_ids_path=jobs_ids_path,   # <-- add this param in fast_fail_detail
+            dataset_path=getattr(self, "dataset_path", None)
+        )
 
     def eval_dataset(
         self,
@@ -293,6 +266,8 @@ class CIFixBenchmark:
             num_dp=num_dp,
             force_download=force_download,
         )
+        
+        self.dataset_path = dataset_info 
 
         if ids_list is not None:
             # self.dataset = self.dataset.filter(lambda example: filter_by_id(example, ids_list))
@@ -307,8 +282,6 @@ class CIFixBenchmark:
 
         print("---------------- Getting results -------------------")
         self.eval_jobs(result_filename=result_filename)
-        
-        self.analyze_results()
 
     def run_datapoint(self, datapoint, fix_repo_function):
         # This method is for debugging reasons

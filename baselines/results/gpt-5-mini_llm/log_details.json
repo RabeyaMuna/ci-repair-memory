@@ -223,10 +223,6 @@
         ]
     },
     {
-        "error": "Failed to generate summary: Can not decode value starting with character ':'",
-        "sha_fail": "b9a749745c9e91ee446a6ebdda7640d49cac8027"
-    },
-    {
         "sha_fail": "0276b7a794ed6215d9da8584791916b37610e3b5",
         "error_context": [
             "The CI run failed during the 'Run Tests (3.11)' step with the single logged error message: \"Values must be separated by a comma\". This message indicates a parsing/syntax error (a missing comma or malformed list/dictionary) that occurred while running the test job for Python 3.11. The workflow contains a matrix job named 'Run Tests' (job id: test) that runs tests and related steps (including pytest invocations); the failing step name from the logs corresponds to that job's 3.11 matrix entry, but the logs do not include the failing command, stack trace, or the file/line where the parse error originated. Because no file or command is reported in the provided logs, the precise file and step command causing the parsing error cannot be determined from the available evidence."
@@ -442,10 +438,6 @@
         ]
     },
     {
-        "error": "Failed to generate summary: Can not decode value starting with character ':'",
-        "sha_fail": "f57afa39e8c9dc4b57c95a021af8a588f6c8c822"
-    },
-    {
         "sha_fail": "76de63fdc2facad254862b3db7e7f44a1e381cd2",
         "error_context": [
             "The CI run failed in the Linters job: a linter (run via the repository's Pre-Commit action) reported a string-literal error. The step-level error is \"Line terminator characters must be escaped inside string literals', 'U+000A'\", which indicates an unescaped newline (U+000A) inside a string literal. The workflow's linter job ('linter' / name: 'Linters') runs the Pre-Commit action (pre-commit/action@v3.0.1); that pre-commit hook detected the issue and caused the Linters job to fail. No other steps or test jobs are reported as failing in the provided logs."
@@ -465,10 +457,6 @@
                 "command": "uses: pre-commit/action@v3.0.1"
             }
         ]
-    },
-    {
-        "error": "Failed to generate summary: Can not decode value starting with character '\\\\'",
-        "sha_fail": "daad35b9c60770a655eaaea4565bf81f63ae1b38"
     },
     {
         "sha_fail": "238a409674f147334f43788013fdfa766fd8035c",
@@ -12343,6 +12331,689 @@
         ],
         "sha_fail": "051820b73ce053cdbb73101445cd203c156813e1",
         "id": "561"
+    },
+    {
+        "error_context": [
+            "The CI run failed because the linting step produced many Ruff violations and returned a non-zero exit code, causing the job to fail. The repository-wide Ruff check (run from the lint job) reported\u5927\u91cf unused-imports (F401) and assigned-but-unused locals (F841) across multiple source and test files (e.g. \"Found 41 errors.\" in src/crewai/utilities/events/__init__.py and \"Found 4 errors.\" in tests/storage/test_mem0_storage.py), plus at least one disallowed bare-except (E722) in src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py. The workflow treats linter failures as fatal: the step ended with \"##[error]Process completed with exit code 123.\", so the \"lint\" job failed when the Ruff check returned errors.",
+            "Failure is localized to the lint job's Ruff run (the workflow step that runs ruff across all Python files), not to dependency install or checkout steps; the log shows the linter output and the non-zero exit which terminated the job."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/utilities/events/__init__.py",
+                "line_number": 6,
+                "reason": "Reported many F401 unused-import re-export errors (log shows many F401 lines for this file and an aggregated \"Found 41 errors.\") \u2014 a primary contributor to the lint failure."
+            },
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
+                "line_number": 77,
+                "reason": "An E722 bare-except was reported at line 77 (\"Do not use bare `except`\") \u2014 a disallowed lint rule violation flagged by Ruff."
+            },
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
+                "line_number": 1,
+                "reason": "Unused-imports (F401) reported (e.g., `typing.AsyncIterable` and `ToolMessage`), with the log noting \"Found 2 errors.\", contributing to the repository lint failures."
+            },
+            {
+                "file": "src/crewai/utilities/events/base_event_listener.py",
+                "line_number": 2,
+                "reason": "Unused import (F401 `logging.Logger`) reported at line 2 and \"Found 1 error.\", indicating this file produced a lint error counted by the failing step."
+            },
+            {
+                "file": "tests/storage/test_mem0_storage.py",
+                "line_number": 1,
+                "reason": "Multiple unused-import errors reported (F401 at several lines) and the log lists \"Found 4 errors.\", showing tests also caused lint failures that led to the CI failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting errors \u2014 unused imports and assigned-but-unused locals",
+                "evidence": "Many F401 (unused-import) and F841 (assigned-but-unused) messages across src/ and tests/ (e.g., \"Found 41 errors.\" in src/crewai/utilities/events/__init__.py)."
+            },
+            {
+                "category": "Code Quality",
+                "subcategory": "Linting rule violation \u2014 bare except",
+                "evidence": "E722 reported in src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py: \"Do not use bare `except`\" at line 77."
+            },
+            {
+                "category": "Configuration / CI Step Failure",
+                "subcategory": "CI step exited non-zero due to linter failures",
+                "evidence": "The lint step terminated with a non-zero exit: \"##[error]Process completed with exit code 123.\", indicating Ruff failures were treated as fatal."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "lint",
+                "command": "echo \"${{ steps.all-files.outputs.files }}\" | tr ' ' '\\n' | grep -v 'src/crewai/cli/templates/' | grep -v '/tests/' | xargs -I{} uv run ruff check \"{}\""
+            }
+        ],
+        "sha_fail": "06e2683fd889129c12e6bd818a3b4a5bd880444a",
+        "id": "562"
+    },
+    {
+        "error_context": [
+            "The CI failed in the type-checking job because mypy (run via the workflow step that executes \"mypy src\") reported static type errors and exited with code 1. The failing log (step 'type-checker') shows \"Found 5 errors in 1 file\" and multiple mypy errors all pointing to src/crewai/llm.py (missing variable annotation for _batch_requests at line 383; attribute/assignment mismatches around lines 489 and 495; unsupported operand between float and None at line 525; and an incompatible assignment of str to a variable typed as None at line 1172), which caused the step to fail. Additionally, mypy emitted a coverage/configuration note in src/crewai/agent.py (line 683) recommending \"--check-untyped-defs\", indicating some function bodies are untyped and not checked by default and that enabling stricter checking might reveal more issues."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/llm.py",
+                "line_number": 383,
+                "reason": "Primary source of failing type checks: mypy reported five errors in this file, including a missing variable annotation for '_batch_requests' (line 383), attribute/assignment type mismatches (lines ~489 and ~495), an unsupported operand comparison involving None (line ~525), and an incompatible assignment of str to a variable typed as None (line ~1172)."
+            },
+            {
+                "file": "src/crewai/agent.py",
+                "line_number": 683,
+                "reason": "Mypy emitted a note at this location that untyped function bodies are not checked by default and suggested using --check-untyped-defs, indicating type-coverage/configuration considerations that affect reporting."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Type Checking",
+                "subcategory": "Mypy static type errors (var annotations, attribute/assignment mismatches, unsupported operations)",
+                "evidence": "Mypy errors: \"Need type annotation for '_batch_requests'\", \"'Collection[str]' has no attribute 'append'\", \"Incompatible types in assignment (expression has type 'list[dict[Any, Any]]')\", and \"Unsupported operand types for < ('float' and 'None')\" \u2014 reported in src/crewai/llm.py."
+            },
+            {
+                "category": "Configuration Error",
+                "subcategory": "Type-checker configuration/coverage \u2014 untyped function bodies not checked",
+                "evidence": "Mypy note: \"By default the bodies of untyped functions are not checked, consider using --check-untyped-defs\" (src/crewai/agent.py:683)."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "type-checker",
+                "step": "type-checker",
+                "command": "mypy src"
+            }
+        ],
+        "sha_fail": "09e5a829f92d1f0c9446be6e49553e30d3cdd5a8",
+        "id": "563"
+    },
+    {
+        "error_context": [
+            "The CI run failed in the type-checking job: in step 'Run type checks' mypy reported type errors and exited with code 1. The workflow set up Python 3.11.9 and installed mypy successfully, then executed 'mypy src' which produced two errors in src/crewai/utilities/events/event_listener.py (lines 382\u2013383): an index/subscript operation on a value typed 'str | Callable[..., Any]' and a len(...) call on that same union-typed value (Callable is not Sized). Mypy also emitted an informational note pointing to src/crewai/agent.py:683 about untyped function bodies not being checked by default. In short: the immediate root cause is invalid operations according to static types (indexing and using len() on a union that can be a Callable), causing the 'Run type checks' step to fail."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/utilities/events/event_listener.py",
+                "line_number": 382,
+                "reason": "Mypy reported two errors at lines 382\u2013383: an index/subscript on a value typed 'str | Callable[..., Any]' and a len(...) call on the same union-typed value, which caused the type-check step to fail."
+            },
+            {
+                "file": "src/crewai/agent.py",
+                "line_number": 683,
+                "reason": "Mypy emitted a note referencing this file/line: 'By default the bodies of untyped functions are not checked, consider using --check-untyped-defs', indicating untyped function bodies may reduce type coverage and is relevant context for the failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Type Checking",
+                "subcategory": "Type Checking \u2013 mypy errors: indexing a union type and calling len() on a non-Sized union",
+                "evidence": "src/crewai/utilities/events/event_listener.py:382: error: Value of type \"str | Callable[..., Any]\" is not indexable; src/crewai/utilities/events/event_listener.py:383: error: Argument 1 to \"len\" has incompatible type \"str | Callable[..., Any]\"; expected \"Sized\""
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "type-checker",
+                "step": "Run type checks",
+                "command": "mypy src"
+            }
+        ],
+        "sha_fail": "0b704756f6d392dc02a8e2ce3dda9d719f128690",
+        "id": "564"
+    },
+    {
+        "error_context": [
+            "In step 'tests (3.13)' the pytest run (cd lib/crewai && uv run pytest ...) completed with 1 failed test (199 passed, 1 skipped). The failing test is tests/utilities/test_events.py::test_streaming_fallback_to_non_streaming which triggered a pydantic ValidationError when constructing an LLMStreamChunkEvent because the required field response_id was missing. Evidence: traceback shows pydantic_core._pydantic_core.ValidationError: 1 validation error for LLMStreamChunkEvent; response_id Field required [type=missing, input_value={'chunk': 'Test chunk 1'}], and the test emitted LLMStreamChunkEvent(chunk=\"Test chunk 1\").",
+            "The immediate root cause is a model/schema mismatch: the test/mock code constructs an event without response_id while the LLMStreamChunkEvent pydantic model requires it (error originates in src/crewai/events/types/llm_events.py where model initialization raised the ValidationError).",
+            "Additional warnings appeared during the run (PytestUnknownMarkWarning about unknown mark 'isolated' and multiple PydanticSerializationUnexpectedValue warnings) which suggest recent API/serialization changes or test setup inconsistencies that may have led tests to exercise code paths with stricter validation."
+        ],
+        "relevant_files": [
+            {
+                "file": "lib/crewai/tests/utilities/test_events.py",
+                "line_number": 852,
+                "reason": "Defines the failing test test_streaming_fallback_to_non_streaming; the test's mock emits LLMStreamChunkEvent(chunk=\"Test chunk 1\") which directly produced the ValidationError reported by pytest."
+            },
+            {
+                "file": "src/crewai/events/types/llm_events.py",
+                "line_number": 26,
+                "reason": "Implements LLMStreamChunkEvent pydantic model; traceback shows model initialization (super().__init__(**data)) raised the ValidationError because response_id was missing, indicating the model requires response_id but the test did not provide it."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Test Failure \u2013 unit test failed due to model validation",
+                "evidence": "FAILED tests/utilities/test_events.py::test_streaming_fallback_to_non_streaming - pydantic_core._pydantic_core.ValidationError: 1 validation error for LLMStreamChunkEvent"
+            },
+            {
+                "category": "Runtime Error",
+                "subcategory": "ValidationError during runtime (pydantic model initialization)",
+                "evidence": "pydantic_core._pydantic_core.ValidationError: response_id Field required [type=missing, input_value={'chunk': 'Test chunk 1'}]"
+            },
+            {
+                "category": "Configuration / Test Setup Warning",
+                "subcategory": "Pytest collection / serialization warnings indicating possible API/model changes",
+                "evidence": "PytestUnknownMarkWarning about unknown mark 'isolated' and multiple PydanticSerializationUnexpectedValue warnings reported in the run"
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests",
+                "step": "tests (3.13)",
+                "command": "cd lib/crewai && uv run pytest \\\n          --block-network \\\n          --timeout=30 \\\n          -vv \\\n          --splits 8 \\\n          --group ${{ matrix.group }} \\\n          $DURATIONS_ARG \\\n          --durations=10 \\\n          -n auto \\\n          --maxfail=3"
+            }
+        ],
+        "sha_fail": "0bef3aba9a6f8b20804f2234ab6392359091e965",
+        "id": "565"
+    },
+    {
+        "error_context": [
+            "Unable to determine root cause: no step-level log details were provided (the provided \"log_details\" array is empty). The workflow 'Run Tests' defines a single job 'tests' with these steps: 'Checkout code' (uses: actions/checkout@v4), 'Install uv' (uses: astral-sh/setup-uv@v3), 'Set up Python' (run: uv python install ${matrix.python-version}), 'Install the project' (run: uv sync --dev --all-extras), and 'Run tests' (run: uv run pytest --block-network --timeout=60 -vv). Any of those steps could have failed, but without per-step logs, commands, or error messages we cannot identify which step failed nor the failure reason."
+        ],
+        "relevant_files": [],
+        "error_types": [],
+        "failed_job": [],
+        "sha_fail": "0ca45f6bc5636846b3aeaf10321cb07218bc23f3",
+        "id": "566"
+    },
+    {
+        "error_context": [
+            "The CI run failed during the test execution step: in the tests matrix job for Python 3.13 the pytest run (step that runs the project's tests) exited with code 1 because a test failed. The immediate failure is in step 'tests (3.13)' which corresponds to the workflow step that runs pytest (Run tests (group ${{ matrix.group }} of 8)). The failing test tests/experimental/evaluation/test_agent_evaluator.py::TestAgentEvaluator::test_failed_evaluation raised a KeyError when the test attempted to access results[agent.role] for 'Test Agent' (\"(result,) = results[agent.role]\" -> \"KeyError: 'Test Agent'\"). Log output shows the evaluator failed earlier and did not populate the results mapping: captured stdout contains \"Error in goal_alignment evaluator: Forced evaluation failure\", indicating the evaluator errored before producing the expected result entry. Multiple pytest and runtime warnings were also emitted (PytestCollectionWarning about test classes with __init__, PytestRemovedIn9Warning, PytestUnknownMarkWarning, PytestReturnNotNoneWarning, and a RuntimeWarning: \"coroutine 'AsyncTool._run' was never awaited\"). Those warnings did not directly trigger the failing assertion but indicate possible test instability or async handling issues that may have contributed to the evaluator failure or to missing result population."
+        ],
+        "relevant_files": [
+            {
+                "file": "tests/experimental/evaluation/test_agent_evaluator.py",
+                "line_number": 268,
+                "reason": "Failing assertion occurs here: the test tries to read results[agent.role] and raises \"KeyError: 'Test Agent'\" at line 268, showing the test expected an evaluator result for that agent role which was not produced."
+            },
+            {
+                "file": "lib/crewai/tests/tools/test_base_tool.py",
+                "line_number": null,
+                "reason": "RuntimeWarning references an un-awaited coroutine \"coroutine 'AsyncTool._run' was never awaited\", implicating async tool execution that could interfere with evaluators or test async flow."
+            },
+            {
+                "file": "lib/crewai/tests/agents/test_lite_agent.py",
+                "line_number": null,
+                "reason": "Appears in PytestCollectionWarning and PytestReturnNotNoneWarning (test class with __init__, and tests returning non-None), indicating test-structure issues that may affect test discovery or behavior."
+            },
+            {
+                "file": "lib/crewai/tests/test_flow_persistence.py",
+                "line_number": null,
+                "reason": "Referenced by PytestCollectionWarning about a test class with __init__, showing collection warnings during the run that may reflect broader test stability issues."
+            },
+            {
+                "file": "lib/crewai/tests/test_llm.py",
+                "line_number": null,
+                "reason": "Log contains a PytestRemovedIn9Warning about marks applied to fixtures in this file, indicating deprecated pytest usage that could alter fixture behavior with newer pytest versions."
+            },
+            {
+                "file": "lib/crewai/tests/utilities/events/test_crewai_event_bus.py",
+                "line_number": null,
+                "reason": "Included in PytestCollectionWarning (test class with __init__), another collection warning contributing to test discovery/collection noise."
+            },
+            {
+                "file": "lib/crewai/tests/utilities/test_training_converter.py",
+                "line_number": null,
+                "reason": "Referenced by PytestCollectionWarning (test class with __init__), part of multiple collection warnings observed in the run."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Test Failure \u2013 KeyError when accessing test results mapping",
+                "evidence": "\"(result,) = results[agent.role]\" -> \"E   KeyError: 'Test Agent'\" (tests/experimental/evaluation/test_agent_evaluator.py:268)"
+            },
+            {
+                "category": "Runtime Error",
+                "subcategory": "Evaluator error prevented result population",
+                "evidence": "Captured stdout: \"Error in goal_alignment evaluator: Forced evaluation failure\" (evaluator reported failure before results were populated)"
+            },
+            {
+                "category": "Test Warnings / Configuration Issues",
+                "subcategory": "Pytest collection/compatibility and runtime warnings (could affect test stability)",
+                "evidence": "Multiple warnings: PytestCollectionWarning (classes with __init__), PytestRemovedIn9Warning, PytestUnknownMarkWarning, PytestReturnNotNoneWarning, and RuntimeWarning \"coroutine 'AsyncTool._run' was never awaited\""
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests",
+                "step": "tests (3.13)",
+                "command": "cd lib/crewai && uv run pytest \\\n          --block-network \\\n          --timeout=30 \\\n          -vv \\\n          --splits 8 \\\n          --group ${{ matrix.group }} \\\n          $DURATIONS_ARG \\\n          --durations=10 \\\n          -n auto \\\n          --maxfail=3"
+            }
+        ],
+        "sha_fail": "0d95b133ddb0fa253ec05ebaeef9ec901c6f7237",
+        "id": "567"
+    },
+    {
+        "error_context": [
+            "The CI run failed in the lint job: the 'Run Ruff on All Python Files' step invoked ruff and the linter reported numerous style/static-analysis violations across the codebase (predominantly F401 'imported but unused' and F841 'assigned-but-unused') and at least one E722 ('bare except') in production code. The linter output shows per-file summaries (for example, src/crewai/utilities/events/__init__.py reported 'Found 41 errors.'), and test modules (tests/storage/test_mem0_storage.py and tests/tools/test_base_tool.py) also produced F401/F841 diagnostics that contributed to the failure. Because these diagnostics were treated as fatal, the ruff run exited non-zero and the step terminated with '##[error]Process completed with exit code 123.' The E722 bare-except in src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py (line 77) is a nontrivial issue that requires a code change rather than simple removal of unused imports."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/utilities/events/__init__.py",
+                "line_number": 2,
+                "reason": "Produced a large cluster of unused-import errors; log explicitly reports 'Found 41 errors.' for this file, making it a primary contributor to the linter failure."
+            },
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
+                "line_number": 77,
+                "reason": "Contains a bare 'except:' flagged as E722 ('Do not use bare `except`') at line 77 \u2014 a nontrivial lint error shown in the log."
+            },
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
+                "line_number": 1,
+                "reason": "Reported F401 unused imports (e.g., typing.AsyncIterable and langchain_core.messages.ToolMessage) with 'Found 2 errors.' in the linter output."
+            },
+            {
+                "file": "src/crewai/cli/run_crew.py",
+                "line_number": 3,
+                "reason": "Reported F401 for unused typing imports ('List' and 'Optional') with 'Found 2 errors.' in the linter output."
+            },
+            {
+                "file": "src/crewai/utilities/events/base_event_listener.py",
+                "line_number": 2,
+                "reason": "Reported F401 for an unused 'logging.Logger' import ('Found 1 error.') contributing to the overall lint failure."
+            },
+            {
+                "file": "tests/storage/test_mem0_storage.py",
+                "line_number": 1,
+                "reason": "Test file reported multiple F401 unused-imports (e.g., os, Agent, Crew, Task) and 'Found 4 errors.'; test-code lint failures contributed to the step failure."
+            },
+            {
+                "file": "tests/tools/test_base_tool.py",
+                "line_number": 2,
+                "reason": "Test file reported several F401 unused-imports (inspect, unittest, typing items) with 'Found 5 errors.' and is part of the failing linter output."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting / Linting",
+                "subcategory": "Static analysis \u2013 unused imports and assigned-but-unused variables (pyflakes/ruff)",
+                "evidence": "Multiple 'F401 ... imported but unused' and 'F841 assigned but unused' messages across many files; examples include 'Found 41 errors.' for src/crewai/utilities/events/__init__.py and per-file F401 entries."
+            },
+            {
+                "category": "Code Quality / Linting",
+                "subcategory": "Unsafe/poor practice \u2013 bare except (E722)",
+                "evidence": "Explicit 'src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py:77:21: E722 Do not use bare `except`' displayed in the log."
+            },
+            {
+                "category": "CI Failure",
+                "subcategory": "Linter step exited non-zero",
+                "evidence": "The run ended with '##[error]Process completed with exit code 123.' after many 'Found N errors.' linter messages indicating the CI considered the lint failures fatal."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "echo \"${{ steps.all-files.outputs.files }}\" \\\n            | tr ' ' '\\n' \\\n            | grep -v 'src/crewai/cli/templates/' \\\n            | grep -v '/tests/' \\\n            | xargs -I{} uv run ruff check \"{}\""
+            }
+        ],
+        "sha_fail": "10a55bd2102c1f482ef8f7a0d6efd2f3776d3cf2",
+        "id": "568"
+    },
+    {
+        "error_context": [
+            "The CI run failed because the linting step reported widespread ruff violations and exited non-zero. The failing step in the workflow is the 'Run Ruff on All Python Files' step of the 'lint' job (log step labeled 'lint'), which ran ruff across repository Python files and produced many per-file \"Found N errors.\" messages and ended with \"##[error]Process completed with exit code 123.\" Checkout, environment setup, and dependency installation completed successfully; the blocker is the linter failures reported when running ruff.",
+            "Ruff reported multiple categories of issues across source and test files (unused imports F401, bare except E722, module-level/import-order E402, assigned-but-unused locals F841, redefinition F811, comparison-to-None style E711, etc.). Some issues are automatically fixable with `--fix`, but others require manual changes or unsafe fixes (log notes: \"1 fixable with the `--fix` option.\" and \"No fixes available (13 hidden fixes can be enabled with the `--unsafe-fixes` option).\"), so the errors were treated as blocking and caused the CI step to fail."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
+                "line_number": 1,
+                "reason": "ruff reported unused-imports (F401) including `typing.AsyncIterable` and other unused imports; log shows this file \"Found 2 errors.\" which contributed to the lint failure."
+            },
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
+                "line_number": 77,
+                "reason": "ruff flagged a bare `except:` (E722) at line 77 (exception swallowed with `pass`); the file logged \"Found 1 error.\" and is a direct lint violation."
+            },
+            {
+                "file": "src/crewai/agents/crew_agent_executor.py",
+                "line_number": 1,
+                "reason": "Top-of-file unused imports reported (F401 for `json`, `re`); the file logged \"Found 2 errors.\" contributing to the overall lint failures."
+            },
+            {
+                "file": "src/crewai/telemetry/telemetry.py",
+                "line_number": 29,
+                "reason": "ruff reported module-level import ordering error (E402) around line 29 (imports not at top); the file shows \"Found 1 error.\""
+            },
+            {
+                "file": "src/crewai/utilities/events/__init__.py",
+                "line_number": 2,
+                "reason": "Large number of unused-imports/re-export warnings were reported (many event names); the log shows this file \"Found 41 errors.\", making it a major contributor to the lint failure."
+            },
+            {
+                "file": "src/crewai/tools/agent_tools/add_image_tool.py",
+                "line_number": 1,
+                "reason": "Top-level unused typing imports (F401 for `Dict`, `Union`) at line 1; file logged \"Found 2 errors.\""
+            },
+            {
+                "file": "tests/task_test.py",
+                "line_number": 840,
+                "reason": "Multiple assigned-but-unused local variable errors (F841) reported in tests (e.g. `task`); file shows \"Found 13 errors.\", indicating test-style violations flagged by the linter."
+            },
+            {
+                "file": "tests/llm_test.py",
+                "line_number": 225,
+                "reason": "Contains unused import (F401) and comparison-to-None style issue (E711) at line 225; file logged \"Found 2 errors.\""
+            },
+            {
+                "file": "tests/crew_test.py",
+                "line_number": 16,
+                "reason": "Test file reported a redefinition (F811) and multiple unused-imports; log shows \"Found 5 errors.\", so test-file lint failures contributed to the CI failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting errors reported by ruff (unused imports, bare except, import-order, assigned-but-unused variables, redefinitions, comparison style)",
+                "evidence": "Multiple diagnostics in the log such as \"F401 `...` imported but unused\", \"E722 Do not use bare `except`\", \"E402 Module level import not at top of file\" and repeated \"Found N errors.\" across many files."
+            },
+            {
+                "category": "Tests (style issues)",
+                "subcategory": "Lint violations inside test files (F841 assigned-but-unused, F811 redefinition, E711 comparison to None)",
+                "evidence": "Test-specific entries like \"tests/task_test.py ... Found 13 errors.\", \"F841 Local variable `task` is assigned to but never used\", and \"F811 Redefinition of unused `CacheHandler'\" in test files."
+            },
+            {
+                "category": "CI / Job Failure",
+                "subcategory": "Non-zero exit due to lint failures",
+                "evidence": "The lint step terminated with a non-zero exit code: \"##[error]Process completed with exit code 123.\" following the ruff reports."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "echo \"${{ steps.all-files.outputs.files }}\" \\\n  | tr ' ' '\\n' \\\n  | grep -v 'src/crewai/cli/templates/' \\\n  | grep -v '/tests/' \\\n  | xargs -I{} uv run ruff check \"{}\""
+            }
+        ],
+        "sha_fail": "130a7fc1e0a80a2f0f25f03663afd7fe38493e2c",
+        "id": "569"
+    },
+    {
+        "error_context": [
+            "The CI 'lint' job failed because the Ruff linter (run in the workflow step 'Run Ruff on All Python Files') reported multiple import-block ordering/formatting errors (I001) across several files and the lint step exited with a non-zero code. Evidence: log shows lines such as \"manual_test_csv_update.py:7:1: I001 [*] Import block is un-sorted or un-formatted\" and similar I001 messages for multiple __init__.py files, each followed by \"Found 1 error.\" and \"[*] 1 fixable with the `--fix` option.\" The run terminated immediately after the linter output with \"##[error]Process completed with exit code 123.\", indicating the pipeline treated the linter failures as a fatal error. The workflow ran Ruff via an xargs call invoking `uv run ruff check \"{}\"` on each Python file, which is the command that produced the linter output and the non-zero termination."
+        ],
+        "relevant_files": [
+            {
+                "file": "manual_test_csv_update.py",
+                "line_number": 7,
+                "reason": "Ruff reported an I001 import-block ordering/formatting error at line 7: \"manual_test_csv_update.py:7:1: I001 [*] Import block is un-sorted or un-formatted\" and \"Found 1 error.\"; marked fixable with `--fix`."
+            },
+            {
+                "file": "src/crewai/flow/__init__.py",
+                "line_number": 1,
+                "reason": "Ruff reported an I001 import-block ordering/formatting error at line 1 for this file with \"Found 1 error.\" and \"[*] 1 fixable with the `--fix` option.\""
+            },
+            {
+                "file": "src/crewai/memory/__init__.py",
+                "line_number": 1,
+                "reason": "Ruff reported an I001 import-block ordering/formatting error at line 1 and marked it fixable; the file is explicitly listed in the lint errors."
+            },
+            {
+                "file": "src/crewai/utilities/__init__.py",
+                "line_number": 1,
+                "reason": "Ruff reported an I001 import-block ordering/formatting error at line 1 with the import block shown and noted it is fixable with `--fix`."
+            },
+            {
+                "file": "src/crewai/utilities/events/__init__.py",
+                "line_number": 1,
+                "reason": "Ruff reported an I001 import-block ordering/formatting error at line 1 with the detailed import list and \"Found 1 error.\"; marked fixable with `--fix`."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linter errors \u2013 import block ordering/formatting (ruff I001)",
+                "evidence": "\"manual_test_csv_update.py:7:1: I001 [*] Import block is un-sorted or un-formatted\" and similar I001 messages for multiple __init__.py files; each followed by \"Found 1 error.\" and \"[*] 1 fixable with the `--fix` option.\""
+            },
+            {
+                "category": "Configuration / CI Failure",
+                "subcategory": "Non-zero exit from CI step after linting",
+                "evidence": "Final log line: \"##[error]Process completed with exit code 123.\" occurring immediately after the ruff output, indicating the lint step failed the job."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "echo \"${{ steps.all-files.outputs.files }}\" | tr ' ' '\\n' | grep -v 'src/crewai/cli/templates/' | grep -v '/tests/' | xargs -I{} uv run ruff check \"{}\""
+            }
+        ],
+        "sha_fail": "14579a7861ec02a3c8f497fcc7113eae9341dccf",
+        "id": "570"
+    },
+    {
+        "error_context": [
+            "The CI run failed in the 'lint' job when the step 'Run Ruff on All Python Files' executed the ruff linter across the repository and returned a non-zero exit. Ruff reported many static-analysis violations (unused imports F401, unused local assignments F841, a bare except E722, and a comparison-to-None style issue E711) across multiple files \u2014 for example, src/crewai/utilities/events/__init__.py reported \"Found 41 errors.\" \u2014 and the step terminated with \"##[error]Process completed with exit code 123.\"",
+            "Concretely, the workflow creates a virtualenv and installs dependencies, then runs the command that pipes all Python files into `uv run ruff check`. Because linter findings are enforced as errors, the aggregated ruff failures caused the job to fail (evidence: repeated ruff messages such as \"F401 ... imported but unused\", \"F841 Local variable ... is assigned to but never used\", \"E722 Do not use bare `except`\", and the final non-zero exit)."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/utilities/events/__init__.py",
+                "line_number": 2,
+                "reason": "Major contributor to the lint failure: ruff reported many unused-import/re-export issues and the run printed \"Found 41 errors.\" for this file."
+            },
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
+                "line_number": 1,
+                "reason": "Contains unused-import(s) flagged by ruff (F401: e.g., `typing.AsyncIterable` at line 1 and other unused imports), with ruff reporting \"Found 2 errors.\" for this file."
+            },
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
+                "line_number": 77,
+                "reason": "Contains a bare except that ruff flagged (E722: \"Do not use bare `except`\") contributing to the lint failure."
+            },
+            {
+                "file": "src/crewai/agents/crew_agent_executor.py",
+                "line_number": 1,
+                "reason": "Header-level unused imports reported by ruff (F401 for `json` and `re`), counted toward the total lint errors."
+            },
+            {
+                "file": "src/crewai/tools/agent_tools/add_image_tool.py",
+                "line_number": 1,
+                "reason": "Header unused-import(s) flagged by ruff (F401, e.g., `typing.Union`) and included in the linter error output."
+            },
+            {
+                "file": "tests/llm_test.py",
+                "line_number": 225,
+                "reason": "Test file had both an unused-import (F401) and a style error E711 at line 225 (comparison to `None` using `==`), which ruff reported and which caused the lint step to fail."
+            },
+            {
+                "file": "tests/task_test.py",
+                "line_number": 840,
+                "reason": "Contains multiple instances of local variables assigned but never used (F841) reported by ruff (e.g., at line 840), adding to the total lint errors."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting errors reported by ruff (unused imports, unused assignments, bare excepts, style issues)",
+                "evidence": "Ruff messages in logs: \"F401 `...` imported but unused\", \"F841 Local variable `...` is assigned to but never used\", and \"E722 Do not use bare `except`\"; aggregated \"Found 41 errors.\" for a file."
+            },
+            {
+                "category": "CI Failure",
+                "subcategory": "Non-zero exit due to enforced linter errors",
+                "evidence": "The lint step ended with: \"##[error]Process completed with exit code 123.\" after ruff reported many errors, causing the job to fail."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "echo \"${{ steps.all-files.outputs.files }}\" \\\n            | tr ' ' '\\n' \\\n            | grep -v 'src/crewai/cli/templates/' \\\n            | grep -v '/tests/' \\\n            | xargs -I{} uv run ruff check \"{}\""
+            }
+        ],
+        "sha_fail": "148c3bae1aa467fb5a22a91f7fa6e4f434032ba1",
+        "id": "571"
+    },
+    {
+        "error_context": [
+            "The CI run failed because the lint job reported widespread linting violations when running ruff, causing the linter step to exit non-zero. The failure originated in the job 'lint' during the step 'Run Ruff on All Python Files' which executed ruff over repository Python files. Logs show many F401 (unused-import) errors across library and test files (e.g. \"Found 41 errors.\" in src/crewai/utilities/events/__init__.py and multiple files flagged), plus at least one non-auto-fixable error (E722 bare except in src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py at line 77) and an E711 comparison-to-None in tests/llm_test.py. The runner terminated with a non-zero exit code (\"Process completed with exit code 123.\"), consistent with ruff failing the step. Some issues are fixable with ruff's --fix option (noted in logs), but the bare except requires manual code change."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
+                "line_number": 77,
+                "reason": "Contains an E722 \"Do not use bare `except`\" lint error at line 77 (explicitly called out in logs) \u2014 a non-auto-fixable issue contributing to the lint failure."
+            },
+            {
+                "file": "src/crewai/utilities/events/__init__.py",
+                "line_number": 2,
+                "reason": "Reported a large number of F401 unused-import errors (logs show \"Found 41 errors.\"), making this file a major contributor to the ruff failure."
+            },
+            {
+                "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
+                "line_number": 1,
+                "reason": "Flagged for F401 unused imports at the top of the file (e.g., imported but unused types), contributing to the overall lint error count."
+            },
+            {
+                "file": "src/crewai/tools/base_tool.py",
+                "line_number": 2,
+                "reason": "Reported F401 unused import (`warnings`) at line 2 and was included in the linter output counted toward failures."
+            },
+            {
+                "file": "tests/llm_test.py",
+                "line_number": 225,
+                "reason": "Test file flagged for unused imports and an E711 comparison-to-None (use 'is'/'is not'), indicating lint violations in tests that caused ruff to fail the job."
+            },
+            {
+                "file": "tests/storage/test_mem0_storage.py",
+                "line_number": 1,
+                "reason": "Reported multiple F401 unused-import errors (four errors found) and was included in the ruff failure summary."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting errors reported by ruff (unused imports, bare except, comparison style)",
+                "evidence": "Logs show many F401 unused-imports, an E722 bare except in structured_output_converter.py, E711 comparisons to None in tests, and repeated \"Found X errors.\" messages; logs also note some issues are \"fixable with the `--fix` option.\""
+            },
+            {
+                "category": "Configuration Error",
+                "subcategory": "CI step failed due to non-zero exit status",
+                "evidence": "\"##[error]Process completed with exit code 123.\" indicating the lint step exited non-zero after ruff reported violations."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "lint",
+                "step": "Run Ruff on All Python Files",
+                "command": "echo \"${{ steps.all-files.outputs.files }}\" \\\n            | tr ' ' '\\n' \\\n            | grep -v 'src/crewai/cli/templates/' \\\n            | grep -v '/tests/' \\\n            | xargs -I{} uv run ruff check \"{}\""
+            }
+        ],
+        "sha_fail": "166bfec208af6891791f6eb63f13d346b460b0a6",
+        "id": "572"
+    },
+    {
+        "error_context": [
+            "In the 'Run tests' step (reported as tests (3.11)), pytest ran and produced 1 failing test: tests/test_task_context_type_annotation.py::TestTaskContextTypeAnnotation::test_task_context_validation_rejects_invalid_types. The immediate root cause is an AttributeError raised in src/crewai/utilities/config.py where code does `config = values.get(\"config\", {})` but `values` is a string ('not'), producing \"AttributeError: 'str' object has no attribute 'get'\". The test invoked Task(..., context=[\"not\", \"tasks\"]) and expected a ValidationError, but the bad type reached process_config via src/crewai/task.py which led to the unexpected AttributeError instead of the expected validation path.",
+            "Concurrent/background issues were observed during the same test run: multiple PytestUnhandledThreadExceptionWarning entries show VCR/pytest-recording failures in background threads (e.g., vcr.errors.CannotOverwriteExistingCassetteException: \"Can't overwrite existing cassette (...) in your current record mode ('none'). No match for the request (...) was found.\" and RuntimeError: \"Network is disabled\"). These are runtime/threaded test-recording/environment issues that generate warnings and can cause flakiness but are reported as thread warnings rather than the direct cause of the failing unit test.",
+            "Environment/tooling warnings occurred during setup: a GitHub Actions cache restore emitted \"Failed to restore: Cache service responded with 400\" and deprecation/configuration warnings (e.g., `tool.uv.dev-dependencies` deprecated and pytest-asyncio configuration unset). These are configuration/environment warnings present in the same run but not the proximate cause of the test-level AttributeError."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/utilities/config.py",
+                "line_number": 19,
+                "reason": "Stack trace shows the AttributeError originates here: code calls `values.get(\"config\", {})` but `values` is a string ('not'), causing \"AttributeError: 'str' object has no attribute 'get'\"."
+            },
+            {
+                "file": "src/crewai/task.py",
+                "line_number": 234,
+                "reason": "On the failing call path, process_model_config in this file calls process_config (the utility that raised the exception), linking the test invocation to the utility error."
+            },
+            {
+                "file": "tests/test_task_context_type_annotation.py",
+                "line_number": 114,
+                "reason": "This test invocation (Task(... context=[\"not\", \"tasks\"])) is where the failure is triggered; the test expected a ValidationError but the call raised an AttributeError at runtime."
+            },
+            {
+                "file": "tests/utilities/cassettes/test_crew_emits_start_task_event.yaml",
+                "line_number": null,
+                "reason": "Referenced by repeated VCR errors in background threads (CannotOverwriteExistingCassetteException), indicating test-recording cassette mismatches contributing to thread warnings and flaky behavior."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Test Failure \u2013 AttributeError in unit test (unexpected exception instead of ValidationError)",
+                "evidence": "FAILED tests/test_task_context_type_annotation.py::TestTaskContextTypeAnnotation::test_task_context_validation_rejects_invalid_types - AttributeError: 'str' object has no attribute 'get'"
+            },
+            {
+                "category": "Runtime Error",
+                "subcategory": "Unhandled thread exceptions \u2013 VCR cassette mismatch and network guard errors in background threads",
+                "evidence": "vcr.errors.CannotOverwriteExistingCassetteException: Can't overwrite existing cassette (...) in your current record mode ('none'). No match for the request (...) was found.; RuntimeError: Network is disabled; PytestUnhandledThreadExceptionWarning entries"
+            },
+            {
+                "category": "Dependency / Environment",
+                "subcategory": "CI cache restore failure / configuration warnings",
+                "evidence": "##[warning]Failed to restore: Cache service responded with 400; No GitHub Actions cache found for key: ..."
+            },
+            {
+                "category": "Configuration Warning",
+                "subcategory": "Test tooling deprecation / pytest-asyncio configuration unset",
+                "evidence": "/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option \"asyncio_default_fixture_loop_scope\" is unset.; The `tool.uv.dev-dependencies` field ... is deprecated"
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests",
+                "step": "tests (3.11)",
+                "command": "uv run pytest --block-network --timeout=60 -vv"
+            }
+        ],
+        "sha_fail": "189b3bfbf49628da389450b64d98d2be2f45f8d9",
+        "id": "573"
+    },
+    {
+        "error_context": [
+            "In the tests job, during the 'Run tests' step (matrix variant 'tests (3.11)'), pytest aborted test collection because an import-time NameError occurred in package import. The traceback shows test collection imported the package (src/crewai/__init__.py -> src/crewai/agent.py -> src/crewai/tools/__init__.py -> src/crewai/tools/base_tool.py) and failed where a class field annotation uses 'Optional' without importing/defining it. This produced 'NameError: name 'Optional' is not defined' at src/crewai/tools/base_tool.py:21, which propagated across many test modules and resulted in '57 errors' and exit code 2. Non-fatal CI log messages (a PytestDeprecationWarning and a cache-restore 400 warning) appear in the log but are not the cause of the import-time failures; the actionable fix is to define or import Optional (e.g., 'from typing import Optional' or use 'str | None') in src/crewai/tools/base_tool.py so the package can be imported and tests can be collected."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/crewai/tools/base_tool.py",
+                "line_number": 21,
+                "reason": "Import-time NameError originates here: class EnvVar declares 'default: Optional[str] = None' but 'Optional' is not defined/imported, causing package import to fail and blocking pytest collection."
+            },
+            {
+                "file": "src/crewai/tools/__init__.py",
+                "line_number": 1,
+                "reason": "This module imports BaseTool from .base_tool (e.g. 'from .base_tool import BaseTool, tool'), bringing the failing base_tool.py into the package import chain and triggering the NameError during test collection."
+            },
+            {
+                "file": "src/crewai/__init__.py",
+                "line_number": 3,
+                "reason": "Top-level package import (trace shows 'from crewai.agent import Agent') begins the import chain that loads src/crewai/tools/base_tool.py and surfaces the NameError during pytest collection."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Runtime Error",
+                "subcategory": "NameError during import (undefined symbol 'Optional')",
+                "evidence": "Traceback: 'E   NameError: name 'Optional' is not defined' at src/crewai/tools/base_tool.py:21 where 'default: Optional[str] = None' is declared."
+            },
+            {
+                "category": "Test Failure",
+                "subcategory": "Collection aborted due to import-time errors",
+                "evidence": "Pytest reported '57 errors in 8.19s' and collection was interrupted because package import failed during test collection."
+            },
+            {
+                "category": "Configuration Error",
+                "subcategory": "CI/tooling warnings (non-fatal)",
+                "evidence": "Log contains a PytestDeprecationWarning about 'asyncio_default_fixture_loop_scope' and a cache restore message 'Failed to restore: Cache service responded with 400'\u2014present in logs but not the root cause of the import error."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "tests",
+                "step": "Run tests",
+                "command": "uv run pytest --block-network --timeout=60 -vv"
+            }
+        ],
+        "sha_fail": "18ec9967ccaf892188f1d7275dc36ec6b1b0e06e",
+        "id": "574"
     },
     {
         "sha_fail": "9b092571b566f63ef4452119952a64f003121409",
