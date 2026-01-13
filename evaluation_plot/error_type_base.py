@@ -360,7 +360,7 @@ def run_error_type_accuracy_evaluation(
         0.01,
         0.98,
         f"Dataset rows: {overall['total_dataset']}\n"
-        f"Attempted: {overall['attempted']}  Not pushed: {overall['not_pushed']}\n"
+        # f"Attempted: {overall['attempted']}  Not pushed: {overall['not_pushed']}\n"
         f"Passed: {overall['passed']}  Failed: {overall['failed']}  Waiting: {overall['waiting']}\n"
         f"Accuracy(passed/attempted): {overall['accuracy_percent_attempted']}%\n"
         f"Total error labels: {total_error_labels}\n"

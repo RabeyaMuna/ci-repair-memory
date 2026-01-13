@@ -31,7 +31,7 @@ def count_tokens(text: str, model: str = "cl100k_base") -> int:
     """
     
     enc = _get_encoder_from_model(model)
-    return len(enc.encode(text or ""))
+    return len(enc.encode(text or "", disallowed_special=()))
 
 
 def estimate_tokens(text: str, model: str = "gpt-4o-mini") -> int:
@@ -68,7 +68,7 @@ def chunk_log_by_tokens(
 
     for line in lines:
         # token count per line (including a newline approximation to reduce overflow risk)
-        line_tokens = len(enc.encode(line)) + 1
+        line_tokens = len(enc.encode(line, disallowed_special=())) + 1
 
         # If adding this line exceeds the budget, flush current chunk first
         if current_lines and (current_tokens + line_tokens > max_tokens):
@@ -80,7 +80,7 @@ def chunk_log_by_tokens(
                     current_lines[-overlap:] if len(current_lines) >= overlap else current_lines
                 )
                 current_lines = list(overlap_lines)
-                current_tokens = sum((len(enc.encode(l)) + 1) for l in current_lines)
+                current_tokens = sum((len(enc.encode(l, disallowed_special=())) + 1) for l in current_lines)
             else:
                 current_lines = []
                 current_tokens = 0

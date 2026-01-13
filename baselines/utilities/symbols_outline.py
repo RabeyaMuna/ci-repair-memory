@@ -32,6 +32,39 @@ def _node_span(node: ast.AST) -> Tuple[int, int]:
     end = getattr(node, "end_lineno", start) or start
     return start, end
 
+def _decorator_block(fn: ast.AST) -> Optional[Dict[str, Any]]:
+    """
+    Create a synthetic outline node that covers all decorator lines for a function.
+
+    Covers from the first decorator line to the line immediately before the function def.
+    Returns None if there are no decorators or span cannot be computed safely.
+    """
+    decs = getattr(fn, "decorator_list", None) or []
+    if not decs:
+        return None
+
+    fn_line = getattr(fn, "lineno", None)
+    if not isinstance(fn_line, int):
+        return None
+
+    dec_lines = [getattr(d, "lineno", None) for d in decs]
+    dec_lines = [d for d in dec_lines if isinstance(d, int)]
+    if not dec_lines:
+        return None
+
+    start = min(dec_lines)
+    end = fn_line - 1
+    if end < start:
+        return None
+
+    return {
+        "kind": "decorator_block",
+        "name": "decorators",
+        "start": start,
+        "end": end,
+        "children": [],
+    }
+
 def _method_info(fn: ast.AST) -> Dict[str, Any]:
     start, end = _node_span(fn)
     decos = [_name_of_decorator(d) for d in getattr(fn, "decorator_list", [])]
@@ -91,7 +124,7 @@ def _class_children(c: ast.ClassDef) -> List[Dict[str, Any]]:
     """
     Return GitHub-style class children:
     - nested classes (recursively)
-    - methods/functions
+    - methods/functions (with decorator_block if present)
     - const assignments
     - import blocks inside the class
     """
@@ -108,6 +141,9 @@ def _class_children(c: ast.ClassDef) -> List[Dict[str, Any]]:
                 "children": _class_children(n),
             })
         elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            dec_block = _decorator_block(n)
+            if dec_block:
+                items.append(dec_block)
             items.append(_method_info(n))
         elif isinstance(n, (ast.Assign, ast.AnnAssign)):
             for nm in _var_targets(n):
@@ -138,7 +174,7 @@ def _class_children(c: ast.ClassDef) -> List[Dict[str, Any]]:
 def build_outline(src: str) -> List[Dict[str, Any]]:
     """
     GitHub-style symbols outline (JSON-friendly list).
-    Each item: {kind:'const'|'func'|'class'|'import_block', name, start, end, children:[...]}
+    Each item: {kind:'const'|'func'|'class'|'import_block'|'decorator_block', name, start, end, children:[...]}
     """
     try:
         tree = ast.parse(src)
@@ -158,6 +194,9 @@ def build_outline(src: str) -> List[Dict[str, Any]]:
                 "children": _class_children(node),
             })
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            dec_block = _decorator_block(node)
+            if dec_block:
+                outline.append(dec_block)
             outline.append(_method_info(node))
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
             for nm in _var_targets(node):
@@ -192,6 +231,7 @@ def format_outline(outline: List[Dict[str, Any]], *, max_lines: int = 2000) -> s
         "func": "func",
         "const": "const",
         "import_block": "import",
+        "decorator_block": "decorators",
     }
     lines: List[str] = ["Symbols"]
 

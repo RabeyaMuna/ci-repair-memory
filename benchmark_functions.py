@@ -130,7 +130,11 @@ def push_repo(repo, credentials, benchmark_owner, user_branch_name):
     origin_url = (
         f"https://{username}:{token}@github.com/{benchmark_owner}/{repo.name}.git"
     )
-    origin = repo.create_remote("origin", url=origin_url)
+    try:
+        origin = repo.remote("origin")
+        origin.set_url(origin_url)
+    except Exception:
+        origin = repo.create_remote("origin", origin_url)
     repo.git.push("--force", "--set-upstream", origin, repo.head.ref)
     # Tried this, but it did not work - returned an error
     """

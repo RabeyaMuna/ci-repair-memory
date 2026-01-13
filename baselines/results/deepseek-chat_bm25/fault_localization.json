@@ -1443,26 +1443,6 @@
         ]
     },
     {
-        "sha_fail": "0d26cc1482ff5080ec579b17b29f22657a20c562",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "7440ca51fb0ff3fb94a725fcd278f7fd5ea77c04",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "b94b7e71f74eb6e8c4ef7f299c24a20f5cded2f8",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "454164496177fd8b9d6aad4f106e68e816becb6c",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "537b57d99d10ecbcf8a9835bda18a73ee284d88f",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "68ddb2559e616656301858d441a523ebd64a710f",
         "fault_localization_data": [
             {
@@ -2327,10 +2307,6 @@
         ]
     },
     {
-        "sha_fail": "0b08b8e82f8e67d89dd4335e63ecd95ab6f5f048",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "3137ef65975fc93e9e82b130e545028223cef408",
         "fault_localization_data": [
             {
@@ -2352,10 +2328,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "616eb3b10db94cf4a4c209377f36b2ce995bd01c",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "d4ca3713b196de2aee52fd0344d0eb9a9eaada64",
@@ -2846,14 +2818,6 @@
         ]
     },
     {
-        "sha_fail": "1afe2c9cb192d3760d59190cc7892e7ac37d5e27",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "7f351340260c165e18ccd7c83dc783bb371b3797",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "897a5deb406b53ea2f4675cdf0c2f1fa93fc6238",
         "fault_localization_data": [
             {
@@ -2963,10 +2927,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "99ad8a351bb884f1e398c1d85c62d6b6e0bdd67e",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "44b56e01683771fb4ca583f9ea57c67dcee8e779",
@@ -4710,10 +4670,6 @@
         ]
     },
     {
-        "sha_fail": "2201be21886bb82201f3c3487f5f1468f6e6ac81",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "785242b646b54a33547ff1298cb945a05c24aa4c",
         "fault_localization_data": [
             {
@@ -5614,10 +5570,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "386bf6f0815368b78261be43bf90e203dfe9c13f",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "d85078a610cbad69e8561060229aa8f35b4e1163",
@@ -6620,10 +6572,6 @@
         ]
     },
     {
-        "sha_fail": "d340b3a337398d539f38101282d09dd5e9966354",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "d78ebf9508e112a8d2526ec26bcc37d8e8a2bfa2",
         "fault_localization_data": [
             {
@@ -6852,10 +6800,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "e36b14dc3ee04beb3f0d8c2b89252eb864ea5c1a",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "ede117552a48bee7f674fbfab87d9586f2fabe19",
@@ -7508,10 +7452,6 @@
         ]
     },
     {
-        "sha_fail": "5548acee0b31576cae313185aa3c859f88818939",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "73f1acb9539c928be57de3ecb4e9d2b49da62d9f",
         "fault_localization_data": [
             {
@@ -7745,26 +7685,6 @@
         ]
     },
     {
-        "sha_fail": "07c55e7c8bee5b60d9d9647d647f89bec137ef4d",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "1366645090f139b99f4606faf8cb1f054330213e",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "14df8e5918cb5d6c4ca62d23b5a1f653a0e92212",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "424e2bec035589620a6ae25f51d4f389adc3a12e",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "444017d8b29540c809f8a7b6479fcb124f229ab8",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "44cc14aa3f36dbd14049106933dcd12bdb1fead4",
         "fault_localization_data": [
             {
@@ -7786,10 +7706,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "44eb41928c49ec0438728ea76283495461dc2e19",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "5f98672f68c7f4acdf3e6f68fd79e66b56d0b529",
@@ -7815,10 +7731,6 @@
         ]
     },
     {
-        "sha_fail": "63b90b943bab2b7897e968fcea280f6a8ecc229b",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "66718a2530fcc65c0adfa0a6ea380e1978c12ebe",
         "fault_localization_data": [
             {
@@ -7840,10 +7752,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "6aec23d104a077af68fbcf236630ed69d6d965ac",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "6aee1d58e8ce6402c48325c8c479dae84596d352",
@@ -7892,14 +7800,6 @@
         ]
     },
     {
-        "sha_fail": "992b9a36ee14ce62ac8639c1ec88ba83e375e525",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "a02c53a0eed80e7332e03b39bac351260afde289",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "a6517d5fc23bbb6be3424924264025b961df3fe2",
         "fault_localization_data": [
             {
@@ -7923,10 +7823,6 @@
         ]
     },
     {
-        "sha_fail": "a7a139ca8f5d0acdebb205d469166fbe034c2372",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "af6a0b457a537777e1e18111b49dbe9abfffb2cd",
         "fault_localization_data": [
             {
@@ -7948,14 +7844,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "b2a09db583937f76160cef9629dc7d172b86dbed",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "c3a3944a6d50067aa5937e22e97eac0a64631f47",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "cbb7561e4e0d81a027fbd7ff6482fea13ee17398",
@@ -7982,22 +7870,6 @@
     },
     {
         "sha_fail": "d4593aedbc14dbd885f63009dcb0a4b962a04be6",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "da7ae359227a089cedf0b7aba53962766e7eb0b2",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "df0344c9bd80f87fed394e512d67a3138a1d8176",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "ed13d89504c50a1b3f5d9757b74c7aaf38356150",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "f231d50356ccfb76ed54d27e9fd32dd40e824f28",
         "fault_localization_data": []
     },
     {
@@ -8372,10 +8244,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "166f99e7023eb1ab623926aa8ce743e7fb2a6d50",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "23546b560fa453bd3fb05e7b8661bf77f77fb1a6",
@@ -11112,10 +10980,6 @@
         ]
     },
     {
-        "sha_fail": "37c595ac6f390dbccbcfa20f742faa36f34b194a",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "39d992d415c335b61f670c31a68c0edc578e5062",
         "fault_localization_data": [
             {
@@ -11570,10 +11434,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "5f24cca27fe01045314ee6ddb7619e164ada0c91",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "601a9c6986f1659f3051449238c0c0c5d2ef4124",
@@ -12082,14 +11942,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "754f4d3afe097bd3d360bb8a186acd95cc2542ea",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "78c5d662bf2145c91356e5185db05a17950b3dc4",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "7b8834b321a97bc57d7a5ac82680c24aff793b91",
@@ -13523,10 +13375,6 @@
         ]
     },
     {
-        "sha_fail": "ae364459a503a2867eeef3ede75f24ad3b5d5839",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "aef89d7979ff37db1e5e5a75265767e0c460b0ba",
         "fault_localization_data": [
             {
@@ -13917,10 +13765,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "38a33e76e84f68df9d4d0387dfff2887bace39a2",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "7a4b27be84c300a67cc8dea17a3b3d4e75688dd8",
@@ -14503,10 +14347,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "e6f35571a577e5f0d2e2754871242438de3404de",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "b94d6dc7134d3bf6b510a164f1b7f02e4610cdbc",
@@ -15220,14 +15060,6 @@
         ]
     },
     {
-        "sha_fail": "5e68d7e73930685c3ec5716e576e8ff13ffa53f4",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "44464700849670aefca66ee42eb7e75abd5c1ba3",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "789b7649d036666d8e2e07913e97a1de7a340f8b",
         "fault_localization_data": [
             {
@@ -15597,10 +15429,6 @@
         ]
     },
     {
-        "sha_fail": "5f349d507ced55bbb24469127b0eb9ac571f023c",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "a206d0817acd2948f4ed3f0af8402a2a368391dc",
         "fault_localization_data": [
             {
@@ -15791,10 +15619,6 @@
         ]
     },
     {
-        "sha_fail": "7fb5fd395695464d34fe0cf49d8b663529859fdf",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "4f79881e6cd35592692c7a7c1cb1d639eb70a009",
         "fault_localization_data": [
             {
@@ -15840,10 +15664,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "9fa62424e0f94d17a247b63898651667216075a5",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "73e5958ee67f4f9a6a822b25d4c39bae81f1b6f4",
@@ -17036,14 +16856,6 @@
         ]
     },
     {
-        "sha_fail": "b7ec6c4678dec0418367309d4cec8a94da0feff8",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "2fa979886fa74265de0b939c24910272ff166fd6",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "275119c05eb95555e52b5c4b25ee27baf150fbe6",
         "fault_localization_data": [
             {
@@ -18181,10 +17993,6 @@
         ]
     },
     {
-        "sha_fail": "8f705513f0244f89d4b0c186f76c7d7b0da37c85",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "938a4fb3f5dbe7e6ae75e049ecc5059bd25c14bf",
         "fault_localization_data": [
             {
@@ -18484,10 +18292,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "bddc230cc11627fdbb8bdd98b67489afcad87d98",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "daad35b9c60770a655eaaea4565bf81f63ae1b38",
@@ -19063,14 +18867,6 @@
         ]
     },
     {
-        "sha_fail": "9ecbaeeb4d8db618ccdb6cb81f5edf4ba2c8b8de",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "20a0e348143cc9f47432d087a62ad5c2a4040fe2",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "6033729f8ed6df96607e43cb8739cd481b895519",
         "fault_localization_data": [
             {
@@ -19574,10 +19370,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "4846dead90a34de7b3d8addf4ddf36300ccbc6e3",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "411289ce91c2497290d0d51a16053612f27b43ff",
@@ -21578,10 +21370,6 @@
         ]
     },
     {
-        "sha_fail": "d6626e5de246cce87651793060322ff1b3f7e0c0",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "f6adbaa7d295c83c481fbd8ad452eb1883f42a2c",
         "fault_localization_data": [
             {
@@ -21603,10 +21391,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "1ab3bc774b390a52cf998b70586f980b6684375a",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "6f27d0e8dbbb74ef34579d283621da82ebf3ba26",
@@ -22953,10 +22737,6 @@
         ]
     },
     {
-        "sha_fail": "c9c582cbef0e49bb73fb65cb83042e2e5eb849b1",
-        "fault_localization_data": []
-    },
-    {
         "sha_fail": "496bc88f08677236887552428dea181ff16e7e46",
         "fault_localization_data": [
             {
@@ -22990,14 +22770,6 @@
                 ]
             }
         ]
-    },
-    {
-        "sha_fail": "5fd445c656b537125771608dac8823bded23f826",
-        "fault_localization_data": []
-    },
-    {
-        "sha_fail": "4ffacbbe801b90aa147af206809b8c610ccbcefb",
-        "fault_localization_data": []
     },
     {
         "sha_fail": "61b034a122453c563e1304c0977230172d5e8767",
@@ -30876,6 +30648,28 @@
         ]
     },
     {
+        "sha_fail": "9388a2af668cc9def219ceca43c66a649bdc69d0",
+        "fault_localization_data": [
+            {
+                "file_path": "scripts/unsloth_install.py",
+                "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/axolotl/scripts/unsloth_install.py",
+                "faults": [
+                    {
+                        "line_range": [
+                            14,
+                            25
+                        ],
+                        "reason": "CUDA version 12.8 or 12.6 triggers RuntimeError: 'CUDA = {cuda} not supported!' as per CI logs. The condition only allows CUDA 12.1, 11.8, or 12.4. Fix: Update condition to also accept CUDA 12.8 and 12.6.",
+                        "issue_type": "dependency_error",
+                        "fault_localization_level": "line",
+                        "code_snippet": "cuda = str(torch.version.cuda)\ntry:\n    is_ampere = torch.cuda.get_device_capability()[0] >= 8\nexcept RuntimeError:\n    is_ampere = False\nif cuda != \"12.1\" and cuda != \"11.8\" and cuda != \"12.4\":\n    raise RuntimeError(f\"CUDA = {cuda} not supported!\")\nif v <= V(\"2.1.0\"):\n    raise RuntimeError(f\"Torch = {v} too old!\")\nelif v <= V(\"2.1.1\"):\n    x = \"cu{}{}-torch211\"\nelif v <= V(\"2.1.2\"):"
+                    }
+                ]
+            }
+        ],
+        "id": "475"
+    },
+    {
         "sha_fail": "99d0e8fb13e8389c1c8ea51be1193f674aa47034",
         "fault_localization_data": [
             {
@@ -31611,6 +31405,54 @@
     {
         "sha_fail": "ee19007ba4a51af406a9e80d2b1b53ffc7d713a7",
         "fault_localization_data": []
+    },
+    {
+        "sha_fail": "f20dec3285bbb18784f228e767f58580cdbc5251",
+        "fault_localization_data": [
+            {
+                "file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/axolotl/src/axolotl/utils/trainer.py",
+                "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/axolotl/src/axolotl/utils/trainer.py",
+                "faults": [
+                    {
+                        "line_range": [
+                            393,
+                            520
+                        ],
+                        "reason": "TypeError: unsupported operand type(s) for *: 'float' and 'NoneType' in test_lora_packing. The variable `cfg.sequence_parallel_degree` or `cfg.tensor_parallel_size` may be None, causing multiplication with a float. Fix: Ensure these configuration attributes are initialized to numeric values (e.g., 1) before use in arithmetic.",
+                        "issue_type": "type_error",
+                        "fault_localization_level": "method",
+                        "code_snippet": "def calculate_total_num_steps(cfg, train_dataset, update=True):\n    if (\n        not cfg.total_num_tokens\n        and not cfg.skip_prepare_dataset\n        and not cfg.reward_model\n    ):\n        total_num_tokens = np.sum(\n            train_dataset.select_columns(\"input_ids\")\n            .to_pandas()[\"input_ids\"]\n            .apply(len)\n            .values\n        )\n        LOG.debug(f\"total_num_tokens: {total_num_tokens:_}\")\n        if update:\n            cfg.total_num_tokens = total_num_tokens\n\n    skip_estimates = cfg.model_config_type == \"mamba\"\n\n    if (\n        not skip_estimates\n        and not cfg.total_supervised_tokens\n        and not cfg.skip_prepare_dataset\n        and not cfg.reward_model\n    ):\n        total_supervised_tokens = (\n            train_dataset.data.column(\"labels\")\n            .to_pandas()\n            .apply(lambda x: np.sum(np.array(x) != -100))\n            .sum()\n        )\n        LOG.debug(f\"`total_supervised_tokens: {total_supervised_tokens:_}`\")\n        if update:\n            cfg.total_supervised_tokens = total_supervised_tokens\n\n    if not skip_estimates and cfg.sample_packing:\n        # we have to drop anything longer then sequence len otherwise\n        # flash attention with position ids fails\n\n        if cfg.sample_packing_eff_est:\n            total_num_steps = (\n                # match count to len est in dataloader\n                int(\n                    math.floor(\n                        0.99\n                        * cfg.total_num_tokens\n                        / cfg.sample_packing_eff_est\n                        / cfg.sequence_len\n                        // cfg.batch_size\n                    )\n                    - 1\n                )\n                * cfg.num_epochs\n                * cfg.sequence_parallel_degree\n                * cfg.tensor_parallel_size\n            )\n            LOG.debug(\n                f\"total_num_tokens: {cfg.total_num_tokens:_}, total_num_steps: {total_num_steps:_}\"\n            )\n        else:\n            if cfg.flash_attention and not cfg.multipack_real_batches:\n                sampler_batch_size = 1\n                batch_max_len = cfg.micro_batch_size * cfg.sequence_len\n            else:\n                sampler_batch_size = cfg.micro_batch_size\n                batch_max_len = cfg.sequence_len\n            if cfg.curriculum_sampling:\n                sampler = SequentialSampler(train_dataset)\n            else:\n                sampler = RandomSampler(train_dataset)\n            sampler = MultipackBatchSampler(\n                sampler=sampler,\n                lengths=get_dataset_lengths(train_dataset),\n                batch_size=sampler_batch_size,\n                batch_max_len=batch_max_len,\n                group_size=cfg.sample_packing_group_size,\n                bin_size=cfg.sample_packing_bin_size,\n                sequential=cfg.sample_packing_sequentially,\n                drop_last=True,\n                num_processes=cfg.dataset_processes,\n                mp_start_method=cfg.sample_packing_mp_start_method or \"fork\",\n            )\n\n            data_loader = DataLoader(\n                train_dataset.remove_columns([\"length\"]),\n                batch_sampler=sampler,\n            )\n            data_loader_len = len(data_loader) * cfg.micro_batch_size // cfg.batch_size\n            LOG.debug(f\"data_loader_len: {data_loader_len}\")\n            # FIXME: is there a bug here somewhere? the total num steps depends\n            # on the agreed on value for sample_packing_eff_est\n            total_num_steps = int(\n                math.floor(\n                    data_loader_len\n                    * cfg.num_epochs\n                    * cfg.sequence_parallel_degree\n                    * cfg.tensor_parallel_size\n                )\n            )\n            if cfg.dataloader_drop_last:\n                # drop the last batch for each epoch\n                total_num_steps -= int(math.ceil(cfg.num_epochs))\n\n            def calc_sample_packing_eff_est(estimates: List[float]):\n                LOG.info(f\"sample_packing_eff_est across ranks: {repr(estimates)}\")\n                return max(estimates)\n\n            sample_packing_actual_eff_all = reduce_and_broadcast(\n                lambda: sampler.efficiency(),  # pylint: disable=unnecessary-lambda\n                calc_sample_packing_eff_est,\n            )\n            sample_packing_eff_est = (\n                math.ceil(sample_packing_actual_eff_all * 100.0) / 100.0\n            )\n            if update:\n                cfg.sample_packing_eff_est = sample_packing_eff_est\n            LOG.debug(f\"sample_packing_eff_est: {cfg.sample_packing_eff_est}\")\n    else:\n        total_num_steps = int(\n            math.ceil(\n                len(train_dataset)\n                * cfg.num_epochs\n                * cfg.sequence_parallel_degree\n                * cfg.tensor_parallel_size\n                / cfg.batch_size\n            )\n        )\n    LOG.debug(f\"total_num_steps: {total_num_steps}\")\n    return total_num_steps"
+                    }
+                ]
+            },
+            {
+                "file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/axolotl/scripts/unsloth_install.py",
+                "full_file_path": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/axolotl/scripts/unsloth_install.py",
+                "faults": [
+                    {
+                        "line_range": [
+                            14,
+                            25
+                        ],
+                        "reason": "RuntimeError: 'CUDA = 12.6 not supported!' from CI logs. The condition on line 19 does not allow CUDA version 12.6, which is present in the failing job. Fix: Update the condition to accept CUDA 12.6.",
+                        "issue_type": "runtime_error",
+                        "fault_localization_level": "line",
+                        "code_snippet": "cuda = str(torch.version.cuda)\ntry:\n    is_ampere = torch.cuda.get_device_capability()[0] >= 8\nexcept RuntimeError:\n    is_ampere = False\nif cuda != \"12.1\" and cuda != \"11.8\" and cuda != \"12.4\":\n    raise RuntimeError(f\"CUDA = {cuda} not supported!\")\nif v <= V(\"2.1.0\"):\n    raise RuntimeError(f\"Torch = {v} too old!\")\nelif v <= V(\"2.1.1\"):\n    x = \"cu{}{}-torch211\"\nelif v <= V(\"2.1.2\"):"
+                    },
+                    {
+                        "line_range": [
+                            28,
+                            41
+                        ],
+                        "reason": "RuntimeError: 'Torch = {v} too new!' from CI logs. The condition on line 33 (v < V(\"2.6.0\")) and the else block on lines 35-36 will raise an error for PyTorch versions 2.7.1, 2.8.0, and 2.9.0 used in CI, causing installation failure. Fix: Add version branches for torch >=2.6.0.",
+                        "issue_type": "runtime_error",
+                        "fault_localization_level": "line",
+                        "code_snippet": "    x = \"cu{}{}-torch220\"\nelif v < V(\"2.4.0\"):\n    x = \"cu{}{}-torch230\"\nelif v < V(\"2.5.0\"):\n    x = \"cu{}{}-torch240\"\nelif v < V(\"2.6.0\"):\n    x = \"cu{}{}-torch250\"\nelse:\n    raise RuntimeError(f\"Torch = {v} too new!\")\nx = x.format(cuda.replace(\".\", \"\"), \"-ampere\" if is_ampere else \"\")\nuv_prefix = \"uv \" if use_uv else \"\"\nprint(\n    f'{uv_prefix}pip install unsloth-zoo==2024.12.1 && {uv_prefix}pip install --no-deps \"unsloth[{x}]==2024.12.4\"'\n)"
+                    }
+                ]
+            }
+        ],
+        "id": "495"
     },
     {
         "sha_fail": "58c3b25cfd4d29bb38d95f411068b5bbf1b65fed",

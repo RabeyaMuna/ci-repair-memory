@@ -46,3 +46,18 @@ def get_prompt_token_budget(model_name: Optional[str]) -> int:
 
 def get_max_output_tokens(model_name: Optional[str], prompt_tokens: int) -> int:
     return get_model_limits(model_name).output_budget(prompt_tokens)
+
+def get_chunk_threshold_simple(model_name: Optional[str]) -> int:
+    limits = get_model_limits(model_name)
+    ctx = limits.context_window
+
+    # Large-context models (GPT-5-mini, GPT-5.1, GPT-4.1, etc.)
+    if ctx >= 300_000:
+        return 200_000
+
+    # Standard 128k models
+    return 70_000 
+
+def is_large_context_model(model_name: Optional[str]) -> bool:
+    limits = get_model_limits(model_name)
+    return limits.context_window >= 300_000

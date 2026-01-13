@@ -19636,6 +19636,59 @@
         ]
     },
     {
+        "sha_fail": "9388a2af668cc9def219ceca43c66a649bdc69d0",
+        "error_context": [
+            "The primary failure is a test failure in test_lora_packing due to an AttributeError: 'AxolotlTrainingArguments' object has no attribute 'dataset_num_proc'. This indicates a missing attribute in the training arguments class used during dataset preprocessing. Additionally, there are environment setup issues: a CUDA version incompatibility error from unsloth_install.py (CUDA 12.8 or 12.6 not supported) and a bitsandbytes native library loading failure (OSError). These environment errors may have occurred before the test but the test failure is the direct cause of the CI step exit code 1."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/axolotl/src/axolotl/integrations/base.py",
+                "line_number": 114,
+                "reason": "The AttributeError traceback points to line 114 in base.py where 'dataset_num_proc' was accessed, as indicated in the log summary for step 'PyTest (3.11, 2.7.1)'."
+            },
+            {
+                "file": "scripts/unsloth_install.py",
+                "line_number": null,
+                "reason": "Logs show a RuntimeError from unsloth_install.py stating 'CUDA = 12.8 not supported!' (or 12.6), causing a script failure during installation."
+            },
+            {
+                "file": "tests/",
+                "line_number": null,
+                "reason": "The failing test is test_lora_packing, which is part of the test suite. The error occurred during dataset preprocessing steps within this test."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "AttributeError in unit test",
+                "evidence": "AttributeError: 'AxolotlTrainingArguments' object has no attribute 'dataset_num_proc' in test_lora_packing."
+            },
+            {
+                "category": "Dependency Error",
+                "subcategory": "CUDA version incompatibility",
+                "evidence": "RuntimeError: 'CUDA = 12.8 not supported!' (or 12.6) from unsloth_install.py script."
+            },
+            {
+                "category": "Runtime Error",
+                "subcategory": "Missing native library",
+                "evidence": "bitsandbytes failed to load its native library 'libbitsandbytes_cpu.so', causing an OSError."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "pytest",
+                "step": "Run tests",
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+            },
+            {
+                "job": "pytest-sdist",
+                "step": "Run tests",
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+            }
+        ],
+        "id": "475"
+    },
+    {
         "sha_fail": "99d0e8fb13e8389c1c8ea51be1193f674aa47034",
         "error_context": [
             "The pre-commit job failed because the flake8 hook detected a code style violation. Specifically, flake8 found an unused import 're' in the file src/axolotl/monkeypatch/ring_attn/patch.py at line 12. This caused the flake8 hook to exit with code 1, which in turn caused the overall pre-commit step to fail with exit code 1."
@@ -20423,6 +20476,59 @@
                 "command": "python -m build --no-isolation --sdist; pip3 install --no-build-isolation dist/axolotl*.tar.gz; pip3 install -r requirements-dev.txt -r requirements-tests.txt"
             }
         ]
+    },
+    {
+        "sha_fail": "f20dec3285bbb18784f228e767f58580cdbc5251",
+        "error_context": [
+            "The CI workflow failed due to two distinct root causes across different jobs. For jobs using PyTorch versions 2.8.0 and 2.9.0, the failure was a pip dependency resolution conflict during installation of the axolotl package. Specifically, the constraint torch==2.9.0 (or 2.8.0) conflicted with requirements from accelerate>=2.0.0 and autoawq>=2.2.0, leading to a ResolutionImpossible error and exit code 1. For jobs using PyTorch 2.7.1, the installation succeeded but tests failed. A RuntimeError from unsloth_install.py indicated CUDA 12.6 is unsupported, and a TypeError occurred in test_lora_packing due to an attempt to multiply a float by NoneType in trainer.py line 485."
+        ],
+        "relevant_files": [
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/axolotl/src/axolotl/utils/trainer.py",
+                "line_number": 485,
+                "reason": "Logs show a TypeError: 'unsupported operand type(s) for *: 'float' and 'NoneType'' originating from this file during test_lora_packing."
+            },
+            {
+                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/axolotl/scripts/unsloth_install.py",
+                "line_number": null,
+                "reason": "Logs show a RuntimeError: 'CUDA = 12.6 not supported!' from this script during installation for PyTorch 2.7.1 jobs."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Dependency Error",
+                "subcategory": "Version incompatibility conflict",
+                "evidence": "Pip reported 'Cannot install axolotl and axolotl==0.12.0.dev0 because these package versions have conflicting dependencies', specifically torch==2.9.0 conflicting with accelerate>=2.0.0 and autoawq>=2.2.0 requirements."
+            },
+            {
+                "category": "Runtime Error",
+                "subcategory": "CUDA compatibility error",
+                "evidence": "RuntimeError from unsloth_install.py: 'CUDA = 12.6 not supported!'."
+            },
+            {
+                "category": "Test Failure",
+                "subcategory": "TypeError in unit test",
+                "evidence": "TypeError in test_lora_packing: 'unsupported operand type(s) for *: 'float' and 'NoneType'' in trainer.py line 485."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "pytest",
+                "step": "Install dependencies",
+                "command": "pip3 install --no-cache-dir --no-build-isolation -U -e ."
+            },
+            {
+                "job": "pytest-sdist",
+                "step": "Install dependencies",
+                "command": "pip3 install --no-cache-dir --no-build-isolation dist/axolotl*.tar.gz"
+            },
+            {
+                "job": "pytest",
+                "step": "Run tests",
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+            }
+        ],
+        "id": "495"
     },
     {
         "sha_fail": "58c3b25cfd4d29bb38d95f411068b5bbf1b65fed",

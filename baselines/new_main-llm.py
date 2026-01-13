@@ -23,6 +23,19 @@ from utilities.ensure_repo import ensure_repo_at_commit
 
 load_dotenv()
 
+TARGET_IDS = [27, 33, 47, 48, 58, 64, 95, 99,
+101, 106, 112, 115, 117, 118, 122, 123, 128, 133,
+146, 151, 161, 200, 212, 213, 229, 235, 241, 244,
+249, 251, 252, 258, 261, 265, 266, 268, 274, 276,
+277, 278, 285, 289, 304, 312, 318, 320, 321, 330,
+342, 344, 369, 370, 371, 380, 381, 383, 386, 393,
+396, 410, 411, 413, 414, 416, 418, 424, 426, 434,
+436, 440, 445, 448, 451, 453, 454, 455, 463, 472,
+474, 476, 477, 478, 481, 483, 489, 507, 519, 531,
+534, 538, 541, 545, 547, 549, 558]
+
+TARGET_ID_SET = set(TARGET_IDS)
+
 # ----------------------------------------------------------------------
 # Helper functions: load + ordered save (by dataset sha_fail order)
 # ----------------------------------------------------------------------
@@ -123,7 +136,8 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
     # Use the full dataset order as the canonical order
     # If you want a subset for processing, change here:
-    subset = dataset[426:]  # or dataset[start:end], etc. , 442:
+    # subset = dataset[26:]  # or dataset[start:end], etc. , 442:
+    subset = [dp for dp in dataset if dp.get("id") in TARGET_ID_SET]
 
     for datapoint in subset:
         task_id = datapoint["id"]

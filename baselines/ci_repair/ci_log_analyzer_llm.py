@@ -12,10 +12,10 @@ from langchain_core.messages import HumanMessage
 from utilities.constant import ERROR_KEYWORDS
 from utilities.load_config import load_config
 from utilities.chunking_logic import chunk_log_by_tokens
+from utilities.model_token_limits import get_chunk_threshold_simple
+
 
 load_dotenv()
-
-MAX_TOKENS_SUMMARY = 50_000
 
 class CILogAnalyzerLLM:
     def __init__(
@@ -47,10 +47,11 @@ class CILogAnalyzerLLM:
         """
         Analyze CI logs using LLM
         """
-        print("Running Tool: LL M-based CI Log Analysis")
+        print("Running Tool: LLM-based CI Log Analysis")
         results: List[Dict[str, Any]] = []
-        THRESHOLD = 70_000
+        THRESHOLD = get_chunk_threshold_simple(self.model_name)
         chunk_tracker = []
+        
         for step in self.ci_log:
             step_name = step.get("step_name", "unknown_step")
             log = step.get("log", "")
@@ -64,7 +65,7 @@ class CILogAnalyzerLLM:
                 print(f"Token count for '{step_name}': {total_tokens}")
 
                 if total_tokens > THRESHOLD:
-                    raw_chunks = chunk_log_by_tokens(log_text, max_tokens=50000, overlap=200, model=self.model_name)
+                    raw_chunks = chunk_log_by_tokens(log_text, max_tokens=70000, overlap=200, model=self.model_name)
                     print(f"Chunking activated: {len(raw_chunks)} chunks created for step '{step_name}'")
                     
                     chunk_tracker.append((step_name, len(raw_chunks)))
@@ -85,84 +86,110 @@ class CILogAnalyzerLLM:
                     print(f"Processing chunk {i + 1}/{len(chunks)}...")
 
                     prompt = f"""
-You are a CI log analyzer. Analyze the CI log chunk below and extract comprehensive failure-relevant information.
-There may be multiple failures, partial failures, warnings, or ambiguous signals. Do NOT assume a single root cause.
+You are CI Log Analyzer. Analyze the following CI log chunk and extract structured information while staying strictly faithful to the text.
 
-## INSTRUCTIONS
+You may be dealing with ANY CI system and ANY tools.
 
-1) SUMMARY (detailed, evidence-based, NOT overconfident)
-Write an extremely detailed natural-language summary of ALL information in this chunk that could plausibly relate to CI failure.
-Include:
-- Commands/actions executed and their outcomes relevant failure(especially any non-zero exit, failure status, or aborted step).
-- ALL errors, exceptions, failing tests, test failures, critical warnings, and suspicious warnings that might cause failure.
-- For each failure signal, describe:
-  - what happened,
-  - where it happened (file/test/tool),
-  - and what the log evidence says.
+DO NOT guess. DO NOT invent missing context. DO NOT give advice.
 
-Uncertainty rule:
-- If the chunk does not clearly show the final root cause, ignore that and focus on describing what IS visible.
+────────────────────────────────
+1) SUMMARY (SHORT, HIGH-SIGNAL)
 
-Noise rule:
-- Compress routine success output (downloads, installs, caching) unless it contains warnings/errors or directly precedes the failure.
+Write a concise 2–5 sentence summary describing:
+- The purpose of this CI log chunk
+- Whether failures or errors occur
+- The nature of those failures (if present)
+- Whether execution appears to continue or stop
 
-2) RELEVANT FILES (strict, tied to failure evidence)
-Extract ONLY repo-relative file paths that are directly tied to CI failure(example: failures, errors, failing tests, or critical warnings in this chunk.)
-A file qualifies ONLY if it appears in:
-- stack traces near the error,
-- failing test output / assertion messages,
-- explicit error/exception messages referencing a file,
-- linter/typechecker/compiler/runtime errors pointing to a file,
-- critical warnings that may contribute to failure.
+Rules:
+- Omit repetitive and low-signal output
+- Mention repeated failures only once
+- Stay strictly faithful to the log
 
+────────────────────────────────
+2) RELEVANT FILES (ALL FILE PATHS MENTIONED)
+
+Extract ALL file paths that appear anywhere in the chunk.
 For each file:
-- "reason" MUST cite log evidence (short quote 1–3 lines) and explain HOW it relates to failure.
-- Do NOT include generic reasons (e.g., "mentioned in log").
+- Normalize to repo-relative paths when possible
+- Explain WHY the file appears using evidence from the log
+- State whether it is directly related to a failure, a warning, or normal execution
 
-3) RELEVANT FAILURES (exact error blocks with context)
-Extract the exact error/failure blocks as they appear in the log, including surrounding context lines.
-- Include up to 5 failure blocks if present.
-- Preserve exact wording and formatting.
-- If multiple distinct failures exist, include each.
+Rules:
+- Deduplicate files
+- If the same file appears in multiple contexts, merge the reasons
+- Do NOT invent relevance
 
-4) PATH NORMALIZATION
-Normalize absolute paths to repo-relative when possible (e.g., "/opt/.../pkg/a.py" -> "pkg/a.py").
-If unsure, keep the path exactly as shown.
+────────────────────────────────
+3) RELEVANT FAILURES (NORMALIZED, NATURAL LANGUAGE — CRITICAL)
 
-5) DEDUPLICATION
-Deduplicate relevant_files by "file". If the same file appears in multiple failure contexts, merge reasons and include the strongest evidence.
+For each DISTINCT failure observed in this chunk, write ONE concise natural-language description.
 
-## OUTPUT FORMAT (STRICT JSON ONLY)
-Return ONLY valid JSON with EXACTLY this structure (no extra keys, no markdown, no code fences):
+Each failure description MUST:
+- Describe WHAT failed (trial / test / command / step / job, if identifiable)
+- State the EXACT error type and message as shown (e.g., ValueError)
+- State WHERE it occurred (file and line if shown; normalize paths)
+- Explain HOW the failure is evidenced in the log (warnings, traceback mention, failure message)
+- Mention repetition if the same failure occurs multiple times
+
+STRICT RULES:
+- Do NOT copy raw stack traces
+- Do NOT include long multiline blocks
+- Do NOT repeat identical failures multiple times
+- Do NOT speculate about root cause beyond what the log states
+- Keep each failure description under 500 characters
+
+If the chunk contains NO failures, return an empty array [].
+
+────────────────────────────────
+PATH NORMALIZATION
+
+Remove common CI workspace prefixes when possible, such as:
+- /home/runner/work/<repo>/<repo>/
+- /workspace/
+- /__w/<repo>/<repo>/
+- /opt/.../<repo>/
+
+If unsure, keep the original path.
+
+────────────────────────────────
+OUTPUT FORMAT (STRICT)
+
+Return ONLY valid JSON with EXACTLY this structure.
+Do NOT add extra keys.
+Do NOT use ``` or ```json.
 
 {{
-  "summary": "Overall natural-language summary of this chunk. If failures exist, include extremely detailed failure context; otherwise state no failure evidence.",
+  "step_name": "{step_name}",
+  "summary": "Detailed, faithful narrative summary of everything shown in this chunk.",
   "relevant_files": [
     {{
-      "file": "normalized/path/to/file.py",
-      "reason": "evidence-based reason tied to failure signals"
+      "file": "repo/relative/path.ext",
+      "reason": "Evidence-based explanation of why this file appears in the log and whether it relates to a failure."
     }}
   ],
   "relevant_failures": [
-    "failure block 1 with context lines",
-    "failure block 2 with context lines"
+    "Natural-language, evidence-based description of a distinct failure."
   ]
 }}
 
-## CRITICAL RULES
-- Output raw JSON ONLY — absolutely no text before or after.
-- Do NOT add any extra keys.
-- If no files qualify to be failure, return "relevant_files": [].
-- If no failure related information exist, return "relevant_failures": [] and explain in summary that this chunk contains no failure evidence.
+Rules:
+- If no files exist, return: "relevant_files": []
+- If no failures exist, return: "relevant_failures": []
+- Output plain JSON only — no text before or after.
 
-## CI LOG CHUNK
+────────────────────────────────
+CI LOG CHUNK
 {chunk}
 """
 
 
-                    response = self.llm.invoke([HumanMessage(content=prompt)])
-                    content = response.content.strip()
-                    
+
+                    response = self.llm.invoke([HumanMessage(content=prompt)]).content
+                    content = self.load_json_maybe_fenced(response)
+                    if content is None:
+                        continue
+
                     try:
                     # Try standard JSON decoding
                         cleaned_json = json.loads(content)
@@ -296,15 +323,23 @@ of the CI failure for this step using the following STRICT JSON schema
 2. Use null for any unknown scalar values (e.g., line_number if not visible).
 3. Do NOT add extra top-level keys.
 4. Return STRICT JSON ONLY — no markdown, no comments, no natural language outside JSON.
+
+### Output Rules (STRICT)
+- Output MUST be a single raw JSON object.
+- Do NOT wrap the JSON in triple backticks.
+- Do NOT include ```json or any other marker/fence.
+- Do NOT add any text before or after the JSON.
 """
 
             try:
+                
                 response = self.llm.invoke([HumanMessage(content=prompt)]).content
+                content = self.load_json_maybe_fenced(response)
 
                 try:
-                    summary = json.loads(response)
+                    summary = json.loads(content)
                 except json.JSONDecodeError:
-                    summary = demjson3.decode(response)
+                    summary = demjson3.decode(content)
                     
                 log_details.append(summary)
             except Exception as e:
@@ -441,11 +476,12 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
 """
         try:
             response = self.llm.invoke([HumanMessage(content=prompt)]).content
+            content = self.load_json_maybe_fenced(response)
 
             try:
-                summary = json.loads(response)
+                summary = json.loads(content)
             except json.JSONDecodeError:
-                summary = demjson3.decode(response)
+                summary = demjson3.decode(content)
             print(" Completed: _generate_summary")
             
             summary["sha_fail"] = self.sha_fail
@@ -625,3 +661,16 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
                 unique_hits.append(h)
 
         return unique_hits
+
+
+    def load_json_maybe_fenced(self, text: str) -> str:
+        s = text.strip()
+        if s.startswith("```"):
+            lines = s.splitlines()
+            # drop opening fence line (``` or ```json)
+            lines = lines[1:] if lines else lines
+            # drop closing fence line if present
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            s = "\n".join(lines).strip()
+        return s
