@@ -334,47 +334,110 @@ def run_error_type_accuracy_evaluation(
     print("\n=== Per-Error-Type Accuracy ===\n")
     print(acc_df.to_string(index=False))
 
-    sorted_df = acc_df.sort_values("accuracy_percent")
-    fig, ax = plt.subplots(figsize=(10, max(4, len(sorted_df) * 0.45)))
-    y_pos = np.arange(len(sorted_df))
+    # ===================== STYLISH LOLLIPOP PLOT =====================
+    sorted_by = "accuracy"  # or "volume"
 
-    ax.hlines(y=y_pos, xmin=0, xmax=sorted_df["accuracy_percent"])
-    ax.scatter(sorted_df["accuracy_percent"], y_pos, s=60)
+    plot_df = acc_df.copy()
+    if sorted_by == "volume":
+        plot_df = plot_df.sort_values(["total_cases", "accuracy_percent"], ascending=[False, True])
+    else:
+        plot_df = plot_df.sort_values(["accuracy_percent", "total_cases"], ascending=[True, False])
 
-    ax.set_yticks(y_pos)
-    ax.set_yticklabels(sorted_df["error_type"])
-    ax.set_xlabel("Accuracy (%)")
-    ax.set_title("Per-Error-Type Repair Accuracy")
-    ax.grid(axis="x", linestyle="--", alpha=0.4)
+    cmap = plt.get_cmap("tab20")
 
-    for x_val, y_idx, solved, total, acc in zip(
-        sorted_df["accuracy_percent"],
-        y_pos,
-        sorted_df["solved_cases"],
-        sorted_df["total_cases"],
-        sorted_df["accuracy_percent"],
+    def _stable_color(label: str):
+        return cmap(abs(hash(label)) % 20)
+
+    colors = plot_df["error_type"].map(_stable_color).to_list()
+
+    fig_h = max(4.8, 0.48 * len(plot_df))
+    fig, ax = plt.subplots(figsize=(12, fig_h))
+
+    y = np.arange(len(plot_df))
+    x = plot_df["accuracy_percent"].to_numpy()
+
+    ax.hlines(y=y, xmin=0, xmax=x, linewidth=2.2, alpha=0.35, color=colors)
+    ax.scatter(x, y, s=110, c=colors, edgecolors="white", linewidths=1.2, zorder=3)
+
+    # "Count bubble" at origin to show volume per type
+    for yi, total in zip(y, plot_df["total_cases"].to_numpy()):
+        ax.scatter([0], [yi], s=40 + 2.0 * min(total, 60), c=["#DDDDDD"], edgecolors="white",
+                   linewidths=0.8, zorder=2)
+
+    ax.set_yticks(y)
+    ax.set_yticklabels(plot_df["error_type"], fontsize=10)
+
+    ax.set_xlim(0, max(100, float(np.nanmax(x)) + 5))
+    ax.set_xlabel("Repair Accuracy (%)", fontsize=12)
+    ax.set_title("Per-Error-Type Repair Accuracy", fontsize=15, pad=12)
+
+    ax.grid(axis="x", linestyle="--", alpha=0.25)
+    ax.set_axisbelow(True)
+    for spine in ("top", "right", "left"):
+        ax.spines[spine].set_visible(False)
+
+    median_acc = float(np.nanmedian(x)) if len(x) else 0.0
+    ax.axvline(median_acc, linestyle=":", linewidth=1.5, alpha=0.7)
+    ax.text(median_acc, len(y) - 0.2, f"median {median_acc:.1f}%",
+            ha="center", va="bottom", fontsize=9, alpha=0.9)
+
+    for xi, yi, solved, total, acc in zip(
+        plot_df["accuracy_percent"].to_numpy(),
+        y,
+        plot_df["solved_cases"].to_numpy(),
+        plot_df["total_cases"].to_numpy(),
+        plot_df["accuracy_percent"].to_numpy(),
     ):
-        ax.text(x_val, y_idx, f"  {solved}/{total}  ({acc}%)", va="center", ha="left", fontsize=8)
+        ax.text(
+            xi + 0.8,
+            yi,
+            f"{solved}/{total}  ({acc:.1f}%)",
+            va="center",
+            ha="left",
+            fontsize=9,
+            alpha=0.95,
+        )
 
-    fig.text(
-        0.01,
-        0.98,
+    # Callouts: best/worst 3
+    k = min(3, len(plot_df))
+    if k > 0:
+        best_idx = plot_df["accuracy_percent"].nlargest(k).index
+        worst_idx = plot_df["accuracy_percent"].nsmallest(k).index
+        idx_to_y = {idx: int(pos) for pos, idx in enumerate(plot_df.index)}
+
+        for idx in best_idx:
+            yi = idx_to_y[idx]
+            ax.text(ax.get_xlim()[1], yi, "  ★", va="center", ha="right", fontsize=12, alpha=0.9)
+        for idx in worst_idx:
+            yi = idx_to_y[idx]
+            ax.text(-1, yi, "✖  ", va="center", ha="left", fontsize=11, alpha=0.9)
+
+    summary = (
         f"Dataset rows: {overall['total_dataset']}\n"
-        # f"Attempted: {overall['attempted']}  Not pushed: {overall['not_pushed']}\n"
+        f"Attempted: {overall['attempted']} (coverage {overall['coverage_percent']}%)\n"
         f"Passed: {overall['passed']}  Failed: {overall['failed']}  Waiting: {overall['waiting']}\n"
-        f"Accuracy(passed/attempted): {overall['accuracy_percent_attempted']}%\n"
-        f"Total error labels: {total_error_labels}\n"
-        f"Unique error types: {unique_error_types}",
-        ha="left",
-        va="top",
+        f"Accuracy (passed/attempted): {overall['accuracy_percent_attempted']}%\n"
+        f"Total error labels: {total_error_labels}  |  Unique error types: {unique_error_types}\n"
+        f"Sorted by: {sorted_by}"
+    )
+    ax.text(
+        0.01,
+        0.02,
+        summary,
+        transform=ax.transAxes,
         fontsize=9,
+        va="bottom",
+        ha="left",
+        bbox=dict(boxstyle="round,pad=0.5", facecolor="white", alpha=0.85, edgecolor="#CCCCCC"),
     )
 
-    plt.tight_layout(rect=(0, 0, 1, 0.92))
-    plt.savefig(accuracy_plot_path, dpi=200)
+    plt.tight_layout()
+    plt.savefig(accuracy_plot_path, dpi=250, bbox_inches="tight")
     plt.close()
-    print(f"\nSaved accuracy lollipop plot → {accuracy_plot_path}")
+    print(f"\nSaved stylish accuracy plot → {accuracy_plot_path}")
+    # =================================================================
 
+    # -------- Table image ----------
     fig, ax = plt.subplots(figsize=(10, max(3, len(acc_df) * 0.35)))
     ax.axis("off")
     table = ax.table(

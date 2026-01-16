@@ -1,0 +1,12 @@
+{
+  "total_dataset": 574,
+  "attempted": 574,
+  "not_pushed": 0,
+  "passed": 89,
+  "failed": 483,
+  "invalid": 2,
+  "error": 0,
+  "waiting": 0,
+  "accuracy_percent_attempted": 15.51,
+  "coverage_percent": 100.0
+}

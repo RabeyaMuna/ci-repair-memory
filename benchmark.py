@@ -112,7 +112,7 @@ class CIFixBenchmark:
         """
 
         WAIT_INTERVAL = 900       # 10 minutes between polling cycles
-        MAX_ATTEMPTS = 15        # total 2-hour window
+        MAX_ATTEMPTS = 25        # total 2-hour window
         REQ_DELAY = 0.8           # ~0.8s between requests → 4500 req/hour safe margin
 
         if result_filename is None:

@@ -19449,27 +19449,23 @@
     },
     {
         "error_context": [
-            "The CI run failed due to a dependency version conflict that prevented environment setup in multiple test jobs. In the 'PyTest' job, the 'Install dependencies' step failed because the pip resolver could not satisfy both the project's pinned requirement for 'torch==2.8.0' (or 'torch==2.9.0') and the 'xformers==0.0.30' package's strict dependency on 'torch==2.7.0'. This same conflict also caused the 'PyTest from Source Dist' job to fail during its 'Install dependencies' step when attempting to install the built source distribution. The failure occurred before any tests could run, halting all affected jobs with a 'ResolutionImpossible' error."
+            "The CI run failed due to unresolvable dependency conflicts across multiple test jobs. In the 'PyTest from Source Dist (3.11, 2.8.0)' and 'PyTest from Source Dist (3.11, 2.9.0)' steps, the installation of the built 'axolotl' package failed because it requires torch==2.8.0 or torch==2.9.0, respectively, but the dependency 'xformers==0.0.30' explicitly requires torch==2.7.0. Similarly, in the 'PyTest (3.11, 2.8.0)' and 'PyTest (3.11, 2.9.0)' steps, the direct installation of project dependencies in editable mode failed with the same version conflict. This mismatch prevents pip from finding a compatible set of packages, causing all affected jobs to exit before any tests could run."
         ],
-        "relevant_files": [],
+        "relevant_files": [
+            {
+                "file": "pyproject.toml",
+                "line_number": null,
+                "reason": "The dependency constraints defined in this file (or in related configuration files it references) are the source of the version conflict between torch and xformers that caused the installation failures across multiple steps."
+            }
+        ],
         "error_types": [
             {
                 "category": "Dependency Error",
                 "subcategory": "Version Conflict",
-                "evidence": "The pip install command failed due to unresolvable dependency conflicts. The error states that 'axolotl 0.12.0.dev0 depends on torch==2.8.0' (or torch==2.9.0), but 'xformers 0.0.30' requires 'torch==2.7.0'."
+                "evidence": "The pip install commands failed with 'ERROR: ResolutionImpossible' or 'ERROR: Cannot install axolotl... because these package versions have conflicting dependencies.' due to conflicting torch version requirements: axolotl requires torch==2.8.0 or torch==2.9.0, but xformers==0.0.30 requires torch==2.7.0."
             }
         ],
         "failed_job": [
-            {
-                "job": "PyTest",
-                "step": "PyTest (3.11, 2.8.0)",
-                "command": "pip3 install --no-cache-dir --no-build-isolation -U -e ."
-            },
-            {
-                "job": "PyTest",
-                "step": "PyTest (3.11, 2.9.0)",
-                "command": "pip3 install --no-cache-dir --no-build-isolation -U -e ."
-            },
             {
                 "job": "PyTest from Source Dist",
                 "step": "PyTest from Source Dist (3.11, 2.8.0)",
@@ -19479,6 +19475,16 @@
                 "job": "PyTest from Source Dist",
                 "step": "PyTest from Source Dist (3.11, 2.9.0)",
                 "command": "pip3 install --no-cache-dir --no-build-isolation dist/axolotl*.tar.gz"
+            },
+            {
+                "job": "PyTest",
+                "step": "PyTest (3.11, 2.8.0)",
+                "command": "pip3 install --no-cache-dir --no-build-isolation -U -e ."
+            },
+            {
+                "job": "PyTest",
+                "step": "PyTest (3.11, 2.9.0)",
+                "command": "pip3 install --no-cache-dir --no-build-isolation -U -e ."
             }
         ],
         "sha_fail": "6af171ff8190efbbd9b72aa19b11564279fd37f2",
@@ -19524,20 +19530,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'pre-commit' step because the committed code did not adhere to the project's formatting and linting standards. Specifically, the file 'src/axolotl/utils/schemas/config.py' lacked a newline at the end of the file, contained trailing whitespace, and was not formatted according to the Black code style. The pre-commit hooks automatically fixed these issues, and because they modified files, the step was configured to fail to alert the developer that changes are required."
+            "The CI run failed in the 'pre-commit' step because the source code did not comply with the automated code formatting and style standards enforced by the pre-commit hooks. Specifically, the file 'src/axolotl/utils/schemas/config.py' contained issues that three separate hooks attempted to fix: missing a newline at the end of the file, trailing whitespace, and incorrect code formatting. The pre-commit configuration is set to fail if any hook modifies files, which it did, preventing the commit from proceeding."
         ],
         "relevant_files": [
             {
                 "file": "src/axolotl/utils/schemas/config.py",
                 "line_number": null,
-                "reason": "This file was directly modified by the failing pre-commit hooks 'end-of-file-fixer', 'trailing-whitespace', and 'black', causing the step to fail. The log states these hooks 'fixed' or 'reformatted' this file, and the final diff output shows the changes."
+                "reason": "This file was directly modified by three failing pre-commit hooks ('end-of-file-fixer', 'trailing-whitespace', and 'black'), causing the step to fail. The log shows the hooks outputting 'Fixing' or 'reformatted' for this file."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Pre-commit hook failures due to automatic fixes",
-                "evidence": "The pre-commit hooks 'end-of-file-fixer', 'trailing-whitespace', and 'black' failed with exit code 1 as they modified the file src/axolotl/utils/schemas/config.py."
+                "subcategory": "Pre-commit hook modifications (end-of-file-fixer, trailing-whitespace, black)",
+                "evidence": "The 'end-of-file-fixer' and 'trailing-whitespace' hooks failed with 'files were modified by this hook', and the 'black' hook failed with '1 file reformatted'."
             }
         ],
         "failed_job": [
@@ -19623,37 +19629,37 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'pre-commit' step. The root cause was a pylint warning (R0801: duplicate-code) that was configured to be treated as an error, causing the pre-commit hook to exit with a failure code. The warning indicated that code in the file 'tests/test_validation_dataset.py' was very similar to code in two other test files, violating a duplicate code check."
+            "The CI run failed in the 'pre-commit' step. The step executed a series of code quality hooks, and the 'pylint' hook failed with a non-zero exit code. The failure was due to a pylint warning (R0801) about duplicate code found across multiple test files, which was treated as an error, causing the entire step to fail."
         ],
         "relevant_files": [
             {
                 "file": "tests/test_validation_dataset.py",
                 "line_number": 1,
-                "reason": "The primary file where the pylint duplicate-code (R0801) warning was detected, causing the pre-commit hook to fail."
+                "reason": "Flagged by the pylint hook (R0801: duplicate-code) as containing code similar to other files, directly causing the hook to fail."
             },
             {
                 "file": "tests/prompt_strategies/test_chat_templates_advanced.py",
                 "line_number": null,
-                "reason": "Cited by pylint as containing code similar to 'tests/test_validation_dataset.py', contributing to the duplicate-code warning."
+                "reason": "Mentioned in the pylint failure output as containing code similar to 'tests/test_validation_dataset.py', providing evidence for the duplicate-code warning."
             },
             {
                 "file": "tests/prompt_strategies/test_chat_templates_mistral.py",
                 "line_number": null,
-                "reason": "Cited by pylint as containing code similar to 'tests/test_validation_dataset.py', contributing to the duplicate-code warning."
+                "reason": "Mentioned in the pylint failure output as containing code similar to 'tests/test_validation_dataset.py', providing evidence for the duplicate-code warning."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
                 "subcategory": "Linting Error \u2013 Pylint duplicate-code warning (R0801)",
-                "evidence": "The pre-commit hook 'pylint' failed with exit code 8 due to a pylint warning (R0801: duplicate-code) reported in the module 'tests.test_validation_dataset'."
+                "evidence": "The pre-commit 'pylint' hook failed with exit code 8. The failure is a pylint warning (R0801: duplicate-code) indicating similar lines were found in 'tests/test_validation_dataset.py' (line 1) and two other test files."
             }
         ],
         "failed_job": [
             {
                 "job": "pre-commit",
                 "step": "pre-commit",
-                "command": "pre-commit/action@v3.0.1"
+                "command": "uses: pre-commit/action@v3.0.1"
             }
         ],
         "sha_fail": "770f97a0a0b3f9c8a1e7f4b55ad99376197e28f2",
@@ -19699,20 +19705,20 @@
     },
     {
         "error_context": [
-            "The CI run failed due to unresolvable dependency version conflicts across multiple test jobs. In the 'PyTest' and 'PyTest from Source Dist' jobs, the 'Install dependencies' step attempted to install the project package 'axolotl' (version 0.12.0.dev0) via pip. The pip resolver reported a 'ResolutionImpossible' error because the project requires a specific PyTorch version (either torch==2.8.0 or torch==2.9.0, depending on the matrix configuration), but a required dependency, 'xformers==0.0.30', strictly requires 'torch==2.7.0'. This direct version mismatch prevented the installation of the project package and caused all four failing steps to exit with code 1 before any tests could execute."
+            "The CI run failed due to unresolvable dependency conflicts across multiple PyTest jobs. In the 'PyTest (3.11, 2.9.0)' and 'PyTest (3.11, 2.8.0)' steps, the installation of the project's dependencies via 'pip3 install --no-cache-dir --no-build-isolation -U -e .' failed because the axolotl package (version 0.12.0.dev0) requires a specific torch version (2.9.0 or 2.8.0), but the xformers package (version 0.0.30) requires torch==2.7.0. This conflict resulted in a 'ResolutionImpossible' error from pip. Similarly, the 'PyTest from Source Dist' jobs failed during the installation of the built source distribution package due to the same core dependency conflict between torch and xformers, preventing any tests from running."
         ],
         "relevant_files": [
             {
                 "file": "pyproject.toml",
                 "line_number": null,
-                "reason": "The dependency conflict originates from the package requirements defined in this file (or related dependency files it references), specifically the incompatibility between the specified torch version (2.8.0 or 2.9.0) and the xformers==0.0.30 dependency which requires torch==2.7.0."
+                "reason": "This file defines the project dependencies, including the axolotl package which has a strict torch version requirement (2.9.0 or 2.8.0) that conflicts with the xformers package's requirement for torch==2.7.0, causing the installation failure."
             }
         ],
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Version Conflict / Incompatible Requirements",
-                "evidence": "The pip resolver reported 'ResolutionImpossible' errors stating that 'axolotl 0.12.0.dev0 depends on torch==2.8.0' (or 2.9.0) while 'xformers 0.0.30 depends on torch==2.7.0', creating an unresolvable conflict."
+                "subcategory": "Package Version Conflict",
+                "evidence": "Multiple steps reported 'ResolutionImpossible' errors. For example, 'axolotl 0.12.0.dev0' requires 'torch==2.9.0' (or 2.8.0), but 'xformers 0.0.30' requires 'torch==2.7.0', creating an unresolvable conflict."
             }
         ],
         "failed_job": [
@@ -19798,30 +19804,30 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'pre-commit' step due to a code quality violation. The 'pylint' linter, executed as part of the pre-commit hooks, detected duplicate code (warning R0801) in the file 'tests/utils/schemas/validation/test_fsdp.py', which it reported as similar to code in 'tests/e2e/multigpu/patched/test_sp' and 'tests/e2e/test_preprocess'. This violation caused the hook to exit with code 8, leading the entire pre-commit step to fail with exit code 1."
+            "The CI run failed in the 'pre-commit' step due to a code quality violation. The pylint linter, executed as part of the pre-commit hooks, detected duplicate code (warning R0801) in the module 'test_fsdp'. This violation caused the pylint hook to exit with a non-zero status, which in turn caused the entire pre-commit step to fail with exit code 1."
         ],
         "relevant_files": [
             {
                 "file": "tests/utils/schemas/validation/test_fsdp.py",
                 "line_number": 1,
-                "reason": "The primary location where pylint detected duplicate code (R0801), causing the pre-commit step to fail."
+                "reason": "Identified by pylint as the primary module containing duplicate code (R0801)."
             },
             {
                 "file": "tests/e2e/multigpu/patched/test_sp",
                 "line_number": null,
-                "reason": "Pylint reported this file as containing code similar to 'test_fsdp.py', contributing to the duplicate-code warning."
+                "reason": "Mentioned by pylint as containing code similar to the primary file."
             },
             {
                 "file": "tests/e2e/test_preprocess",
                 "line_number": null,
-                "reason": "Pylint reported this file as containing code similar to 'test_fsdp.py', contributing to the duplicate-code warning."
+                "reason": "Mentioned by pylint as containing code similar to the primary file."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Duplicate Code",
-                "evidence": "The pre-commit hook 'pylint' failed with exit code 8 due to a pylint warning (R0801: duplicate-code)."
+                "subcategory": "Linting Error \u2013 Duplicate Code (pylint R0801)",
+                "evidence": "pylint warning (R0801: duplicate-code) in the module 'test_fsdp' at tests/utils/schemas/validation/test_fsdp.py:1."
             }
         ],
         "failed_job": [
@@ -19973,20 +19979,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'pre-commit' step. The 'black' code formatting hook automatically reformatted the file 'src/axolotl/core/builders/rl.py', which is configured to cause a failure in the CI context. This requires the developer to commit the formatted changes to pass the check."
+            "The CI run failed in the 'pre-commit' step because the 'black' code formatting hook reformatted a source file. In this CI environment, pre-commit hooks are configured to fail if any hook modifies files, indicating the code does not comply with the project's formatting standards. The log evidence states 'files were modified by this hook' and shows a diff where a blank line was removed from the file 'src/axolotl/core/builders/rl.py'."
         ],
         "relevant_files": [
             {
                 "file": "src/axolotl/core/builders/rl.py",
                 "line_number": null,
-                "reason": "The 'black' pre-commit hook reformatted this file, causing the step to fail. The log indicated the file was modified, showing a diff where a blank line was removed."
+                "reason": "The 'black' pre-commit hook failed because it reformatted this file, as indicated by the log stating 'files were modified by this hook' and showing a diff for it. This reformatting is the direct cause of the CI step failure."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Black formatting violation",
-                "evidence": "The 'black' hook failed because it reformatted 'src/axolotl/core/builders/rl.py', with the log stating 'files were modified by this hook'."
+                "subcategory": "Pre-commit hook failure due to code reformatting",
+                "evidence": "The 'black' pre-commit hook failed because it reformatted the file 'src/axolotl/core/builders/rl.py'. The hook's output states 'files were modified by this hook'."
             }
         ],
         "failed_job": [
@@ -20001,51 +20007,46 @@
     },
     {
         "error_context": [
-            "The CI run failed because multiple PyTest steps across two jobs ('PyTest' and 'PyTest from Source Dist') did not produce any log output, indicating they failed to execute or were skipped entirely. Specifically, the steps 'PyTest from Source Dist (3.11, 2.9.0)', 'PyTest from Source Dist (3.11, 2.7.1)', 'PyTest (3.11, 2.8.0)', 'PyTest (3.11, 2.7.1)', 'PyTest (3.11, 2.9.0)', and 'PyTest from Source Dist (3.11, 2.8.0)' all had empty log data. This suggests a critical failure in the CI environment setup, such as a missing dependency, a configuration error in the workflow definition, or a failure in pre-run commands that prevented the main test tasks from starting."
+            "The CI run failed because multiple test execution steps could not be analyzed due to missing log data. Specifically, the steps 'PyTest from Source Dist (3.11, 2.9.0)', 'PyTest from Source Dist (3.11, 2.7.1)', 'PyTest (3.11, 2.8.0)', 'PyTest (3.11, 2.9.0)', and 'PyTest from Source Dist (3.11, 2.8.0)' all reported empty log chunks, indicating the test results and any failures were not captured. The step 'PyTest (3.11, 2.7.1)' also had no log data but was not explicitly classified with an error type. This suggests a systemic issue with log collection or processing in the CI pipeline, preventing any determination of test success or failure."
         ],
         "relevant_files": [],
         "error_types": [
             {
                 "category": "Configuration Error",
                 "subcategory": "Missing or Incomplete Log Data",
-                "evidence": "The input JSON for step 'PyTest from Source Dist (3.11, 2.9.0)' contains an empty 'chunks' list, indicating no log data was provided or captured for analysis."
-            },
-            {
-                "category": "Configuration Error",
-                "subcategory": "CI Step Execution Failure",
-                "evidence": "No log chunks were provided for step 'PyTest from Source Dist (3.11, 2.8.0)', indicating the step did not run to completion or produce output."
+                "evidence": "Multiple steps (e.g., 'PyTest from Source Dist (3.11, 2.9.0)', 'PyTest (3.11, 2.8.0)') reported empty 'chunks' arrays in their input data, providing no log content for analysis."
             }
         ],
         "failed_job": [
             {
                 "job": "PyTest",
                 "step": "PyTest (3.11, 2.8.0)",
-                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml\n          pytest -v --durations=10 tests/monkeypatch/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/patched/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/cli/ --cov=axolotl --cov-append --cov-report=xml"
             },
             {
                 "job": "PyTest",
                 "step": "PyTest (3.11, 2.7.1)",
-                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml\n          pytest -v --durations=10 tests/monkeypatch/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/patched/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/cli/ --cov=axolotl --cov-append --cov-report=xml"
             },
             {
                 "job": "PyTest",
                 "step": "PyTest (3.11, 2.9.0)",
-                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml\n          pytest -v --durations=10 tests/monkeypatch/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/patched/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/cli/ --cov=axolotl --cov-append --cov-report=xml"
             },
             {
                 "job": "PyTest from Source Dist",
                 "step": "PyTest from Source Dist (3.11, 2.9.0)",
-                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml\n          pytest -v --durations=10 tests/monkeypatch/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/patched/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/cli/"
             },
             {
                 "job": "PyTest from Source Dist",
                 "step": "PyTest from Source Dist (3.11, 2.7.1)",
-                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml\n          pytest -v --durations=10 tests/monkeypatch/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/patched/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/cli/"
             },
             {
                 "job": "PyTest from Source Dist",
                 "step": "PyTest from Source Dist (3.11, 2.8.0)",
-                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml"
+                "command": "pytest -v --durations=10 -n8 --dist loadfile --ignore=tests/e2e/ --ignore=tests/patched/ --ignore=tests/cli/ --ignore=tests/monkeypatch/ tests/ --cov=axolotl --cov-report=xml\n          pytest -v --durations=10 tests/monkeypatch/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/patched/ --cov=axolotl --cov-append --cov-report=xml\n          pytest -v --durations=10 tests/cli/"
             }
         ],
         "sha_fail": "9388a2af668cc9def219ceca43c66a649bdc69d0",
@@ -20124,37 +20125,37 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'pre-commit' step due to a code quality issue. The pylint linter, executed as part of the pre-commit hooks, detected duplicate code (error R0801) in the file 'tests/test_validation_dataset.py'. This violation caused the pylint hook to exit with status code 8, which in turn caused the entire pre-commit step to fail."
+            "The CI run failed in the 'pre-commit' step due to a code quality check violation. The 'pylint' hook failed with exit code 8, which indicates a style issue was treated as an error. The specific warning was R0801 (duplicate-code), which flagged that code in the 'tests/test_validation_dataset.py' module was found to be similar to code in two other source files ('src/axolotl/monkeypatch/relora' and 'src/axolotl/utils/schedulers'). This violation of the project's code duplication standards caused the pre-commit check to fail, halting the CI pipeline."
         ],
         "relevant_files": [
             {
                 "file": "tests/test_validation_dataset.py",
-                "line_number": 1,
-                "reason": "Primary subject of the pylint duplicate-code (R0801) error that caused the hook to fail."
+                "line_number": null,
+                "reason": "Directly cited in the pylint failure output as the module where the duplicate code issue (R0801) was detected, causing the hook to fail."
             },
             {
                 "file": "src/axolotl/monkeypatch/relora",
                 "line_number": null,
-                "reason": "Cited by pylint as containing code duplicate to the code in 'tests/test_validation_dataset.py'."
+                "reason": "Cited in the pylint failure message as one of the two files containing code similar to the failing file, providing evidence for the duplicate-code violation."
             },
             {
                 "file": "src/axolotl/utils/schedulers",
                 "line_number": null,
-                "reason": "Cited by pylint as containing code duplicate to the code in 'tests/test_validation_dataset.py'."
+                "reason": "Cited in the pylint failure message as one of the two files containing code similar to the failing file, providing evidence for the duplicate-code violation."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Duplicate Code",
-                "evidence": "pylint failed with exit code 8 due to a duplicate-code error (R0801) in 'tests/test_validation_dataset.py'."
+                "subcategory": "Linting Error \u2013 Pylint duplicate-code warning (R0801)",
+                "evidence": "The pre-commit hook 'pylint' failed with exit code 8. The failure is a pylint warning (R0801: duplicate-code) reported in the module 'tests.test_validation_dataset'."
             }
         ],
         "failed_job": [
             {
                 "job": "pre-commit",
                 "step": "pre-commit",
-                "command": "pre-commit/action@v3.0.1"
+                "command": "uses: pre-commit/action@v3.0.1"
             }
         ],
         "sha_fail": "9cf62fab15cce046bb01baf9d0d312ba4da659c3",
@@ -20162,14 +20163,14 @@
     },
     {
         "error_context": [
-            "The CI run failed due to a dependency version conflict that prevented the installation of the project's package in multiple test jobs. In the 'PyTest' job, the steps 'PyTest (3.11, 2.9.0)' and 'PyTest (3.11, 2.8.0)' failed during the 'Install dependencies' step when running 'pip3 install --no-cache-dir --no-build-isolation -U -e .'. The pip resolver encountered a 'ResolutionImpossible' error because the project's dependencies specify torch==2.9.0 (or torch==2.8.0), but the xformers==0.0.30 package has a strict dependency on torch==2.7.0. Similarly, in the 'PyTest from Source Dist' job, the steps 'PyTest from Source Dist (3.11, 2.9.0)' and 'PyTest from Source Dist (3.11, 2.8.0)' failed during the 'Install dependencies' step when running 'pip3 install --no-cache-dir --no-build-isolation dist/axolotl*.tar.gz' after building a source distribution. The same unresolvable conflict between torch and xformers caused the installation to fail with a 'ResolutionImpossible' error, halting the jobs before any tests could run."
+            "The CI run failed due to a dependency version conflict that prevented the installation of the project's package in multiple test jobs. In the 'PyTest' job, the steps 'PyTest (3.11, 2.9.0)' and 'PyTest (3.11, 2.8.0)' failed during the 'Install dependencies' step because the pip command `pip3 install --no-cache-dir --no-build-isolation -U -e .` could not resolve a conflict between the project's pinned requirement for torch (2.9.0 or 2.8.0) and the xformers package's strict dependency on torch==2.7.0. Similarly, in the 'PyTest from Source Dist' job, the steps 'PyTest from Source Dist (3.11, 2.9.0)' and 'PyTest from Source Dist (3.11, 2.8.0)' failed during the 'Install dependencies' step when pip attempted to install the built source distribution, encountering the same unresolvable conflict. This version mismatch caused a 'ResolutionImpossible' error in all four failing steps, halting the environment setup before any tests could execute."
         ],
         "relevant_files": [],
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Package Version Conflict",
-                "evidence": "The pip install command failed with a 'ResolutionImpossible' error. The conflict is between the project's requirement for torch==2.9.0 (or torch==2.8.0) and xformers==0.0.30's requirement for torch==2.7.0, as stated in logs: 'Cannot install axolotl and axolotl==0.12.0.dev0 because these package versions have conflicting dependencies.'"
+                "subcategory": "Version Conflict",
+                "evidence": "The pip install command failed with 'ResolutionImpossible' errors across multiple steps. The conflict is between the project's requirement for torch==2.9.0 (or torch==2.8.0) and the xformers==0.0.30 package's requirement for torch==2.7.0."
             }
         ],
         "failed_job": [
@@ -20401,20 +20402,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'pre-commit' step because the 'black' code formatting hook reformatted the file 'src/axolotl/loaders/model.py'. In CI, pre-commit hooks are configured to fail if they modify any files, indicating that the committed code does not adhere to the required formatting standards. The hook's exit code caused the entire pre-commit job to fail."
+            "The CI run failed in the 'pre-commit' step due to a code formatting issue. The 'black' pre-commit hook automatically reformatted the file 'src/axolotl/loaders/model.py' to comply with its style rules. In the CI context, any modification made by a pre-commit hook is treated as a failure, indicating the committed code does not meet the project's formatting standards."
         ],
         "relevant_files": [
             {
                 "file": "src/axolotl/loaders/model.py",
                 "line_number": null,
-                "reason": "The 'black' pre-commit hook reformatted this file, causing the hook to fail and the CI step to exit with a failure status."
+                "reason": "The 'black' pre-commit hook reformatted this file, causing the hook and the entire pre-commit step to fail. The log states 'reformatted src/axolotl/loaders/model.py' and shows a diff of the changes."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Black formatting hook failure due to file reformatting",
-                "evidence": "The 'black' pre-commit hook failed because it reformatted the file 'src/axolotl/loaders/model.py'."
+                "subcategory": "Black formatting hook failure",
+                "evidence": "The 'black' pre-commit hook failed because it reformatted the file 'src/axolotl/loaders/model.py'. The hook's output states 'files were modified by this hook'."
             }
         ],
         "failed_job": [
@@ -20429,25 +20430,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'pre-commit' step because the source code did not adhere to the project's enforced style standards. The 'black' and 'isort' hooks automatically modified the file 'src/axolotl/cli/train.py' to correct formatting and import ordering issues. The pre-commit configuration is set to fail if any hook modifies files, which directly caused the step to exit with code 1."
+            "The CI run failed in the 'pre-commit' step because the source code did not comply with the project's code formatting standards. The 'black' and 'isort' hooks automatically modified the file src/axolotl/cli/train.py to correct formatting and import ordering. Pre-commit is configured to fail when any hook modifies files, forcing the developer to review and commit the changes."
         ],
         "relevant_files": [
             {
                 "file": "src/axolotl/cli/train.py",
                 "line_number": null,
-                "reason": "The 'black' and 'isort' pre-commit hooks failed because they automatically modified this file to fix code formatting and import ordering, which is the direct cause of the CI failure."
+                "reason": "The 'black' and 'isort' pre-commit hooks failed because they modified this file to correct formatting and import ordering, directly causing the step to fail."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Pre-commit hook failure due to automatic code reformatting",
-                "evidence": "The 'black' hook failed because it reformatted 'src/axolotl/cli/train.py', as indicated by the 'Failed' status and the message 'files were modified by this hook'."
-            },
-            {
-                "category": "Code Formatting",
-                "subcategory": "Pre-commit hook failure due to import sorting",
-                "evidence": "The 'isort' hook failed because it fixed import ordering in 'src/axolotl/cli/train.py', as evidenced by the 'Failed' status and the message 'Fixing /home/runner/work/axolotl/axolotl/src/axolotl/cli/train.py'."
+                "subcategory": "Pre-commit hook failure - black/isort reformatting",
+                "evidence": "The hooks 'black' and 'isort' failed because they modified the file src/axolotl/cli/train.py."
             }
         ],
         "failed_job": [
@@ -20601,14 +20597,20 @@
     },
     {
         "error_context": [
-            "The CI run failed due to a dependency version conflict that prevented the installation of the project's dependencies across multiple test jobs. In the 'PyTest' job, the steps 'PyTest (3.11, 2.8.0)' and 'PyTest (3.11, 2.9.0)' failed during the 'Install dependencies' step because the pip resolver could not satisfy the conflicting requirements for the PyTorch version. Specifically, the 'axolotl' package requires 'torch==2.8.0' or 'torch==2.9.0' (depending on the matrix configuration), but the 'xformers==0.0.30' package strictly depends on 'torch==2.7.0'. This incompatibility resulted in a 'ResolutionImpossible' error, halting environment setup before any tests could run. Similarly, in the 'PyTest from Source Dist' job, the steps 'PyTest from Source Dist (3.11, 2.8.0)' and 'PyTest from Source Dist (3.11, 2.9.0)' failed during the installation of the built source distribution due to the same unresolvable conflict between the pinned torch version and xformers' constraint."
+            "The CI run failed due to a dependency version conflict that prevented the installation of the 'axolotl' package across multiple test jobs. In the 'PyTest (3.11, 2.8.0)' and 'PyTest (3.11, 2.9.0)' steps, the 'pip install -e .' command failed because the 'axolotl' package (version 0.12.0.dev0) requires torch==2.8.0 or torch==2.9.0, respectively, while its dependency 'xformers 0.0.30' requires torch==2.7.0. This incompatibility caused a 'ResolutionImpossible' error, halting the installation before any tests could run. The same conflict also caused the 'PyTest from Source Dist (3.11, 2.9.0)' step to fail when pip attempted to install the built source distribution package."
         ],
-        "relevant_files": [],
+        "relevant_files": [
+            {
+                "file": "pyproject.toml",
+                "line_number": null,
+                "reason": "The project's dependency specifications, including the torch==2.9.0 requirement, are defined here, leading to the conflict with xformers."
+            }
+        ],
         "error_types": [
             {
                 "category": "Dependency Error",
                 "subcategory": "Version conflict between required packages",
-                "evidence": "The pip install commands failed with 'ERROR: ResolutionImpossible' because 'axolotl' requires 'torch==2.8.0' or 'torch==2.9.0', while 'xformers 0.0.30' requires 'torch==2.7.0', creating an unresolvable conflict."
+                "evidence": "Multiple steps reported 'ERROR: Cannot install axolotl and axolotl==0.12.0.dev0 because these package versions have conflicting dependencies.' The conflict is between torch==2.8.0/2.9.0 (required by axolotl) and torch==2.7.0 (required by xformers 0.0.30)."
             }
         ],
         "failed_job": [
@@ -20621,11 +20623,6 @@
                 "job": "PyTest",
                 "step": "PyTest (3.11, 2.9.0)",
                 "command": "pip3 install --no-cache-dir --no-build-isolation -U -e ."
-            },
-            {
-                "job": "PyTest from Source Dist",
-                "step": "PyTest from Source Dist (3.11, 2.8.0)",
-                "command": "pip3 install --no-cache-dir --no-build-isolation dist/axolotl*.tar.gz"
             },
             {
                 "job": "PyTest from Source Dist",
@@ -20788,14 +20785,14 @@
     },
     {
         "error_context": [
-            "The CI run failed due to a critical environment resource issue: insufficient disk space on the Ubuntu runner. This caused two distinct test jobs to fail during their dependency installation phases. In the 'PyTest (3.11, 2.7.1)' step, the command `pip3 install --no-build-isolation -U -e .` failed with an OSError: 'No space left on device', preventing the test environment from being set up. Similarly, in the 'PyTest from Source Dist (3.11, 2.6.0)' step, the installation of the built source distribution also failed with the same OSError, which was preceded by a warning about critically low free disk space (50 MB). The failure in both steps is identical in root cause, halting the jobs before any tests could execute."
+            "The CI run failed due to a disk space exhaustion error on the GitHub Actions runner. In the step 'PyTest (3.11, 2.7.1)', the installation of project dependencies via `pip install --no-build-isolation -U -e .` was interrupted by an OSError: '[Errno 28] No space left on device'. This prevented the test environment from being set up and caused the job to exit before any tests could be executed. The step 'PyTest from Source Dist (3.11, 2.6.0)' had no associated log data, so its status is unknown, but the primary failure is the infrastructure issue in the first step."
         ],
         "relevant_files": [],
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Environment / Disk Space Issue",
-                "evidence": "Multiple pip installation commands failed with OSError: 'No space left on device'. Evidence includes: 'ERROR: Could not install packages due to an OSError: [Errno 28] No space left on device' and a prior warning about low disk space (50 MB free)."
+                "subcategory": "Environment / Infrastructure Failure \u2013 Disk Space Exhaustion",
+                "evidence": "ERROR: Could not install packages due to an OSError: [Errno 28] No space left on device"
             }
         ],
         "failed_job": [
@@ -20803,11 +20800,6 @@
                 "job": "PyTest",
                 "step": "PyTest (3.11, 2.7.1)",
                 "command": "pip3 install --no-build-isolation -U -e ."
-            },
-            {
-                "job": "PyTest from Source Dist",
-                "step": "PyTest from Source Dist (3.11, 2.6.0)",
-                "command": "pip3 install --no-build-isolation dist/axolotl*.tar.gz"
             }
         ],
         "sha_fail": "ee19007ba4a51af406a9e80d2b1b53ffc7d713a7",
@@ -20815,19 +20807,19 @@
     },
     {
         "error_context": [
-            "The CI run failed due to a consistent dependency version conflict across multiple test jobs. In the 'PyTest' and 'PyTest from Source Dist' jobs, the 'Install dependencies' step (or its equivalent) failed when running the command 'pip3 install --no-cache-dir --no-build-isolation -U -e .' or installing from a source distribution. The root cause is that the project (axolotl) explicitly requires a specific version of PyTorch (e.g., torch==2.9.0, torch==2.8.0), but another dependency, xformers==0.0.30, requires torch==2.7.0. This incompatibility causes pip's dependency resolver to fail with a 'ResolutionImpossible' error, preventing the installation from succeeding and halting the job before any tests could run. This issue affected steps: 'PyTest (3.11, 2.9.0)', 'PyTest (3.11, 2.8.0)', and 'PyTest from Source Dist (3.11, 2.9.0)'."
+            "The CI run failed due to unresolvable dependency version conflicts in multiple steps across two jobs. The primary issue is that the project 'axolotl' (version 0.12.0.dev0) explicitly requires specific PyTorch versions (2.9.0, 2.8.0, or 2.7.1 depending on the matrix configuration), but its dependency 'xformers==0.0.30' strictly requires 'torch==2.7.0'. This creates a direct conflict that pip's dependency resolver cannot satisfy, resulting in a 'ResolutionImpossible' error. This failure occurred during the 'Install dependencies' step in the 'PyTest' job for PyTorch versions 2.9.0 and 2.8.0, and during the package installation step in the 'PyTest from Source Dist' job for PyTorch versions 2.9.0 and 2.8.0. The steps for PyTorch 2.7.1 failed due to missing log data, preventing analysis of their specific causes."
         ],
         "relevant_files": [],
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Version Conflict / Resolution Failure",
-                "evidence": "pip dependency resolution error: project requires torch==2.9.0, but xformers==0.0.30 requires torch==2.7.0."
+                "subcategory": "Version Conflict \u2013 Incompatible torch requirements",
+                "evidence": "Multiple steps report a conflict where 'axolotl 0.12.0.dev0' requires 'torch==2.9.0' (or 2.8.0), but 'xformers 0.0.30' requires 'torch==2.7.0', causing pip 'ResolutionImpossible' errors."
             },
             {
                 "category": "Configuration Error",
-                "subcategory": "Missing or Incomplete Log Data",
-                "evidence": "The input JSON for step 'PyTest from Source Dist (3.11, 2.8.0)' contains an empty 'chunks' list, indicating no log data was captured or provided for analysis."
+                "subcategory": "Missing or Empty Log Data",
+                "evidence": "Steps 'PyTest from Source Dist (3.11, 2.7.1)', 'PyTest (3.11, 2.7.1)', and 'PyTest from Source Dist (3.11, 2.8.0)' had empty or missing log data, preventing failure analysis."
             }
         ],
         "failed_job": [
@@ -20951,40 +20943,45 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'type-checker' step because the pyright type checker reported 13 type errors across multiple Python files. The errors are primarily argument type mismatches in function calls within LLM integration and evaluation modules. Specifically, the code is incorrectly passing special sentinel values like 'NotGiven' or string arguments where the external client libraries expect different union types (e.g., 'str | Iterable[TextBlockParam] | Omit' for Anthropic's 'system' parameter, or 'ReasoningEffort | Omit' for OpenAI's 'reasoning_effort' parameter). This indicates a breakdown in type safety and interface compatibility with the underlying LLM SDKs."
+            "The CI run failed in the 'type-checker' step due to static type errors detected by the pyright tool. The step executed the command 'uv run pyright', which reported 13 type errors across multiple Python files. The primary root cause is type incompatibility between the codebase and the expected type signatures of external LLM client libraries (Anthropic, OpenAI, Google) and an internal evaluation module. Specifically, there are argument type mismatches when calling API client methods and incompatible type assignments, indicating the code is not properly typed for the external APIs or internal annotations."
         ],
         "relevant_files": [
             {
                 "file": "browser_use/llm/anthropic/chat.py",
                 "line_number": null,
-                "reason": "Contains 4 type errors where arguments of type 'NotGiven' are passed to parameters expecting 'str | Iterable[TextBlockParam] | Omit', specifically for the 'create' function and 'system' parameter."
+                "reason": "Pyright reported 4 type errors concerning mismatched arguments for the Anthropic client's 'create' method."
             },
             {
                 "file": "browser_use/llm/aws/chat_anthropic.py",
                 "line_number": null,
-                "reason": "Contains 4 type errors with the same argument mismatches for the 'create' function and 'system' parameter as in the anthropic chat file."
+                "reason": "Pyright reported 4 type errors concerning mismatched arguments for the Anthropic client's 'create' method."
             },
             {
                 "file": "browser_use/llm/google/serializer.py",
-                "line_number": 96,
-                "reason": "Contains 1 type error where an argument of type 'Content' is passed to a parameter expecting 'str | PIL_Image | File | Part' for the 'append' function."
+                "line_number": null,
+                "reason": "Pyright reported 1 type error concerning an argument type mismatch for the 'append' function."
             },
             {
                 "file": "browser_use/llm/openai/chat.py",
                 "line_number": null,
-                "reason": "Contains 2 type errors where a 'str' argument is passed to the 'reasoning_effort' parameter of type 'ReasoningEffort | Omit' in the 'create' function."
+                "reason": "Pyright reported 2 type errors concerning the 'reasoning_effort' argument for the OpenAI client's 'create' method."
             },
             {
                 "file": "eval/judge_system.py",
-                "line_number": 197,
-                "reason": "Contains 2 type errors where an 'ImagingCore' argument is passed to a parameter expecting an 'Iterable' for the list '__init__' function."
+                "line_number": null,
+                "reason": "Pyright reported 2 type errors concerning the 'ImagingCore' type being passed where an 'Iterable' is expected."
             }
         ],
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Argument Type Mismatch",
-                "evidence": "Pyright reported 13 type errors across multiple files, including mismatches for 'NotGiven' vs expected union types in Anthropic/AWS modules, 'Content' vs expected union in Google serializer, 'str' vs 'ReasoningEffort | Omit' in OpenAI, and 'ImagingCore' vs 'Iterable' in the evaluation judge."
+                "subcategory": "Static Type Error \u2013 Argument Type Mismatch",
+                "evidence": "Pyright reports errors concerning mismatched arguments for API client methods (e.g., 'create', 'append')."
+            },
+            {
+                "category": "Type Checking",
+                "subcategory": "Static Type Error \u2013 Incompatible Type Assignment",
+                "evidence": "Pyright reports errors involving incompatible type assignments (e.g., 'NotGiven', 'str', 'Content', 'ImagingCore')."
             }
         ],
         "failed_job": [
@@ -21206,55 +21203,55 @@
     },
     {
         "error_context": [
-            "The CI run failed due to errors in two separate linting steps. In the 'code-style' step, the 'check-symlinks' pre-commit hook failed because it detected a broken symbolic link in the repository, causing the job to stop. In the 'type-checker' step, the pyright type checker failed because it identified 11 type errors across multiple source files, including mismatched arguments for function calls and incorrect parameter assignments."
+            "The CI run failed due to errors in two separate linting steps. In the 'code-style' step, the pre-commit hook 'check-symlinks' failed because it detected a broken symbolic link in the repository. In the 'type-checker' step, the pyright static type checker failed because it identified 11 type errors across multiple source files, primarily involving argument mismatches in function calls."
         ],
         "relevant_files": [
             {
                 "file": "examples/features/multiple_agents_same_browser.py",
                 "line_number": null,
-                "reason": "Identified as a broken symbolic link by the failing 'check-symlinks' pre-commit hook in the 'code-style' step."
+                "reason": "Identified as a broken symbolic link by the 'check-symlinks' pre-commit hook, causing the 'code-style' step to fail."
             },
             {
                 "file": "browser_use/llm/anthropic/chat.py",
                 "line_number": null,
-                "reason": "Contains type errors reported by pyright in the 'type-checker' step, including mismatched argument types for the 'create' function and the 'system' parameter."
+                "reason": "Contains multiple type errors reported by pyright concerning mismatched arguments for the 'create' function, contributing to the 'type-checker' step failure."
             },
             {
                 "file": "browser_use/llm/aws/chat_anthropic.py",
                 "line_number": null,
-                "reason": "Contains type errors reported by pyright in the 'type-checker' step, including mismatched argument types for the 'create' function and the 'system' parameter."
+                "reason": "Contains multiple type errors reported by pyright concerning mismatched arguments for the 'create' function, contributing to the 'type-checker' step failure."
             },
             {
                 "file": "browser_use/llm/google/serializer.py",
                 "line_number": null,
-                "reason": "Contains a type error reported by pyright in the 'type-checker' step where an argument of type 'Content' cannot be assigned to parameter 'object'."
+                "reason": "Contains a type error reported by pyright concerning an argument type mismatch for the 'append' function, contributing to the 'type-checker' step failure."
             },
             {
                 "file": "eval/judge_system.py",
                 "line_number": null,
-                "reason": "Contains type errors reported by pyright in the 'type-checker' step where an argument of type 'ImagingCore' cannot be assigned to a parameter expecting an Iterable."
+                "reason": "Contains type errors reported by pyright concerning an 'ImagingCore' object being passed where an 'Iterable' is expected, contributing to the 'type-checker' step failure."
             }
         ],
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "Repository Integrity - Broken Symbolic Link",
-                "evidence": "The pre-commit hook 'check-symlinks' failed with exit code 1, identifying a broken symlink at 'examples/features/multiple_agents_same_browser.py'."
+                "subcategory": "Broken Symbolic Link",
+                "evidence": "The pre-commit hook 'check-symlinks' (hook id: check-symlinks) failed with exit code 1, reporting a broken symlink at 'examples/features/multiple_agents_same_browser.py'."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Pyright Type Mismatch Errors",
-                "evidence": "The pyright type checker reported 11 errors, including 'No overloads for \"create\" match the provided arguments' and argument type mismatches for parameters like 'system' and 'object'."
+                "subcategory": "Static Type Error \u2013 Argument Mismatch",
+                "evidence": "Pyright reports errors such as 'No overloads for \"create\" match the provided arguments' and 'Argument of type ... cannot be assigned to parameter ...' across multiple files."
             }
         ],
         "failed_job": [
             {
-                "job": "code-style",
+                "job": "lint-style",
                 "step": "code-style",
                 "command": "uv run pre-commit run --all-files --show-diff-on-failure"
             },
             {
-                "job": "type-checker",
+                "job": "lint-typecheck",
                 "step": "type-checker",
                 "command": "uv run pyright"
             }
@@ -21476,20 +21473,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'code-style' step because a pre-commit hook named 'check-shebang-scripts-are-executable' reported an error and exited with code 1. This hook checks that files containing a shebang line are marked as executable. The failure was triggered specifically because the file 'examples/use-cases/play_chess.py' has a shebang but its file permissions do not include the executable bit."
+            "The CI run failed in the 'code-style' step due to a pre-commit hook that enforces file permissions. The hook 'check-shebang-scripts-are-executable' reported an error because it detected a file with a shebang line that was not marked as executable in the filesystem, causing the step to exit with code 1."
         ],
         "relevant_files": [
             {
                 "file": "examples/use-cases/play_chess.py",
                 "line_number": null,
-                "reason": "The pre-commit hook 'check-shebang-scripts-are-executable' failed because this file contains a shebang line but is not marked as executable, causing the CI step to fail."
+                "reason": "The pre-commit hook 'check-shebang-scripts-are-executable' failed because this file contains a shebang line but is not marked as executable."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Pre-commit Hook Failure \u2013 File Permissions",
-                "evidence": "The pre-commit hook 'check-shebang-scripts-are-executable' failed with exit code 1 because the file 'examples/use-cases/play_chess.py' has a shebang but is not marked executable."
+                "subcategory": "Pre-commit Hook Failure \u2013 File Permission Issue",
+                "evidence": "The pre-commit hook 'check-shebang-scripts-are-executable' failed with exit code 1 because a file has a shebang but is not marked executable."
             }
         ],
         "failed_job": [
@@ -21504,20 +21501,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'code-style' step because the 'end-of-file-fixer' pre-commit hook modified the .gitignore file by adding a missing newline at the end. This modification caused the pre-commit framework to exit with a non-zero status, which is treated as a failure condition."
+            "The CI run failed in the 'code-style' step because the pre-commit hook 'end-of-file-fixer' automatically modified the .gitignore file by adding a missing newline at the end of the file. This modification is treated as a failure by the pre-commit tool, causing the 'pre-commit run' command to exit with a non-zero status and halt the job."
         ],
         "relevant_files": [
             {
                 "file": ".gitignore",
                 "line_number": null,
-                "reason": "Modified by the 'end-of-file-fixer' pre-commit hook, which added a missing newline, causing the CI job to fail."
+                "reason": "Modified by the 'end-of-file-fixer' pre-commit hook, which added a missing newline, causing the pre-commit run to fail."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Pre-commit Hook Failure \u2013 File Modified",
-                "evidence": "The 'pre-commit run --all-files' step failed because the 'end-of-file-fixer' hook modified the .gitignore file."
+                "subcategory": "Pre-commit hook failure - end-of-file-fixer",
+                "evidence": "The pre-commit hook 'end-of-file-fixer' failed with exit code 1 because it modified the file .gitignore."
             }
         ],
         "failed_job": [
@@ -21686,20 +21683,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'code-style' step due to a code formatting violation. The pre-commit hook 'ruff-format' automatically reformatted the file 'browser_use/agent/service.py' because it did not adhere to the project's required formatting standards. The pre-commit configuration is set to fail the run when a hook modifies files, which caused the 'pre-commit run' command to exit with a non-zero status."
+            "The CI run failed in the 'code-style' step due to a code formatting issue. The 'ruff-format' pre-commit hook detected that 1 file did not comply with the project's style guidelines, reformatted it, and exited with a failure status (code 1). This is the standard behavior for hooks that fix issues, as they require the changes to be committed. The failure is directly tied to the formatting of a specific source file."
         ],
         "relevant_files": [
             {
                 "file": "browser_use/agent/service.py",
                 "line_number": null,
-                "reason": "This file was automatically reformatted by the 'ruff-format' pre-commit hook, which is the direct cause of the CI failure."
+                "reason": "This file was reformatted by the failing 'ruff-format' pre-commit hook, which directly caused the step to fail."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Pre-commit hook failure due to file reformatting",
-                "evidence": "The pre-commit hook 'ruff-format' failed because it modified a file, as indicated by the log stating '1 file reformatted'."
+                "subcategory": "Pre-commit hook failure due to formatting changes",
+                "evidence": "The pre-commit hook 'ruff-format' failed with the message 'files were modified by this hook'."
             }
         ],
         "failed_job": [
@@ -22310,50 +22307,50 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'Linux Functional (3.10)' step due to two primary issues. First, a systemic environment problem caused the setup phase for hundreds of functional tests to fail because essential build tools like 'cmake', 'emcc', 'bazel', 'qbs', 'scons', and 'premake' were not installed or not found in the CI environment. This was enforced by a pytest fixture in `test/conftest.py`. Second, four specific Meson toolchain integration tests failed at runtime due to an AssertionError. The tests expected a compiled binary to contain the string 'main __GNUC__9' (indicating GCC version 9) but the actual output contained '__GNUC__13' (from GCC version 13), indicating a hardcoded version expectation mismatch."
+            "The CI run failed in the 'Linux Functional (3.10)' step due to two primary issues. First, the CI environment was missing critical build tools (cmake, bazel, qbs, scons, premake, emcc) required by the test suite. A pytest hook in `test/conftest.py` checks for these tools before each test, and their absence caused 252 test setup errors. Second, four specific functional tests in the Meson toolchain suite failed with AssertionErrors. These tests expected a compiled binary's output to contain the string 'main __GNUC__9', but the actual output from the CI environment's GCC compiler was 'main __GNUC__13', indicating a version mismatch."
         ],
         "relevant_files": [
             {
                 "file": "test/conftest.py",
                 "line_number": 354,
-                "reason": "Contains the pytest_runtest_setup hook that checks for required build tools and calls pytest.fail if they are missing. This caused the setup phase to fail for hundreds of tests, preventing their execution."
+                "reason": "Contains the `pytest_runtest_setup` hook that checks for required build tools. The absence of tools like 'cmake' caused 252 test setup errors when the hook called `pytest.fail`."
             },
             {
                 "file": "test/functional/toolchains/meson/_base.py",
                 "line_number": 36,
-                "reason": "Contains the '_check_binary' helper method where an AssertionError occurred. The method expected 'main __GNUC__9' in the output but found '__GNUC__13', causing four different Meson-related tests to fail."
+                "reason": "Contains the `_check_binary` method where an AssertionError occurred. The method expected the string 'main __GNUC__9' in the program output, but the actual output contained 'main __GNUC__13', causing four test failures."
             },
             {
                 "file": "test/functional/toolchains/meson/test_meson.py",
-                "line_number": null,
-                "reason": "Contains the test 'MesonToolchainTest.test_definition_of_global_options' which failed due to the AssertionError in the shared '_check_binary' helper method."
+                "line_number": 120,
+                "reason": "Contains the failing test `MesonToolchainTest.test_definition_of_global_options`, which triggered an AssertionError due to the GCC version mismatch in `_check_binary`."
             },
             {
                 "file": "test/functional/toolchains/meson/test_pkg_config_reuse.py",
-                "line_number": null,
-                "reason": "Contains the test 'MesonPkgConfigTest.test_reuse' which failed due to the AssertionError in the shared '_check_binary' helper method."
+                "line_number": 58,
+                "reason": "Contains the failing test `MesonPkgConfigTest.test_reuse`, which triggered an AssertionError due to the GCC version mismatch in `_check_binary`."
             },
             {
                 "file": "test/functional/toolchains/meson/test_preprocessor_definitions.py",
-                "line_number": null,
-                "reason": "Contains the test 'MesonPreprocessorDefinitionsTest.test_build' which failed due to the AssertionError in the shared '_check_binary' helper method."
+                "line_number": 70,
+                "reason": "Contains the failing test `MesonPreprocessorDefinitionsTest.test_build`, which triggered an AssertionError due to the GCC version mismatch in `_check_binary`."
             },
             {
                 "file": "test/functional/toolchains/meson/test_test.py",
-                "line_number": null,
-                "reason": "Contains the test 'MesonTest.test_reuse' which failed due to the AssertionError in the shared '_check_binary' helper method."
+                "line_number": 61,
+                "reason": "Contains the failing test `MesonTest.test_reuse`, which triggered an AssertionError due to the GCC version mismatch in `_check_binary`."
             }
         ],
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Missing Required Build Tools",
-                "evidence": "Repeated 'ERROR at setup' messages stating 'Required [tool] tool version [version] is not available' for tools like 'cmake', 'emcc', 'bazel', etc., originating from test/conftest.py:354."
+                "subcategory": "Missing Build Tools in CI Environment",
+                "evidence": "Setup errors reported: 'Failed: Required 'cmake' tool version '[VERSION]' is not available' for tools cmake, bazel, qbs, scons, premake, and emcc."
             },
             {
                 "category": "Test Failure",
                 "subcategory": "AssertionError in Functional Test",
-                "evidence": "AssertionError because expected string 'main __GNUC__9' was not found in output (found '__GNUC__13'), in test/functional/toolchains/meson/_base.py:36, causing four Meson tests to fail."
+                "evidence": "AssertionError because the string 'main __GNUC__9' was not found in the program output, which showed '__GNUC__13' instead."
             }
         ],
         "failed_job": [
@@ -22817,50 +22814,50 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'Linux Functional (3.10)' step due to two primary issues. First, the test environment was missing required build tools. The pytest hook in 'test/conftest.py' checks for tools like 'cmake', 'premake', 'emcc', 'qbs', 'scons', and 'bazel' before each test. Since these tools were not available on the CI runner, over 250 functional tests failed during their setup phase. Second, four specific Meson toolchain tests failed at runtime because an assertion expected the compiler macro '__GNUC__9' but found '__GNUC__13', indicating a mismatch between the expected and actual GCC version in the test environment."
+            "The CI run failed in the 'Linux Functional (3.10)' step due to two primary issues. First, the test environment was missing essential build tools. The pytest hook in `test/conftest.py` checked for tools like cmake, emcc, qbs, scons, premake, and bazel, which were not available on the CI runner. This caused 252 tests to error during their setup phase. Second, four specific Meson toolchain tests failed with AssertionErrors because the compiled binary output did not contain the expected string 'main __GNUC__9', indicating a potential compiler version mismatch or a flaw in the test's assertion logic."
         ],
         "relevant_files": [
             {
                 "file": "test/conftest.py",
                 "line_number": 354,
-                "reason": "Contains the pytest_runtest_setup hook that fails for over 250 tests by calling pytest.fail when required build tools (e.g., cmake) are not found, causing the majority of test setup failures."
+                "reason": "Contains the `pytest_runtest_setup` hook that fails tests when required build tools are missing, causing 252 setup errors."
             },
             {
                 "file": "test/functional/toolchains/meson/_base.py",
                 "line_number": 36,
-                "reason": "Contains the `_check_binary()` helper method that raised an AssertionError in four failing tests due to a mismatch between expected '__GNUC__9' and actual '__GNUC__13' compiler macros."
+                "reason": "Contains the `_check_binary` method where the AssertionError originates for the four failing Meson tests, checking for the string 'main __GNUC__9'."
             },
             {
                 "file": "test/functional/toolchains/meson/test_meson.py",
                 "line_number": 120,
-                "reason": "Location of the 'test_definition_of_global_options' test which failed due to the assertion error in `_check_binary()`."
+                "reason": "Contains the failing test `test_definition_of_global_options` which triggered the AssertionError."
             },
             {
                 "file": "test/functional/toolchains/meson/test_pkg_config_reuse.py",
                 "line_number": 58,
-                "reason": "Location of the 'test_reuse' test which failed due to the assertion error in `_check_binary()`."
+                "reason": "Contains the failing test `test_reuse` which triggered the AssertionError."
             },
             {
                 "file": "test/functional/toolchains/meson/test_preprocessor_definitions.py",
                 "line_number": 70,
-                "reason": "Location of the 'test_build' test which failed due to the assertion error in `_check_binary()`."
+                "reason": "Contains the failing test `test_build` which triggered the AssertionError."
             },
             {
                 "file": "test/functional/toolchains/meson/test_test.py",
                 "line_number": 61,
-                "reason": "Location of the 'test_reuse' test which failed due to the assertion error in `_check_binary()`."
+                "reason": "Contains the failing test `test_reuse` which triggered the AssertionError."
             }
         ],
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Missing Required Build Tools",
-                "evidence": "Logs show repeated failures: 'Failed: Required 'cmake' tool version 'Any' is not available' and similar errors for 'premake', 'emcc', etc., originating from test/conftest.py:354."
+                "subcategory": "Missing Build Tools in CI Environment",
+                "evidence": "Logs show repeated failures: 'Required [tool_name] tool version [version] is not available' for tools like cmake, emcc, qbs, scons, premake, and bazel."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "AssertionError in Functional Test",
-                "evidence": "AssertionError in `_check_binary()` expecting 'main __GNUC__9' but finding 'main __GNUC__13' in four Meson toolchain tests."
+                "subcategory": "AssertionError in Meson Toolchain Tests",
+                "evidence": "AssertionError: 'main __GNUC__9' not found in test output, as seen in the _check_binary method."
             }
         ],
         "failed_job": [
@@ -23400,14 +23397,50 @@
     },
     {
         "error_context": [
-            "The CI run failed because the step 'Linux Functional (3.10)' had no log data available for analysis. This indicates the step either did not execute, its logs were not captured, or it failed before any meaningful output was generated. Without specific log content, the exact root cause within this step cannot be determined."
+            "The CI run failed in the 'Linux Functional (3.10)' step due to a combination of environment and test logic issues. The primary root cause was a missing or incomplete test environment, where essential build tools (cmake, premake, emcc, qbs, scons, bazel) were not installed or discoverable by the CI runner. This triggered a custom pytest hook in 'test/conftest.py' to fail the setup for hundreds of functional tests, preventing them from running. Secondary root causes were specific test failures: 1) A compiler detection test failed because no compiler was found (expected 'gcc', got None). 2) A profile detection test failed due to a ConanException about an invalid 'None' compiler setting. 3) Multiple Meson toolchain tests failed because the compiled test binary output '__GNUC__13' instead of the expected '__GNUC__9', indicating a compiler version or definition mismatch."
         ],
-        "relevant_files": [],
+        "relevant_files": [
+            {
+                "file": "test/conftest.py",
+                "line_number": 352,
+                "reason": "Contains the 'pytest_runtest_setup' function that checks for required tools. The log shows repeated 'Failed: Required ... tool version ... is not available' errors from this line, directly causing widespread test setup failures."
+            },
+            {
+                "file": "test/functional/command/profile_test.py",
+                "line_number": null,
+                "reason": "Contains the failing test 'DetectCompilersTest.test_detect_default_compilers', which raised an AssertionError (None != 'gcc') because no compiler was detected."
+            },
+            {
+                "file": "test/functional/test_profile_detect_api.py",
+                "line_number": 65,
+                "reason": "Contains the failing test 'TestProfileDetectAPI.test_profile_detect_libc'. The test failed because a 'profile show' command raised a ConanException: 'Invalid setting 'None' is not a valid 'settings.compiler' value.'."
+            },
+            {
+                "file": "test/functional/toolchains/meson/_base.py",
+                "line_number": 36,
+                "reason": "Contains the '_check_binary' method where multiple Meson test failures originated. The method raised an AssertionError because the string 'main __GNUC__9' was not found in the program output (which showed '__GNUC__13' instead)."
+            }
+        ],
         "error_types": [
             {
-                "category": "Configuration Error",
-                "subcategory": "Missing or Inaccessible Logs",
-                "evidence": "Log content for step 'Linux Functional (3.10)' contains no data chunks, preventing error analysis."
+                "category": "Dependency Error",
+                "subcategory": "Missing Build Tools in Test Environment",
+                "evidence": "Repeated 'Failed: Required 'cmake' tool version 'Any' is not available' errors from test/conftest.py line 352."
+            },
+            {
+                "category": "Test Failure",
+                "subcategory": "AssertionError in Compiler Detection Test",
+                "evidence": "'test_detect_default_compilers' failed with AssertionError: 'None != 'gcc''."
+            },
+            {
+                "category": "Test Failure",
+                "subcategory": "Runtime Exception in Profile API Test",
+                "evidence": "'test_profile_detect_libc' failed with ConanException: 'Invalid setting 'None' is not a valid 'settings.compiler' value.'."
+            },
+            {
+                "category": "Test Failure",
+                "subcategory": "AssertionError in Meson Toolchain Tests",
+                "evidence": "Multiple Meson tests failed with AssertionError: ''main __GNUC__9' not found in [output]' from _base.py line 36."
             }
         ],
         "failed_job": [
@@ -23621,19 +23654,19 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'test' step because a pytest command attempted to execute tests on a directory that does not exist in the repository. The command 'poetry run pytest ... tests/test_core/test_datasets/' resulted in the error 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates a configuration or path error in the test command or the repository structure, causing the pytest session to exit with error code 4."
+            "In step 'test', the CI run failed because a pytest command attempted to run tests on a directory that does not exist in the repository. Specifically, the command targeted 'tests/test_core/test_datasets/', which was not found, causing a 'file or directory not found' error and a non-zero exit code."
         ],
         "relevant_files": [
             {
                 "file": "tests/test_core/test_datasets/",
                 "line_number": null,
-                "reason": "The pytest command failed because this target directory was not found, as evidenced by the error message 'ERROR: file or directory not found: tests/test_core/test_datasets/'."
+                "reason": "The pytest command in the failing step explicitly targeted this directory, which does not exist, as evidenced by the log error: 'ERROR: file or directory not found: tests/test_core/test_datasets/'."
             }
         ],
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "Test Path / Directory Not Found",
+                "subcategory": "Missing Test Directory",
                 "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
             }
         ],
@@ -23649,20 +23682,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'test' step because a pytest command was configured to run tests in a directory that does not exist. The command 'poetry run pytest ... tests/test_core/test_synthesizer/ tests/test_core/test_datasets/ ...' resulted in the error 'file or directory not found: tests/test_core/test_datasets/', causing the process to exit with code 4. This indicates a configuration or repository state issue where the expected test directory path is incorrect or missing."
+            "The CI run failed in the 'test' step because a pytest command was executed with a target directory that does not exist in the repository. The command 'pytest tests/test_core/test_synthesizer/ tests/test_core/test_datasets/' resulted in the error 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates the specified test directory path is invalid or missing, causing the job to exit with an error."
         ],
         "relevant_files": [
             {
                 "file": "tests/test_core/test_datasets/",
                 "line_number": null,
-                "reason": "This directory was specified as a target for the failing pytest command. The log shows the direct error 'file or directory not found: tests/test_core/test_datasets/', which caused the process to exit with code 4."
+                "reason": "This directory was specified as a target for the failing pytest command, but the log shows an error stating the file or directory was not found, which directly caused the job to exit with an error."
             }
         ],
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "Test Directory Not Found",
-                "evidence": "The pytest command failed with the error 'file or directory not found: tests/test_core/test_datasets/'."
+                "subcategory": "Invalid Test Path in CI Command",
+                "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
             }
         ],
         "failed_job": [
@@ -23677,20 +23710,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'test' step because a pytest command was executed with a target directory that does not exist in the repository. The command 'poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/test_synthesizer/ tests/test_core/test_datasets/ ...' resulted in the error 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates a configuration or path error where the test runner was instructed to look for tests in a non-existent location, causing the job to exit with error code 4."
+            "The CI run failed in the 'test' step because a pytest command attempted to run tests in a directory that does not exist. The command 'poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/test_synthesizer/ tests/test_core/test_datasets/ ...' specified the target 'tests/test_core/test_datasets/', which was not found in the repository at the failing commit, causing pytest to exit with error code 4."
         ],
         "relevant_files": [
             {
                 "file": "tests/test_core/test_datasets/",
                 "line_number": null,
-                "reason": "The directory was specified as a target for the failing pytest command but was not found, directly causing the job to exit with error code 4."
+                "reason": "This directory was specified as a target for the failing pytest command but was not found, causing the test run to exit with error code 4. The log explicitly states 'ERROR: file or directory not found' for this path."
             }
         ],
         "error_types": [
             {
                 "category": "Configuration Error",
                 "subcategory": "Test Path / Directory Not Found",
-                "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
+                "evidence": "The log states: 'ERROR: file or directory not found: tests/test_core/test_datasets/'."
             }
         ],
         "failed_job": [
@@ -23705,19 +23738,19 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'test' step. The step executed two pytest commands. The first command, which ran a subset of tests, passed. The second command, intended to run tests in the 'tests/test_core/test_synthesizer/' and 'tests/test_core/test_datasets/' directories, failed because the directory 'tests/test_core/test_datasets/' does not exist. This caused the pytest command to exit with an error, failing the entire CI job."
+            "The CI run failed in the 'test' step because a pytest command attempted to run tests from a directory that does not exist in the repository. The command specified 'tests/test_core/test_datasets/' as a target, but the log shows an error: 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates a mismatch between the test command configuration and the actual repository structure."
         ],
         "relevant_files": [
             {
                 "file": "tests/test_core/test_datasets/",
                 "line_number": null,
-                "reason": "The directory was passed as an argument to the failing pytest command. The log shows the error 'ERROR: file or directory not found: tests/test_core/test_datasets/', which directly caused the test run to fail."
+                "reason": "This directory was specified as a target for the second pytest command, but the log shows an error stating 'file or directory not found: tests/test_core/test_datasets/', which directly caused the test run to fail."
             }
         ],
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "Test Execution \u2013 Missing Test Directory",
+                "subcategory": "Test Path Configuration \u2013 Missing Directory",
                 "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
             }
         ],
@@ -23733,27 +23766,27 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'test' step because a pytest command attempted to execute tests in a directory that does not exist. The command specified 'tests/test_core/test_datasets/' as a target, but the log shows an error stating 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates a configuration or path error in the test execution command, as the specified directory path is invalid."
+            "In step 'test', the CI run failed because a pytest command attempted to execute tests in a directory that does not exist. The command 'pytest tests/test_core/test_synthesizer/ tests/test_core/test_datasets/' resulted in the error 'file or directory not found: tests/test_core/test_datasets/'. This indicates the specified test directory path is incorrect, preventing the test suite from running."
         ],
         "relevant_files": [
             {
                 "file": "tests/test_core/test_datasets/",
                 "line_number": null,
-                "reason": "This directory was specified as a target for a pytest command, but the log shows an error that it was not found, which is the direct cause of the job failure."
+                "reason": "The pytest command failed because this target directory was not found, as evidenced by the error 'file or directory not found: tests/test_core/test_datasets/'."
             }
         ],
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "Invalid Test Path / Directory Not Found",
-                "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
+                "subcategory": "Test Path / Directory Not Found",
+                "evidence": "The pytest command failed with the error 'file or directory not found: tests/test_core/test_datasets/'."
             }
         ],
         "failed_job": [
             {
                 "job": "test",
                 "step": "test",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
+                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys -o faulthandler_timeout=300 tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
             }
         ],
         "sha_fail": "b9b36350bfdf5ff34ba20076fa39096a59fdf0d5",
@@ -23761,20 +23794,20 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'test' step because a pytest command attempted to run tests in a directory that does not exist. Specifically, the command targeted 'tests/test_core/test_datasets/', which was reported as 'file or directory not found', causing pytest to exit with an error and the job to fail."
+            "The CI run failed in the 'test' step because a pytest command attempted to execute tests from a directory that does not exist in the repository. The command specified the path 'tests/test_core/test_datasets/', which resulted in the error 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates a mismatch between the test configuration or command and the actual repository structure."
         ],
         "relevant_files": [
             {
                 "file": "tests/test_core/test_datasets/",
                 "line_number": null,
-                "reason": "This directory was specified as a target for the second pytest run but was reported as 'file or directory not found', directly causing the test failure and job exit."
+                "reason": "This directory path was specified in the failing pytest command. The log shows the error 'ERROR: file or directory not found: tests/test_core/test_datasets/', which is the direct cause of the CI job failure."
             }
         ],
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "Test Path Configuration \u2013 Missing Directory",
-                "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
+                "subcategory": "Test Configuration \u2013 Missing Directory",
+                "evidence": "The pytest command failed with 'ERROR: file or directory not found: tests/test_core/test_datasets/'."
             }
         ],
         "failed_job": [
@@ -23905,14 +23938,14 @@
     },
     {
         "error_context": [
-            "The CI run failed in the step 'tests (3.10)' due to a configuration error. The step attempted to execute the command 'cd lib/crewai' to change the working directory before running pytest, but the directory 'lib/crewai' did not exist in the current workspace. This caused the shell script to exit with code 1, aborting the entire test execution."
+            "The CI run failed in the 'tests (3.10)' step due to a configuration error in the test execution script. The script attempted to change directory to 'lib/crewai' with the command 'cd lib/crewai', but this directory did not exist in the repository's current working structure. This caused the command to fail with 'No such file or directory', immediately halting the test run and causing the step to exit with code 1."
         ],
         "relevant_files": [],
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "CI Workflow / Path Error",
-                "evidence": "The command 'cd lib/crewai' failed because the directory does not exist, causing the shell script to exit with code 1."
+                "subcategory": "CI Script Path Error",
+                "evidence": "The test execution failed because the command 'cd lib/crewai' could not be executed due to 'No such file or directory'."
             }
         ],
         "failed_job": [
@@ -23927,280 +23960,280 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'lint' step due to numerous code style and quality violations detected by the Ruff linter. The linter identified issues such as unused imports (F401), bare except clauses (E722), comparisons to None (E711), redefined imports (F811), unused variables (F841), and module-level import order problems (E402) across many source and test files. This caused the linter process to exit with code 123, failing the entire CI run."
+            "The CI run failed in the 'lint' step due to multiple code quality violations detected by the Ruff linter. The step executed successfully but exited with a failure code (123) because the linter found numerous issues across the codebase, including unused imports (F401), bare except statements (E722), incorrect comparisons to None (E711), redefinitions (F811), unused variables (F841), and module import order problems (E402). These violations exceed the project's configured tolerance, causing the step and the overall CI run to fail."
         ],
         "relevant_files": [
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
                 "line_number": null,
-                "reason": "Contains an E722 error (bare 'except') identified by Ruff linter."
+                "reason": "Contains E722 (bare except) linting error."
             },
             {
                 "file": "src/crewai/agents/agent_builder/base_agent.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/agents/agent_builder/utilities/base_output_converter.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/agents/crew_agent_executor.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/cli/cli.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/cli/run_crew.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/flow/flow_visualizer.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/flow/html_template_handler.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/flow/path_utils.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/flow/utils.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/flow/visualization_utils.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/knowledge/source/excel_knowledge_source.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/lite_agent.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/llms/base_llm.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/security/security_config.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/task.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/tasks/llm_guardrail.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/telemetry/telemetry.py",
                 "line_number": null,
-                "reason": "Contains an E402 error (module level import not at top of file) identified by Ruff linter."
+                "reason": "Contains E402 (module import order) linting error."
             },
             {
                 "file": "src/crewai/tools/__init__.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/tools/agent_tools/add_image_tool.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/tools/base_tool.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/utilities/events/__init__.py",
                 "line_number": null,
-                "reason": "Contains 41 F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains 41 F401 (unused import) linting errors."
             },
             {
                 "file": "src/crewai/utilities/events/base_event_listener.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/utilities/events/third_party/__init__.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "src/crewai/utilities/formatter.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "tests/agents/agent_adapters/test_base_tool_adapter.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "tests/cli/test_constants.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "tests/crew_test.py",
                 "line_number": null,
-                "reason": "Contains five errors (F401, F811) identified by Ruff linter."
+                "reason": "Contains multiple linting errors (F401, F811)."
             },
             {
                 "file": "tests/custom_llm_test.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "tests/llm_test.py",
                 "line_number": null,
-                "reason": "Contains an F401 error and an E711 error identified by Ruff linter."
+                "reason": "Contains linting errors (F401, E711)."
             },
             {
                 "file": "tests/project_test.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "tests/security/test_deterministic_fingerprints.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "tests/security/test_examples.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "tests/security/test_fingerprint.py",
                 "line_number": null,
-                "reason": "Contains an F401 error and an F841 error identified by Ruff linter."
+                "reason": "Contains linting errors (F401, F841)."
             },
             {
                 "file": "tests/security/test_integration.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "tests/security/test_security_config.py",
                 "line_number": null,
-                "reason": "Contains an F841 error (unused variable) identified by Ruff linter."
+                "reason": "Contains F841 (unused variable) linting error."
             },
             {
                 "file": "tests/storage/test_mem0_storage.py",
                 "line_number": null,
-                "reason": "Contains four F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "tests/task_test.py",
                 "line_number": null,
-                "reason": "Contains 13 F841 errors (unused variables) identified by Ruff linter."
+                "reason": "Contains 13 F841 (unused variable) linting errors."
             },
             {
                 "file": "tests/telemetry/test_telemetry.py",
                 "line_number": null,
-                "reason": "Contains an E402 error (module level import not at top of file) identified by Ruff linter."
+                "reason": "Contains E402 (module import order) linting error."
             },
             {
                 "file": "tests/test_flow_persistence.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "tests/test_lite_agent.py",
                 "line_number": null,
-                "reason": "Contains an F401 error and an F841 error identified by Ruff linter."
+                "reason": "Contains linting errors (F401, F841)."
             },
             {
                 "file": "tests/test_multimodal_validation.py",
                 "line_number": null,
-                "reason": "Contains an F841 error (unused variable) identified by Ruff linter."
+                "reason": "Contains F841 (unused variable) linting error."
             },
             {
                 "file": "tests/test_task_guardrails.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             },
             {
                 "file": "tests/tools/test_base_tool.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "tests/tools/test_tool_usage.py",
                 "line_number": null,
-                "reason": "Contains two F841 errors (unused variables) identified by Ruff linter."
+                "reason": "Contains F841 (unused variable) linting errors."
             },
             {
                 "file": "tests/utilities/test_chromadb_utils.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "tests/utilities/test_converter.py",
                 "line_number": null,
-                "reason": "Contains multiple errors (F401, F841, E402) identified by Ruff linter."
+                "reason": "Contains multiple linting errors (F401, F841, E402)."
             },
             {
                 "file": "tests/utilities/test_events.py",
                 "line_number": null,
-                "reason": "Contains multiple errors (F401, F841) identified by Ruff linter."
+                "reason": "Contains linting errors (F401, F841)."
             },
             {
                 "file": "tests/utilities/test_planning_handler.py",
                 "line_number": null,
-                "reason": "Contains three F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "tests/utilities/test_pydantic_schema_parser.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting errors."
             },
             {
                 "file": "tests/utilities/test_serialization.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) identified by Ruff linter."
+                "reason": "Contains F401 (unused import) linting error."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
                 "subcategory": "Linting Violations (Ruff)",
-                "evidence": "The Ruff linter identified numerous code style issues (F401, E722, E711, F811, F841, E402) across multiple source and test files, causing the process to exit with code 123."
+                "evidence": "The Ruff linter found multiple violations including 'F401 unused imports, E722 bare except, E711 comparison to None, F811 redefinition, F841 unused variables, E402 module import order' and the step exited with code 123."
             }
         ],
         "failed_job": [
             {
-                "job": "tests (${{ matrix.python-version }})",
+                "job": null,
                 "step": "lint",
                 "command": null
             }
@@ -24210,185 +24243,185 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'lint' step because the Ruff linter identified numerous code quality violations across the codebase. The linter exited with code 123, indicating errors were found, which is treated as a failure condition in the CI pipeline. The specific violations include unused imports (F401), bare except statements (E722), and unused variables (F841), which violate the project's configured linting standards for style and best practices."
+            "The CI run failed in the 'lint' step due to multiple code quality violations detected by the Ruff linter. The linter scanned all Python files in the project and found numerous style and syntax issues, primarily 'F401' (unused import) and 'E722' (bare except) errors. The presence of these violations caused the linter to exit with a non-zero code (123), which is the standard exit code for Ruff when linting errors are found, thereby failing the CI job."
         ],
         "relevant_files": [
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains F401 errors (unused imports) on lines 1 and 25."
             },
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
                 "line_number": null,
-                "reason": "Contains a bare except statement (E722 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an E722 error (bare except) on line 77."
             },
             {
                 "file": "src/crewai/agents/agent_builder/base_agent.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 28."
             },
             {
                 "file": "src/crewai/agents/agent_builder/utilities/base_output_converter.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 2."
             },
             {
                 "file": "src/crewai/cli/run_crew.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) on line 3."
             },
             {
                 "file": "src/crewai/flow/flow_visualizer.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) on lines 4 and 11."
             },
             {
                 "file": "src/crewai/flow/html_template_handler.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) on lines 3 and 5."
             },
             {
                 "file": "src/crewai/flow/path_utils.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 8."
             },
             {
                 "file": "src/crewai/flow/utils.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 20."
             },
             {
                 "file": "src/crewai/knowledge/source/excel_knowledge_source.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) on lines 2 and 3."
             },
             {
                 "file": "src/crewai/llms/base_llm.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 2."
             },
             {
                 "file": "src/crewai/security/security_config.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 13."
             },
             {
                 "file": "src/crewai/tasks/llm_guardrail.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) on lines 1 and 7."
             },
             {
                 "file": "src/crewai/tools/agent_tools/add_image_tool.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) on line 1."
             },
             {
                 "file": "src/crewai/utilities/events/__init__.py",
                 "line_number": null,
-                "reason": "Contains numerous unused imports (41 F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains 41 F401 errors (unused imports)."
             },
             {
                 "file": "src/crewai/utilities/events/base_event_listener.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 2."
             },
             {
                 "file": "src/crewai/utilities/events/third_party/__init__.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 1."
             },
             {
                 "file": "tests/agents/agent_adapters/test_base_tool_adapter.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 1."
             },
             {
                 "file": "tests/cli/test_constants.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 1."
             },
             {
                 "file": "tests/custom_llm_test.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 2."
             },
             {
                 "file": "tests/security/test_deterministic_fingerprints.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) on lines 3 and 5."
             },
             {
                 "file": "tests/security/test_examples.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 3."
             },
             {
                 "file": "tests/security/test_fingerprint.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) and an unused variable (F841 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 8 and an F841 error (unused variable) on line 226."
             },
             {
                 "file": "tests/security/test_integration.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 3."
             },
             {
                 "file": "tests/security/test_security_config.py",
                 "line_number": null,
-                "reason": "Contains an unused variable (F841 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F841 error (unused variable) on line 70."
             },
             {
                 "file": "tests/storage/test_mem0_storage.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains four F401 errors (unused imports) on lines 1, 8, 9, and 11."
             },
             {
                 "file": "tests/test_flow_persistence.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) on lines 6 and 7."
             },
             {
                 "file": "tests/test_multimodal_validation.py",
                 "line_number": null,
-                "reason": "Contains an unused variable (F841 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F841 error (unused variable) on line 46."
             },
             {
                 "file": "tests/tools/test_base_tool.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains five F401 errors (unused imports) on lines 2, 3, and 4."
             },
             {
                 "file": "tests/tools/test_tool_usage.py",
                 "line_number": null,
-                "reason": "Contains unused variables (F841 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains two F841 errors (unused variables) on lines 493 and 566."
             },
             {
                 "file": "tests/utilities/test_chromadb_utils.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains five F401 errors (unused imports) on lines 2 and 4."
             },
             {
                 "file": "tests/utilities/test_planning_handler.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains three F401 errors (unused imports) on lines 1, 2, and 5."
             },
             {
                 "file": "tests/utilities/test_pydantic_schema_parser.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401 errors) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains five F401 errors (unused imports) on lines 1, 3, and 4."
             },
             {
                 "file": "tests/utilities/test_serialization.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401 error) reported by Ruff, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) on line 3."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Errors \u2013 Ruff violations (unused imports, bare except, unused variables)",
-                "evidence": "The linter reports numerous style and syntax issues (F401 for unused imports, E722 for bare except, F841 for unused variables) across many source and test files."
+                "subcategory": "Linting Violations (Ruff)",
+                "evidence": "The linter reported numerous style and syntax issues across many files, primarily 'F401' (unused import) and 'E722' (bare except) errors, causing the step to exit with code 123."
             }
         ],
         "failed_job": [
@@ -24548,190 +24581,190 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'lint' step due to code quality violations detected by the Ruff linter. The step executed 'ruff check' on all Python files (excluding templates and test directories) and reported numerous style and quality errors, primarily unused imports (F401), bare except statements (E722), and unused variables (F841). The linter exited with code 123, which is Ruff's standard failure code when linting errors are found, causing the CI step to fail."
+            "The CI run failed in the 'lint' step due to multiple code style and quality violations detected by the Ruff linter. The linter reported violations such as unused imports (F401), bare except statements (E722), and unused variables (F841) across numerous source and test files. The step exited with code 123, which Ruff uses to indicate that linting errors were found, causing the overall job to fail."
         ],
         "relevant_files": [
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
                 "line_number": null,
-                "reason": "Contains F401 errors (unused imports) on lines 1 and 25, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
                 "line_number": null,
-                "reason": "Contains an E722 error (bare except) on line 77, contributing to the linting failure."
+                "reason": "Contains an E722 error (bare except) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/agents/agent_builder/base_agent.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 28, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/agents/agent_builder/utilities/base_output_converter.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/cli/run_crew.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on line 3, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/flow/flow_visualizer.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 4 and 11, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/flow/html_template_handler.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 3 and 5, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/flow/path_utils.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 8, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/flow/utils.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 20, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/knowledge/source/excel_knowledge_source.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 2 and 3, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/llms/base_llm.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/security/security_config.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 13, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/tasks/llm_guardrail.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 1 and 7, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/tools/agent_tools/add_image_tool.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on line 1, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/utilities/events/__init__.py",
                 "line_number": null,
-                "reason": "Contains 41 F401 errors (unused imports) throughout the file, contributing to the linting failure."
+                "reason": "Contains 41 F401 errors (unused imports) reported by Ruff linter, a major contributor."
             },
             {
                 "file": "src/crewai/utilities/events/base_event_listener.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "src/crewai/utilities/events/third_party/__init__.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 1, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "tests/agents/agent_adapters/test_base_tool_adapter.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 1, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "tests/cli/test_constants.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 1, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "tests/custom_llm_test.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "tests/security/test_deterministic_fingerprints.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 3 and 5, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "tests/security/test_examples.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 3, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "tests/security/test_fingerprint.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 8 and an F841 error (unused variable) on line 226, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) and an F841 error (unused variable) reported by Ruff linter."
             },
             {
                 "file": "tests/security/test_integration.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 3, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "tests/security/test_security_config.py",
                 "line_number": null,
-                "reason": "Contains an F841 error (unused variable) on line 70, contributing to the linting failure."
+                "reason": "Contains an F841 error (unused variable) reported by Ruff linter."
             },
             {
                 "file": "tests/storage/test_mem0_storage.py",
                 "line_number": null,
-                "reason": "Contains four F401 errors (unused imports) on lines 1, 8, 9, and 11, contributing to the linting failure."
+                "reason": "Contains four F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "tests/test_cli_documentation_sync.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 1, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             },
             {
                 "file": "tests/test_flow_persistence.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 6 and 7, contributing to the linting failure."
+                "reason": "Contains two F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "tests/test_multimodal_validation.py",
                 "line_number": null,
-                "reason": "Contains an F841 error (unused variable) on line 46, contributing to the linting failure."
+                "reason": "Contains an F841 error (unused variable) reported by Ruff linter."
             },
             {
                 "file": "tests/tools/test_base_tool.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports) on lines 2, 3, and 4, contributing to the linting failure."
+                "reason": "Contains five F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "tests/tools/test_tool_usage.py",
                 "line_number": null,
-                "reason": "Contains two F841 errors (unused variables) on lines 493 and 566, contributing to the linting failure."
+                "reason": "Contains two F841 errors (unused variables) reported by Ruff linter."
             },
             {
                 "file": "tests/utilities/test_chromadb_utils.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports) on lines 2 and 4, contributing to the linting failure."
+                "reason": "Contains five F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "tests/utilities/test_planning_handler.py",
                 "line_number": null,
-                "reason": "Contains three F401 errors (unused imports) on lines 1, 2, and 5, contributing to the linting failure."
+                "reason": "Contains three F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "tests/utilities/test_pydantic_schema_parser.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports) on lines 1, 3, and 4, contributing to the linting failure."
+                "reason": "Contains five F401 errors (unused imports) reported by Ruff linter."
             },
             {
                 "file": "tests/utilities/test_serialization.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 3, contributing to the linting failure."
+                "reason": "Contains an F401 error (unused import) reported by Ruff linter."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violations \u2013 Ruff style and quality errors",
-                "evidence": "The linting step (ruff check) failed with exit code 123. The failure is evidenced by numerous Ruff error messages (e.g., F401, E722, F841) reported across multiple source and test files, indicating style and code quality violations."
+                "subcategory": "Linting Violations (Ruff)",
+                "evidence": "Ruff linter identified numerous code style violations (F401 unused import, E722 bare except, F841 unused variable) across multiple files, leading to exit code 123."
             }
         ],
         "failed_job": [
@@ -24746,275 +24779,275 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'lint' step due to code quality violations detected by the Ruff linter. The linter reported numerous style and syntax issues across many Python source and test files, including unused imports (F401), bare except clauses (E722), module-level import ordering issues (E402), and unused variables (F841). The step executed 'ruff check' on all Python files and exited with code 123, indicating the presence of linting errors that caused the job to fail."
+            "The CI run failed in the 'lint' step because the Ruff linter found numerous code quality violations across the Python codebase. The linter reported errors such as unused imports (F401), bare except statements (E722), incorrect comparisons to None (E711), module-level imports not at the top of the file (E402), unused variables (F841), and redefined names (F811). These violations caused the linter to exit with code 123, indicating the presence of errors that must be fixed manually."
         ],
         "relevant_files": [
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
                 "line_number": null,
-                "reason": "Contains a bare except clause (E722) contributing to linting failure."
+                "reason": "Contains a bare except statement (E722) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/agents/agent_builder/base_agent.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/agents/agent_builder/utilities/base_output_converter.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/agents/crew_agent_executor.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/cli/run_crew.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/flow/flow_visualizer.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/flow/html_template_handler.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/flow/path_utils.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/flow/utils.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/flow/visualization_utils.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/knowledge/source/excel_knowledge_source.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/lite_agent.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/llms/base_llm.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/security/security_config.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/task.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/tasks/llm_guardrail.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/telemetry/telemetry.py",
                 "line_number": null,
-                "reason": "Contains a module-level import ordering issue (E402) contributing to linting failure."
+                "reason": "Contains a module-level import not at top of file (E402) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/tools/__init__.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/tools/agent_tools/add_image_tool.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/tools/base_tool.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/utilities/events/__init__.py",
                 "line_number": null,
-                "reason": "Contains numerous unused imports (F401) contributing to linting failure."
+                "reason": "Contains numerous unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/utilities/events/base_event_listener.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/utilities/events/third_party/__init__.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "src/crewai/utilities/formatter.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/agents/agent_adapters/test_base_tool_adapter.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/cli/provider_test.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/cli/test_constants.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/crew_test.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) and redefinition errors (F811) contributing to linting failure."
+                "reason": "Contains unused imports (F401) and redefinition errors (F811) reported by the Ruff linter."
             },
             {
                 "file": "tests/custom_llm_test.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/llm_test.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) and a comparison to None error (E711) contributing to linting failure."
+                "reason": "Contains an unused import (F401) and an incorrect None comparison (E711) reported by the Ruff linter."
             },
             {
                 "file": "tests/project_test.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/security/test_deterministic_fingerprints.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/security/test_examples.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/security/test_fingerprint.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) and an unused variable (F841) contributing to linting failure."
+                "reason": "Contains an unused import (F401) and an unused variable (F841) reported by the Ruff linter."
             },
             {
                 "file": "tests/security/test_integration.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/security/test_security_config.py",
                 "line_number": null,
-                "reason": "Contains an unused variable (F841) contributing to linting failure."
+                "reason": "Contains an unused variable (F841) reported by the Ruff linter."
             },
             {
                 "file": "tests/storage/test_mem0_storage.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/task_test.py",
                 "line_number": null,
-                "reason": "Contains numerous unused variables (F841) contributing to linting failure."
+                "reason": "Contains numerous unused variables (F841) reported by the Ruff linter."
             },
             {
                 "file": "tests/telemetry/test_telemetry.py",
                 "line_number": null,
-                "reason": "Contains a module-level import ordering issue (E402) contributing to linting failure."
+                "reason": "Contains a module-level import not at top of file (E402) reported by the Ruff linter."
             },
             {
                 "file": "tests/test_flow_persistence.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/test_lite_agent.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) and an unused variable (F841) contributing to linting failure."
+                "reason": "Contains an unused import (F401) and an unused variable (F841) reported by the Ruff linter."
             },
             {
                 "file": "tests/test_multimodal_validation.py",
                 "line_number": null,
-                "reason": "Contains an unused variable (F841) contributing to linting failure."
+                "reason": "Contains an unused variable (F841) reported by the Ruff linter."
             },
             {
                 "file": "tests/test_task_guardrails.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/tools/test_base_tool.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/tools/test_tool_usage.py",
                 "line_number": null,
-                "reason": "Contains unused variables (F841) contributing to linting failure."
+                "reason": "Contains unused variables (F841) reported by the Ruff linter."
             },
             {
                 "file": "tests/utilities/test_chromadb_utils.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/utilities/test_converter.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401), unused variables (F841), and a module-level import ordering issue (E402) contributing to linting failure."
+                "reason": "Contains unused imports (F401), unused variables (F841), and an import order error (E402) reported by the Ruff linter."
             },
             {
                 "file": "tests/utilities/test_events.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) and an unused variable (F841) contributing to linting failure."
+                "reason": "Contains unused imports (F401) and an unused variable (F841) reported by the Ruff linter."
             },
             {
                 "file": "tests/utilities/test_planning_handler.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/utilities/test_pydantic_schema_parser.py",
                 "line_number": null,
-                "reason": "Contains unused imports (F401) contributing to linting failure."
+                "reason": "Contains unused imports (F401) reported by the Ruff linter."
             },
             {
                 "file": "tests/utilities/test_serialization.py",
                 "line_number": null,
-                "reason": "Contains an unused import (F401) contributing to linting failure."
+                "reason": "Contains an unused import (F401) reported by the Ruff linter."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violations (Ruff)",
-                "evidence": "The Ruff linter reported numerous style and syntax issues across many source and test files, including unused imports (F401), bare except clauses (E722), module-level import ordering (E402), and unused variables (F841), causing the step to exit with code 123."
+                "subcategory": "Linting Violations \u2013 Ruff style and syntax errors",
+                "evidence": "The Ruff linter reported numerous style and syntax violations across many source and test files, including unused imports (F401), bare except (E722), comparison to None (E711), module import order (E402), redefinition (F811), and unused variables (F841)."
             }
         ],
         "failed_job": [
@@ -25077,260 +25110,260 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'lint' step due to code quality violations detected by the Ruff linter. The linter executed on all Python files (excluding templates and tests) and found numerous issues, causing it to exit with code 123. The primary root cause is the presence of linting errors across the codebase, including unused imports, bare except statements, comparison issues, unused variables, and module import order problems."
+            "The CI run failed in the 'lint' step because the Ruff linter detected numerous code quality violations across the codebase. The linter exited with code 123, indicating multiple style and syntax issues, including unused imports (F401), bare except clauses (E722), comparisons to None (E711), module imports not at the top (E402), and unused variables (F841). These violations were found in both source and test files, causing the step to fail."
         ],
         "relevant_files": [
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 1 and 25."
+                "reason": "Contains unused imports (F401) on lines 1 and 25."
             },
             {
                 "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
                 "line_number": null,
-                "reason": "Contains an E722 error (bare except) on line 77."
+                "reason": "Contains a bare except clause (E722) on line 77."
             },
             {
                 "file": "src/crewai/agents/agent_builder/base_agent.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 28."
+                "reason": "Contains an unused import (F401) on line 28."
             },
             {
                 "file": "src/crewai/agents/agent_builder/utilities/base_output_converter.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2."
+                "reason": "Contains an unused import (F401) on line 2."
             },
             {
                 "file": "src/crewai/agents/crew_agent_executor.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 1 and 2."
+                "reason": "Contains unused imports (F401) on lines 1 and 2."
             },
             {
                 "file": "src/crewai/cli/cli.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 1 and 3."
+                "reason": "Contains unused imports (F401) on lines 1 and 3."
             },
             {
                 "file": "src/crewai/cli/run_crew.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on line 3."
+                "reason": "Contains an unused import (F401) on line 3."
             },
             {
                 "file": "src/crewai/flow/flow_visualizer.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 4 and 11."
+                "reason": "Contains unused imports (F401) on lines 4 and 11."
             },
             {
                 "file": "src/crewai/flow/html_template_handler.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 3 and 5."
+                "reason": "Contains unused imports (F401) on lines 3 and 5."
             },
             {
                 "file": "src/crewai/flow/path_utils.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 8."
+                "reason": "Contains an unused import (F401) on line 8."
             },
             {
                 "file": "src/crewai/flow/utils.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 20."
+                "reason": "Contains an unused import (F401) on line 20."
             },
             {
                 "file": "src/crewai/flow/visualization_utils.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 20."
+                "reason": "Contains an unused import (F401) on line 20."
             },
             {
                 "file": "src/crewai/knowledge/source/excel_knowledge_source.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 2 and 3."
+                "reason": "Contains unused imports (F401) on lines 2 and 3."
             },
             {
                 "file": "src/crewai/lite_agent.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 3 and 38."
+                "reason": "Contains unused imports (F401) on lines 3 and 38."
             },
             {
                 "file": "src/crewai/llms/base_llm.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2."
+                "reason": "Contains an unused import (F401) on line 2."
             },
             {
                 "file": "src/crewai/security/security_config.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 13."
+                "reason": "Contains an unused import (F401) on line 13."
             },
             {
                 "file": "src/crewai/tasks/llm_guardrail.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 1 and 7."
+                "reason": "Contains unused imports (F401) on lines 1 and 7."
             },
             {
                 "file": "src/crewai/tools/__init__.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on line 1."
+                "reason": "Contains an unused import (F401) on line 1."
             },
             {
                 "file": "src/crewai/tools/agent_tools/add_image_tool.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on line 1."
+                "reason": "Contains an unused import (F401) on line 1."
             },
             {
                 "file": "src/crewai/tools/base_tool.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2."
+                "reason": "Contains an unused import (F401) on line 2."
             },
             {
                 "file": "src/crewai/utilities/events/__init__.py",
                 "line_number": null,
-                "reason": "Contains 41 F401 errors (unused imports)."
+                "reason": "Contains 41 unused imports (F401)."
             },
             {
                 "file": "src/crewai/utilities/events/base_event_listener.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2."
+                "reason": "Contains an unused import (F401) on line 2."
             },
             {
                 "file": "src/crewai/utilities/events/third_party/__init__.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 1."
+                "reason": "Contains an unused import (F401) on line 1."
             },
             {
                 "file": "tests/agent_test.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 24."
+                "reason": "Contains an unused import (F401) on line 24."
             },
             {
                 "file": "tests/agents/agent_adapters/test_base_tool_adapter.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 1."
+                "reason": "Contains an unused import (F401) on line 1."
             },
             {
                 "file": "tests/cli/test_constants.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 1."
+                "reason": "Contains an unused import (F401) on line 1."
             },
             {
                 "file": "tests/custom_llm_test.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2."
+                "reason": "Contains an unused import (F401) on line 2."
             },
             {
                 "file": "tests/llm_test.py",
                 "line_number": null,
-                "reason": "Contains an F401 error on line 5 and an E711 error on line 225."
+                "reason": "Contains an unused import (F401) on line 5 and a comparison to None (E711) on line 225."
             },
             {
                 "file": "tests/project_test.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 2."
+                "reason": "Contains an unused import (F401) on line 2."
             },
             {
                 "file": "tests/security/test_deterministic_fingerprints.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 3 and 5."
+                "reason": "Contains unused imports (F401) on lines 3 and 5."
             },
             {
                 "file": "tests/security/test_examples.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 3."
+                "reason": "Contains an unused import (F401) on line 3."
             },
             {
                 "file": "tests/security/test_fingerprint.py",
                 "line_number": null,
-                "reason": "Contains an F401 error on line 8 and an F841 error on line 226."
+                "reason": "Contains an unused import (F401) on line 8 and an unused variable (F841) on line 226."
             },
             {
                 "file": "tests/security/test_integration.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 3."
+                "reason": "Contains an unused import (F401) on line 3."
             },
             {
                 "file": "tests/security/test_security_config.py",
                 "line_number": null,
-                "reason": "Contains an F841 error (unused variable) on line 70."
+                "reason": "Contains an unused variable (F841) on line 70."
             },
             {
                 "file": "tests/storage/test_mem0_storage.py",
                 "line_number": null,
-                "reason": "Contains four F401 errors (unused imports) on lines 1, 8, 9, and 11."
+                "reason": "Contains unused imports (F401) on lines 1, 8, 9, and 11."
             },
             {
                 "file": "tests/task_test.py",
                 "line_number": null,
-                "reason": "Contains 13 F841 errors (unused variables)."
+                "reason": "Contains 13 unused variables (F841)."
             },
             {
                 "file": "tests/telemetry/test_telemetry.py",
                 "line_number": null,
-                "reason": "Contains an E402 error (module import not at top) on line 37."
+                "reason": "Contains a module import not at the top (E402) on line 37."
             },
             {
                 "file": "tests/test_flow_persistence.py",
                 "line_number": null,
-                "reason": "Contains two F401 errors (unused imports) on lines 6 and 7."
+                "reason": "Contains unused imports (F401) on lines 6 and 7."
             },
             {
                 "file": "tests/test_lite_agent.py",
                 "line_number": null,
-                "reason": "Contains an F401 error on line 1 and an F841 error on line 316."
+                "reason": "Contains an unused import (F401) on line 1 and an unused variable (F841) on line 316."
             },
             {
                 "file": "tests/test_multimodal_validation.py",
                 "line_number": null,
-                "reason": "Contains an F841 error (unused variable) on line 46."
+                "reason": "Contains an unused variable (F841) on line 46."
             },
             {
                 "file": "tests/test_task_guardrails.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 1."
+                "reason": "Contains an unused import (F401) on line 1."
             },
             {
                 "file": "tests/tools/test_base_tool.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports) on lines 2, 3, and 4."
+                "reason": "Contains unused imports (F401) on lines 2, 3, and 4."
             },
             {
                 "file": "tests/tools/test_tool_usage.py",
                 "line_number": null,
-                "reason": "Contains two F841 errors (unused variables) on lines 493 and 566."
+                "reason": "Contains unused variables (F841) on lines 493 and 566."
             },
             {
                 "file": "tests/utilities/test_chromadb_utils.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports) on lines 2 and 4."
+                "reason": "Contains unused imports (F401) on lines 2 and 4."
             },
             {
                 "file": "tests/utilities/test_converter.py",
                 "line_number": null,
-                "reason": "Contains an F401 error, two F841 errors, and an E402 error."
+                "reason": "Contains an unused import (F401) on line 2, unused variables (F841) on lines 434 and 568, and a module import not at the top (E402) on line 519."
             },
             {
                 "file": "tests/utilities/test_events.py",
                 "line_number": null,
-                "reason": "Contains F401 and F841 errors."
+                "reason": "Contains unused imports (F401) on lines 1 and 41 and an unused variable (F841) on line 312."
             },
             {
                 "file": "tests/utilities/test_planning_handler.py",
                 "line_number": null,
-                "reason": "Contains three F401 errors (unused imports)."
+                "reason": "Contains unused imports (F401) on lines 1, 2, and 5."
             },
             {
                 "file": "tests/utilities/test_pydantic_schema_parser.py",
                 "line_number": null,
-                "reason": "Contains five F401 errors (unused imports)."
+                "reason": "Contains unused imports (F401) on lines 1, 3, and 4."
             },
             {
                 "file": "tests/utilities/test_serialization.py",
                 "line_number": null,
-                "reason": "Contains an F401 error (unused import) on line 3."
+                "reason": "Contains an unused import (F401) on line 3."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
                 "subcategory": "Linting Violations",
-                "evidence": "The Ruff linter found numerous violations including 'F401' (unused import), 'E722' (bare except), 'E711' (comparison to None), 'F841' (unused variable), and 'E402' (module import not at top)."
+                "evidence": "The Ruff linter found numerous style and syntax errors across many source and test files, including unused imports (F401), bare except clauses (E722), comparisons to None (E711), module imports not at the top (E402), and unused variables (F841)."
             }
         ],
         "failed_job": [
@@ -25345,235 +25378,30 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'lint' step because the Ruff linter detected numerous code quality violations across the project's Python source and test files. The linter reported multiple types of errors, including unused imports (F401), bare except statements (E722), comparisons to None (E711), unused variables (F841), and module import order issues (E402). The presence of these unfixed violations caused the linter to exit with a non-zero status (exit code 123), failing the step and the entire CI job."
+            "The CI run failed in the 'lint' step because the Ruff linter detected multiple code quality violations across the Python codebase. The step executed successfully but exited with code 123, which indicates the presence of linting errors, causing the overall job to fail."
         ],
         "relevant_files": [
             {
-                "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
                 "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
-                "line_number": null,
-                "reason": "Contains an E722 (bare except) error."
-            },
-            {
-                "file": "src/crewai/agents/agent_builder/base_agent.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/agents/agent_builder/utilities/base_output_converter.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/agents/crew_agent_executor.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/cli/run_crew.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/flow/flow_visualizer.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/flow/html_template_handler.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/flow/path_utils.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/flow/utils.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/flow/visualization_utils.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/knowledge/source/excel_knowledge_source.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/lite_agent.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/llms/base_llm.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/security/security_config.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/tasks/llm_guardrail.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/tools/__init__.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/tools/agent_tools/add_image_tool.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/tools/base_tool.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/utilities/events/__init__.py",
-                "line_number": null,
-                "reason": "Contains 41 F401 (unused import) errors."
-            },
-            {
-                "file": "src/crewai/utilities/events/base_event_listener.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "src/crewai/utilities/events/third_party/__init__.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "tests/agents/agent_adapters/test_base_tool_adapter.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "tests/cli/test_constants.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "tests/custom_llm_test.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
+                "line_number": 77,
+                "reason": "Contains an E722 (do not use bare `except`) linting error, contributing to the linter's failure."
             },
             {
                 "file": "tests/llm_test.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error and an E711 (comparison to None) error."
-            },
-            {
-                "file": "tests/project_test.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "tests/security/test_deterministic_fingerprints.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "tests/security/test_examples.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "tests/security/test_fingerprint.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error and an F841 (unused variable) error."
-            },
-            {
-                "file": "tests/security/test_integration.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
-            },
-            {
-                "file": "tests/security/test_security_config.py",
-                "line_number": null,
-                "reason": "Contains an F841 (unused variable) error."
-            },
-            {
-                "file": "tests/storage/test_mem0_storage.py",
-                "line_number": null,
-                "reason": "Contains four F401 (unused import) errors."
+                "line_number": 225,
+                "reason": "Contains an E711 (comparison to None) linting error, contributing to the linter's failure."
             },
             {
                 "file": "tests/telemetry/test_telemetry.py",
-                "line_number": null,
-                "reason": "Contains an E402 (module level import not at top of file) error."
-            },
-            {
-                "file": "tests/test_flow_persistence.py",
-                "line_number": null,
-                "reason": "Contains two F401 (unused import) errors."
-            },
-            {
-                "file": "tests/test_lite_agent.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error and an F841 (unused variable) error."
-            },
-            {
-                "file": "tests/test_multimodal_validation.py",
-                "line_number": null,
-                "reason": "Contains an F841 (unused variable) error."
-            },
-            {
-                "file": "tests/tools/test_base_tool.py",
-                "line_number": null,
-                "reason": "Contains five F401 (unused import) errors."
-            },
-            {
-                "file": "tests/tools/test_tool_usage.py",
-                "line_number": null,
-                "reason": "Contains two F841 (unused variable) errors."
-            },
-            {
-                "file": "tests/utilities/test_chromadb_utils.py",
-                "line_number": null,
-                "reason": "Contains five F401 (unused import) errors."
-            },
-            {
-                "file": "tests/utilities/test_events.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) and F841 (unused variable) errors."
-            },
-            {
-                "file": "tests/utilities/test_planning_handler.py",
-                "line_number": null,
-                "reason": "Contains three F401 (unused import) errors."
-            },
-            {
-                "file": "tests/utilities/test_pydantic_schema_parser.py",
-                "line_number": null,
-                "reason": "Contains five F401 (unused import) errors."
-            },
-            {
-                "file": "tests/utilities/test_serialization.py",
-                "line_number": null,
-                "reason": "Contains an F401 (unused import) error."
+                "line_number": 37,
+                "reason": "Contains an E402 (module level import not at top of file) linting error, contributing to the linter's failure."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violations \u2013 Ruff errors (F401, E722, E711, F841, E402)",
-                "evidence": "The Ruff tool reported numerous code style violations across multiple source and test files, including unused imports (F401), bare except statements (E722), comparisons to None (E711), unused variables (F841), and module import order issues (E402)."
+                "subcategory": "Linting Violations (Ruff)",
+                "evidence": "The Ruff linter identified numerous violations including 'F401' (unused import), 'E722' (bare except), 'E711' (comparison to None), 'E402' (module import order), and 'F841' (unused variable)."
             }
         ],
         "failed_job": [
@@ -25626,25 +25454,25 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'tests (3.11)' step due to a Python NameError in the source code. Specifically, the name 'Optional' was not defined in the file `src/crewai/tools/base_tool.py` at line 21. This error occurred during the import of the crewai module when pytest attempted to collect tests, causing 57 test files to fail during collection and preventing the entire test suite from executing."
+            "The CI run failed in the 'tests (3.11)' step due to a NameError in the source code. Specifically, the name 'Optional' was not defined in the file 'src/crewai/tools/base_tool.py' at line 21. This error occurred during the import of the crewai module when pytest attempted to collect tests, causing a cascading failure that prevented the collection and execution of 57 test files."
         ],
         "relevant_files": [
             {
                 "file": "src/crewai/tools/base_tool.py",
                 "line_number": 21,
-                "reason": "A NameError: 'name 'Optional' is not defined' at line 21 within the EnvVar class, which caused all test collection failures."
+                "reason": "Contains a NameError where 'Optional' is not defined, breaking the import chain for the crewai module and causing all dependent tests to fail during collection."
             }
         ],
         "error_types": [
             {
                 "category": "Runtime Error",
-                "subcategory": "NameError in source code during import",
-                "evidence": "NameError stating 'name 'Optional' is not defined' in the file `src/crewai/tools/base_tool.py` at line 21."
+                "subcategory": "NameError in source code import",
+                "evidence": "NameError: 'Optional' is not defined, originating in src/crewai/tools/base_tool.py at line 21."
             },
             {
                 "category": "Test Failure",
                 "subcategory": "Test collection failure due to import error",
-                "evidence": "The test collection phase fails with 57 errors, all due to the same underlying NameError, preventing any tests from executing."
+                "evidence": "pytest test collection failed for 57 test modules due to a NameError, preventing test execution."
             }
         ],
         "failed_job": [
