@@ -1,0 +1,10 @@
+{
+    "sha_fail": "c5f6c8039c85e1c8c1796ebac91f258f8cb0c860",
+    "changed_files": [
+        {
+            "commit": "c5f6c8039c85e1c8c1796ebac91f258f8cb0c860",
+            "file_path": "requirements.txt",
+            "diff": "diff --git a/requirements.txt b/requirements.txt\nindex fae1d20cc..e864391d7 100644\n--- a/requirements.txt\n+++ b/requirements.txt\n@@ -13,7 +13,7 @@ packaging==23.2\n \n huggingface_hub>=0.33.0\n peft==0.16.0\n-transformers @ git+https://github.com/winglian/transformers.git@fa-prepare-qkv-from-posids-revert\n+transformers @ git+https://github.com/huggingface/transformers.git@main\n tokenizers>=0.21.1\n accelerate @ git+https://github.com/SalmanMohammadi/accelerate.git@device_mesh_parallelism_config\n datasets==4.0.0\n"
+        }
+    ]
+}

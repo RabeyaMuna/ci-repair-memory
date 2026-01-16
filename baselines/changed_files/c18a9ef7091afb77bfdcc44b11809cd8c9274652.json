@@ -1,0 +1,10 @@
+{
+    "sha_fail": "c18a9ef7091afb77bfdcc44b11809cd8c9274652",
+    "changed_files": [
+        {
+            "commit": "c18a9ef7091afb77bfdcc44b11809cd8c9274652",
+            "file_path": "litellm/llms/anthropic/experimental_pass_through/messages/handler.py",
+            "diff": "diff --git a/litellm/llms/anthropic/experimental_pass_through/messages/handler.py b/litellm/llms/anthropic/experimental_pass_through/messages/handler.py\nindex a198dcfd82..37fd839b3c 100644\n--- a/litellm/llms/anthropic/experimental_pass_through/messages/handler.py\n+++ b/litellm/llms/anthropic/experimental_pass_through/messages/handler.py\n@@ -144,9 +144,10 @@ def anthropic_messages_handler(\n     )\n \n     anthropic_messages_provider_config: Optional[BaseAnthropicMessagesConfig] = None\n-    if (\n-        custom_llm_provider in LlmProviders.__annotations__.keys()\n-    ):  # send custom models straight through to chat completion handler\n+\n+    if custom_llm_provider is not None and custom_llm_provider in [\n+        provider.value for provider in LlmProviders\n+    ]:\n         anthropic_messages_provider_config = (\n             ProviderConfigManager.get_provider_anthropic_messages_config(\n                 model=model,\n"
+        }
+    ]
+}

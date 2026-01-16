@@ -1,0 +1,15 @@
+{
+    "sha_fail": "a1741388832b295ac6f4f031820ea292f484c64a",
+    "changed_files": [
+        {
+            "commit": "a1741388832b295ac6f4f031820ea292f484c64a",
+            "file_path": "apps/models_provider/impl/xinference_model_provider/credential/stt.py",
+            "diff": "diff --git a/apps/models_provider/impl/xinference_model_provider/credential/stt.py b/apps/models_provider/impl/xinference_model_provider/credential/stt.py\nindex 3cdbb53f2..880ad988c 100644\n--- a/apps/models_provider/impl/xinference_model_provider/credential/stt.py\n+++ b/apps/models_provider/impl/xinference_model_provider/credential/stt.py\n@@ -27,7 +27,7 @@ class XInferenceSTTModelCredential(BaseForm, BaseModelCredential):\n                 else:\n                     return False\n         try:\n-            model = provider.get_model(model_type, model_name, model_credential)\n+            model = provider.get_model(model_type, model_name, model_credential, **model_params)\n             model.check_auth()\n         except Exception as e:\n             if isinstance(e, AppApiException):\n@@ -44,4 +44,4 @@ class XInferenceSTTModelCredential(BaseForm, BaseModelCredential):\n         return {**model, 'api_key': super().encryption(model.get('api_key', ''))}\n \n     def get_model_params_setting_form(self, model_name):\n-        pass\n+        return\n"
+        },
+        {
+            "commit": "a1741388832b295ac6f4f031820ea292f484c64a",
+            "file_path": "apps/models_provider/impl/xinference_model_provider/model/stt.py",
+            "diff": "diff --git a/apps/models_provider/impl/xinference_model_provider/model/stt.py b/apps/models_provider/impl/xinference_model_provider/model/stt.py\nindex e614d42d4..f8935045d 100644\n--- a/apps/models_provider/impl/xinference_model_provider/model/stt.py\n+++ b/apps/models_provider/impl/xinference_model_provider/model/stt.py\n@@ -17,6 +17,7 @@ class XInferenceSpeechToText(MaxKBBaseModel, BaseSpeechToText):\n     api_base: str\n     api_key: str\n     model: str\n+    params: dict\n \n     def __init__(self, **kwargs):\n         super().__init__(**kwargs)\n"
+        }
+    ]
+}

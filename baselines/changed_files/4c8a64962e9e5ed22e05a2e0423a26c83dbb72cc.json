@@ -1,0 +1,10 @@
+{
+    "sha_fail": "4c8a64962e9e5ed22e05a2e0423a26c83dbb72cc",
+    "changed_files": [
+        {
+            "commit": "4c8a64962e9e5ed22e05a2e0423a26c83dbb72cc",
+            "file_path": "tests/test_web_urldispatcher.py",
+            "diff": "diff --git a/tests/test_web_urldispatcher.py b/tests/test_web_urldispatcher.py\nindex eb83bc52a..c42c5559c 100644\n--- a/tests/test_web_urldispatcher.py\n+++ b/tests/test_web_urldispatcher.py\n@@ -966,7 +966,7 @@ async def test_subapp_domain_routing(aiohttp_client: AiohttpClient) -> None:\n     client = await aiohttp_client(app)\n     async with client.get(\"/\", headers={\"Host\": \"different.example.com\"}) as r:\n         assert r.status == 200\n-        result = await resp.text()\n+        result = await r.text()\n         assert result == \"SUBAPP\"\n \n \n"
+        }
+    ]
+}

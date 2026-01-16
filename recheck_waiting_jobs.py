@@ -7,7 +7,7 @@ import shutil
 import requests
 from omegaconf import OmegaConf
 from benchmark_utils import save_jsonl
-from benhmark_functions import get_results
+from benchmark_functions import get_results
 from benchmark import CIFixBenchmark
 
 # -----------------------------
@@ -241,7 +241,7 @@ config = OmegaConf.load(CONFIG_PATH)
 base_dir = config.get("base_dir")
 
 results_dir       = os.path.join(base_dir, "results")
-jobs_pushed_file  = os.path.join(results_dir, "jobs_ids_diff-5-llm.jsonl")      # SOURCE OF TRUTH (input)
+jobs_pushed_file  = os.path.join(results_dir, "jobs_ids_diff.jsonl")      # SOURCE OF TRUTH (input)
 
 # dedicated outputs
 awaiting_file     = os.path.join(results_dir, "jobs_awaiting_diff.jsonl")
@@ -347,6 +347,7 @@ print(f"  failure: {len(failure)}  → {failure_file}")
 print(f"  error:   {len(errors)}   → {errors_file}")
 print(f"  waiting: {len(waiting)}  → {awaiting_file}")
 
+accuracy = len(success)/(len(success)+ len(failure)+len(errors)+len(waiting))
 # -----------------------------
 # Build combined results (success + failure) for analysis
 # -----------------------------
@@ -355,4 +356,6 @@ save_overwrite(results_file, combined_results)
 
 print(f"\nCombined results (success+failure) written → {results_file}")
 print(f"[Sanity] Combined row count: {len(combined_results)}")
+
+print(f"  Accuracy (success / total_jobs): {accuracy:.4f} ({accuracy*100:.2f}%)")
 

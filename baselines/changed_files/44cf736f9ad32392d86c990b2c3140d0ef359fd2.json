@@ -1,0 +1,10 @@
+{
+    "sha_fail": "44cf736f9ad32392d86c990b2c3140d0ef359fd2",
+    "changed_files": [
+        {
+            "commit": "44cf736f9ad32392d86c990b2c3140d0ef359fd2",
+            "file_path": "conan/internal/util/runners.py",
+            "diff": "diff --git a/conan/internal/util/runners.py b/conan/internal/util/runners.py\nindex 3adc880f1..e6d81f553 100644\n--- a/conan/internal/util/runners.py\n+++ b/conan/internal/util/runners.py\n@@ -96,7 +96,8 @@ def check_output_runner(cmd, stderr=None, ignore_error=False):\n             msg = f\"Command '{cmd}' failed with errorcode '{process.returncode}'\\n{stderr}\"\n             raise ConanException(msg)\n \n-        return load(tmp_file)\n+        output = load(tmp_file)\n+        return output\n     finally:\n         try:\n             os.unlink(tmp_file)\n"
+        }
+    ]
+}

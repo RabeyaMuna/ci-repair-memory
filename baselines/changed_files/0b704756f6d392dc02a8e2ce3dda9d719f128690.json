@@ -1,0 +1,10 @@
+{
+    "sha_fail": "0b704756f6d392dc02a8e2ce3dda9d719f128690",
+    "changed_files": [
+        {
+            "commit": "0b704756f6d392dc02a8e2ce3dda9d719f128690",
+            "file_path": "src/crewai/utilities/events/event_listener.py",
+            "diff": "diff --git a/src/crewai/utilities/events/event_listener.py b/src/crewai/utilities/events/event_listener.py\nindex dc85b701..040620dc 100644\n--- a/src/crewai/utilities/events/event_listener.py\n+++ b/src/crewai/utilities/events/event_listener.py\n@@ -378,17 +378,11 @@ class EventListener(BaseEventListener):\n \n         @crewai_event_bus.on(LLMGuardrailStartedEvent)\n         def on_llm_guardrail_started(source, event: LLMGuardrailStartedEvent):\n-            guardrail_name = \"Guardrail\"\n-            if isinstance(event.guardrail, str):\n-                guardrail_name = (\n-                    event.guardrail[:50] + \"...\"\n-                    if len(event.guardrail) > 50\n-                    else event.guardrail\n-                )\n-            elif hasattr(event.guardrail, \"__name__\"):\n-                guardrail_name = event.guardrail.__name__\n-            elif hasattr(event.guardrail, \"__class__\"):\n-                guardrail_name = event.guardrail.__class__.__name__\n+            guardrail_name = (\n+                event.guardrail[:50] + \"...\"\n+                if len(event.guardrail) > 50\n+                else event.guardrail\n+            )\n \n             self.formatter.handle_guardrail_started(guardrail_name, event.retry_count)\n \n"
+        }
+    ]
+}

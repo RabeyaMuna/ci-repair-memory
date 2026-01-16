@@ -1,0 +1,10 @@
+{
+    "sha_fail": "af5fcb21859b6be4d60ee75ffdec5ef326932b6d",
+    "changed_files": [
+        {
+            "commit": "af5fcb21859b6be4d60ee75ffdec5ef326932b6d",
+            "file_path": "conan/cli/formatters/graph/info_graph_html.py",
+            "diff": "diff --git a/conan/cli/formatters/graph/info_graph_html.py b/conan/cli/formatters/graph/info_graph_html.py\nindex abbadeca1..a38edcf23 100644\n--- a/conan/cli/formatters/graph/info_graph_html.py\n+++ b/conan/cli/formatters/graph/info_graph_html.py\n@@ -315,10 +315,10 @@ graph_info_html = r\"\"\"\n                 data = define_data();\n                 network.setData(data);\n                 network.redraw();\n-                if (focus_search) {\n+                network.moveTo({position: viewPos, scale: scale});\n+                // If we have found a package to focus, we need to move the view\n+                if (typeof focus_search === \"string\") {\n                     network.focus(focus_search, {animation: true, locked: false});\n-                } else {\n-                    network.moveTo({position: viewPos, scale: scale});\n                 }\n             }\n             function switchBuild() {\n@@ -348,7 +348,7 @@ graph_info_html = r\"\"\"\n             function onSearchKeyDown(event) {\n                 if (event.key === \"Enter\") {\n                     focus_search = true;\n-                    debouncedDraw();\n+                    draw();\n                     focus_search = false;\n                 }\n             }\n"
+        }
+    ]
+}

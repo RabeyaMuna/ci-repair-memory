@@ -5,334 +5,402 @@ import os
 import json
 import time
 import requests
-from benhmark_functions import get_results
+from pathlib import Path
+from typing import Dict, List, Tuple, Optional
 
-# -----------------------------
-# Debug helper
-# -----------------------------
+from benchmark_functions import get_results
+from benchmark_utils import save_jsonl
+from evaluation_plot.error_type_base import run_error_type_accuracy_evaluation
+
 DEBUG_FAST_FAIL = True
 
+
+# -------------------------
+# Logging
+# -------------------------
 def debug_log(msg: str, *args) -> None:
-    """Simple debug logger for this module."""
     if not DEBUG_FAST_FAIL:
         return
     try:
         formatted = msg.format(*args)
     except Exception:
-        # Fallback if formatting fails
         formatted = msg
     print(f"[fast_fail_detail] {formatted}", flush=True)
 
-# -----------------------------
-# Module-level helpers (no nesting)
-# -----------------------------
-def normalize_run_level_conclusion(concl: str) -> str:
-    c = (concl or "").lower()
-    if c in ("cancelled", "timed_out", "timeout"):
-        return "failure"
-    return c or ""
 
-def parse_owner_repo_run_id(url: str):
-    """
-    Parse .../github.com/<owner>/<repo>/actions/runs/<run_id> (no regex).
-    Returns (owner, repo, run_id) or (None, None, None).
-    """
-    if not url:
-        return None, None, None
-    s = url.strip().strip("/")
-    parts = s.split("/")
-    # Handle schema-present URLs
-    if "//" in s and "github.com" not in parts:
-        s2 = s.split("//", 1)[1]
-        parts = s2.strip("/").split("/")
-    # Prefer actions/runs pattern
-    if "actions" in parts and "runs" in parts:
-        a = parts.index("actions")
-        if a >= 2 and a + 2 < len(parts):
-            return parts[a - 2], parts[a - 1], parts[a + 2]
-    # Fallback using 'github.com' anchor
-    if "github.com" in parts and len(parts) >= parts.index("github.com") + 6:
-        i = parts.index("github.com")
-        return parts[i + 1], parts[i + 2], parts[i + 5]
-    return None, None, None
+# -------------------------
+# JSONL helpers
+# -------------------------
+def _read_jsonl(path: str) -> List[dict]:
+    if not path or not os.path.exists(path):
+        return []
+    out = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return out
 
-def build_github_headers(token: str | None):
+
+def _write_jsonl_overwrite(path: str, rows: List[dict]) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    save_jsonl(path, rows)
+
+
+# -------------------------
+# GH helpers
+# -------------------------
+def build_github_headers(token: Optional[str]):
     headers = {"Accept": "application/vnd.github+json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     return headers
 
 
-# -----------------------------
-# Detail pass (flat; call from your class)
-# -----------------------------
+def parse_owner_repo_run_id(url: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    if not url:
+        return None, None, None
+    s = url.strip().strip("/")
+    parts = s.split("/")
+    if "//" in s and "github.com" not in parts:
+        s2 = s.split("//", 1)[1]
+        parts = s2.strip("/").split("/")
+
+    if "actions" in parts and "runs" in parts:
+        a = parts.index("actions")
+        if a >= 2 and a + 2 < len(parts):
+            return parts[a - 2], parts[a - 1], parts[a + 2]
+
+    if "github.com" in parts and len(parts) >= parts.index("github.com") + 6:
+        i = parts.index("github.com")
+        return parts[i + 1], parts[i + 2], parts[i + 5]
+
+    return None, None, None
+
+
+def _find_repo_root(start: Path) -> Path:
+    start = start.resolve()
+    for p in [start] + list(start.parents):
+        if (p / "dataset").exists() and (p / "results").exists():
+            return p
+    return start.parent
+
+
+# -------------------------
+# Normalization rules (IMPORTANT)
+# -------------------------
+def normalize_conclusion(concl: str) -> str:
+    """
+    IMPORTANT: cancelled/timed_out/timeout are NOT failure.
+    We keep them as separate buckets.
+    """
+    c = (concl or "").lower()
+    if c in ("", None):
+        return ""
+    # normalize spelling variants
+    if c == "timed_out":
+        return "timed_out"
+    return c
+
+
+def infer_fast_fail_from_jobs(jobs: List[dict]) -> bool:
+    """
+    Fast-fail definition (your requirement):
+    If ANY job failed (conclusion==failure) and others may be cancelled -> run should be failure.
+    """
+    conclusions = [(j.get("conclusion") or "").lower() for j in jobs]
+    return any(c == "failure" for c in conclusions)
+
+
+def infer_run_conclusion_from_api(owner: str, repo: str, run_id: str, headers: dict) -> Tuple[str, bool]:
+    """
+    Returns: (final_conclusion, fast_fail_bool)
+    final_conclusion is one of:
+      success, failure, cancelled, timed_out, waiting, error, in_progress, queued, ''
+    """
+    base = f"https://api.github.com/repos/{owner}/{repo}/actions"
+
+    # jobs endpoint
+    jobs_url = f"{base}/runs/{run_id}/jobs?per_page=100"
+    r_jobs = requests.get(jobs_url, headers=headers, timeout=20)
+    jobs = (r_jobs.json().get("jobs", []) if r_jobs.ok else []) or []
+
+    fast_fail = infer_fast_fail_from_jobs(jobs)
+
+    # run endpoint (run-level conclusion/status)
+    run_url = f"{base}/runs/{run_id}"
+    r_run = requests.get(run_url, headers=headers, timeout=20)
+    if not r_run.ok:
+        return ("waiting", fast_fail)
+
+    run_json = r_run.json() or {}
+    run_status = normalize_conclusion(run_json.get("status") or "")
+    run_concl = normalize_conclusion(run_json.get("conclusion") or "")
+
+    # If completed, conclusion is meaningful
+    if run_status == "completed":
+        # Apply fast-fail override ONLY when there is a real failure in jobs
+        if fast_fail:
+            return ("failure", True)
+
+        # Otherwise keep cancelled/timed_out separate
+        if run_concl in ("success", "failure", "cancelled", "timed_out", "timeout"):
+            # normalize timeout spelling
+            if run_concl == "timeout":
+                return ("timed_out", False)
+            return (run_concl, False)
+
+        # completed but unknown -> treat as waiting-ish
+        return ("waiting", fast_fail)
+
+    # Not completed yet
+    if run_status in ("queued", "in_progress"):
+        return (run_status, fast_fail)
+
+    return ("waiting", fast_fail)
+
+
+# -------------------------
+# Finalize + file writing + final print + plots
+# -------------------------
 def finalize_after_last_poll(
     self,
     *,
-    jobs_results: list,
-    jobs_ids_await: list,
-    jobs_ids_invalid: list,
+    jobs_results: List[dict],
+    jobs_ids_await: List[dict],
+    jobs_ids_invalid: List[dict],
     stream_results_path: str,
+    out_dir: str,
+    model_name: str,
+    jobs_ids_path: str,
+    dataset_path: Optional[str] = None,
 ) -> None:
     """
-    One-time detail pass to run AFTER the polling loop.
-
-    Mutates (in place):
-      - jobs_results: extends with any newly-resolved rows (incl. inferred failures)
-      - jobs_ids_invalid: extends with any error rows discovered now
-      - jobs_ids_await: replaced with the final still-waiting rows
-
-    Also appends any newly-resolved rows to the streaming results file.
+    - Re-check waiting
+    - Infer fast-fail using GH API
+    - Rewrite dedicated files (success/failure/cancelled/timed_out/invalid/waiting)
+    - Print ONE final report (pushed + dataset-grounded)
+    - Generate per-error-type plots based on success file
     """
+
     REQ_DELAY = 0.8
 
-    debug_log(
-        "Starting finalize_after_last_poll: jobs_results={}, jobs_ids_await={}, jobs_ids_invalid={}",
-        len(jobs_results),
-        len(jobs_ids_await),
-        len(jobs_ids_invalid),
-    )
-    debug_log("Streaming results path: {}", stream_results_path)
+    # ---- Load pushed as source of truth ----
+    pushed_jobs = _read_jsonl(jobs_ids_path)
+    pushed_ids = {str(j.get("id")) for j in pushed_jobs if isinstance(j, dict)}
 
-    # ---------- 1) Re-check all still-waiting once via get_results() ----------
-    resolved_now = []
+    # Normalize already-known results
+    for r in jobs_results:
+        r["conclusion"] = normalize_conclusion(r.get("conclusion") or "")
+
+    for r in jobs_ids_invalid:
+        r["conclusion"] = normalize_conclusion(r.get("conclusion") or "error") or "error"
+
+    # Build a quick map so we don't duplicate
+    resolved_map: Dict[str, dict] = {str(r.get("id")): r for r in jobs_results if str(r.get("id")) in pushed_ids}
+    invalid_map: Dict[str, dict] = {str(r.get("id")): r for r in jobs_ids_invalid if str(r.get("id")) in pushed_ids}
+
+    # Re-derive waiting from pushed - resolved - invalid (most reliable)
+    waiting_now = []
+    for j in pushed_jobs:
+        jid = str(j.get("id"))
+        if jid in resolved_map or jid in invalid_map:
+            continue
+        waiting_now.append(j)
+
+    debug_log(
+        "Finalize start: pushed={} resolved={} invalid={} waiting={}",
+        len(pushed_jobs), len(resolved_map), len(invalid_map), len(waiting_now)
+    )
+
+    # ---- Step 1: re-check all waiting via get_results() ----
     still_waiting = []
+    newly_resolved = []
+    newly_invalid = []
 
     with open(stream_results_path, "a", encoding="utf-8") as streamf:
-        for job in list(jobs_ids_await):
-            job_id = job.get("id")
-            debug_log("Re-checking job (step1): id={}, raw_job={}", job_id, job)
-
+        for job in waiting_now:
+            jid = job.get("id")
             try:
-                job_url, conclusion = get_results(job, self.config, self.credentials)
-                debug_log(
-                    "get_results -> job_id={}, url={}, conclusion={}",
-                    job_id,
-                    job_url,
-                    conclusion,
-                )
+                job_url, concl = get_results(job, self.config, self.credentials)
             except Exception as e:
-                debug_log(
-                    "get_results EXCEPTION for job_id={}: {} (marking as waiting)",
-                    job_id,
-                    repr(e),
-                )
-                job_url, conclusion = None, "waiting"
+                debug_log("get_results exception for id={}: {}", jid, repr(e))
+                job_url, concl = None, "waiting"
 
-            conclusion = normalize_run_level_conclusion(conclusion)
-            debug_log(
-                "Normalized conclusion for job_id={}: {}",
-                job_id,
-                conclusion,
-            )
+            concl = normalize_conclusion(concl)
+            row = dict(job)
+            if job_url:
+                row["url"] = job_url
+            row["conclusion"] = concl
 
-            if conclusion in ("waiting", "queued", "in_progress", ""):
-                row = dict(job)
-                if job_url:
-                    row["url"] = job_url
-                row["conclusion"] = "waiting"
+            # waiting states
+            if concl in ("", "waiting", "queued", "in_progress"):
                 still_waiting.append(row)
-                debug_log(
-                    "Job still waiting after get_results: id={}, url={}",
-                    job_id,
-                    row.get("url"),
-                )
 
-            elif conclusion == "error":
-                rr = dict(job)
-                rr["url"] = job_url
-                rr["conclusion"] = "error"
-                jobs_ids_invalid.append(rr)
-                debug_log(
-                    "Job marked as INVALID (error) after get_results: id={}, url={}",
-                    job_id,
-                    job_url,
-                )
+            # invalid/error bucket
+            elif concl == "error":
+                newly_invalid.append(row)
 
+            # completed buckets: success/failure/cancelled/timed_out
             else:
-                rr = dict(job)
-                rr["url"] = job_url
-                rr["conclusion"] = conclusion  # success or failure
-                resolved_now.append(rr)
-                debug_log(
-                    "Job resolved after get_results: id={}, conclusion={}, url={}",
-                    job_id,
-                    conclusion,
-                    job_url,
-                )
-                json.dump(rr, streamf); streamf.write("\n")
+                newly_resolved.append(row)
+                json.dump(row, streamf)
+                streamf.write("\n")
 
             time.sleep(REQ_DELAY)
 
-    if resolved_now:
-        jobs_results.extend(resolved_now)
-        debug_log(
-            "Step1 complete: newly resolved count={}, jobs_results now={}",
-            len(resolved_now),
-            len(jobs_results),
-        )
-    else:
-        debug_log("Step1 complete: no jobs resolved by get_results")
+    # Merge step-1 results into maps
+    for r in newly_resolved:
+        resolved_map[str(r.get("id"))] = r
+    for r in newly_invalid:
+        invalid_map[str(r.get("id"))] = r
 
-    debug_log("Jobs still waiting after step1: {}", len(still_waiting))
+    debug_log("After step1: newly_resolved={} still_waiting={} newly_invalid={}",
+              len(newly_resolved), len(still_waiting), len(newly_invalid))
 
-    # ---------- 2) For still-waiting rows, use GH API to infer fast-fail ----------
+    # ---- Step 2: GH API inference for still waiting ----
     token = (
         os.environ.get("GH_TOKEN")
         or os.environ.get("GITHUB_TOKEN")
         or self.credentials.get("token")
     )
-    if token:
-        debug_log("GitHub token detected (not printing for safety).")
-    else:
-        debug_log("NO GitHub token detected, API calls may be rate-limited or fail.")
-
     headers = build_github_headers(token)
 
-    inferred_resolved = []   # will include inferred failures and successes
-    undecided_after_api = []
-
+    final_waiting = []
     with open(stream_results_path, "a", encoding="utf-8") as streamf:
         for row in still_waiting:
-            job_id = row.get("id")
-            debug_log("Step2 GH API check for job_id={}, row={}", job_id, row)
-
-            owner, repo, run_id = parse_owner_repo_run_id(row.get("url"))
-            debug_log(
-                "Parsed owner/repo/run_id for job_id={}: owner={}, repo={}, run_id={}",
-                job_id,
-                owner,
-                repo,
-                run_id,
-            )
-
+            owner, repo, run_id = parse_owner_repo_run_id(row.get("url") or "")
             if not (owner and repo and run_id):
-                debug_log(
-                    "Could NOT parse run_id for job_id={} (url={}), keeping undecided.",
-                    job_id,
-                    row.get("url"),
-                )
-                undecided_after_api.append(row)
+                final_waiting.append(row)
                 continue
 
-            base = f"https://api.github.com/repos/{owner}/{repo}/actions"
             try:
-                # Fetch jobs in the run
-                jobs_url = f"{base}/runs/{run_id}/jobs?per_page=100"
-                debug_log("Requesting jobs list for job_id={} -> {}", job_id, jobs_url)
-                r_jobs = requests.get(jobs_url, headers=headers, timeout=20)
-                debug_log(
-                    "Jobs HTTP status for job_id={}: {}",
-                    job_id,
-                    r_jobs.status_code,
-                )
+                inferred_concl, fast_fail = infer_run_conclusion_from_api(owner, repo, run_id, headers)
+            except Exception as e:
+                debug_log("API inference exception id={}: {}", row.get("id"), repr(e))
+                inferred_concl, fast_fail = ("waiting", False)
 
-                jobs = (r_jobs.json().get("jobs", []) if r_jobs.ok else []) or []
-                statuses    = [str(j.get("status") or "").lower() for j in jobs]
-                conclusions = [str(j.get("conclusion") or "").lower() for j in jobs]
+            inferred_concl = normalize_conclusion(inferred_concl)
 
-                debug_log(
-                    "Job details for job_id={}: jobs_count={}, statuses={}, conclusions={}",
-                    job_id,
-                    len(jobs),
-                    statuses,
-                    conclusions,
-                )
+            # Apply your rule: if fast_fail true -> failure, even if run shows cancelled
+            if fast_fail:
+                inferred_concl = "failure"
 
-                fast_fail = (
-                    any(st == "completed" and co == "failure" for st, co in zip(statuses, conclusions))
-                    or ("cancelled" in conclusions and "completed" in statuses)
-                    or any(co == "failure" for co in conclusions)
-                )
-                debug_log(
-                    "Fast-fail inference for job_id={}: fast_fail={}",
-                    job_id,
-                    fast_fail,
-                )
+            row2 = dict(row)
+            row2["conclusion"] = inferred_concl
 
-                if fast_fail:
-                    rr = dict(row); rr["conclusion"] = "failure"
-                    inferred_resolved.append(rr)
-                    json.dump(rr, streamf); streamf.write("\n")
-                    debug_log(
-                        "Job inferred as FAILURE via fast-fail: job_id={}, row={}",
-                        job_id,
-                        rr,
-                    )
-                    time.sleep(REQ_DELAY)
-                    continue
-
-                # Run-level fallback (normalize cancelled/timed_out -> failure)
-                run_url = f"{base}/runs/{run_id}"
-                debug_log(
-                    "Requesting run-level details for job_id={} -> {}",
-                    job_id,
-                    run_url,
-                )
-                r_run = requests.get(run_url, headers=headers, timeout=20)
-                debug_log(
-                    "Run HTTP status for job_id={}: {}",
-                    job_id,
-                    r_run.status_code,
-                )
-
-                rj = r_run.json() if r_run.ok else {}
-                raw_run_concl = rj.get("conclusion")
-                run_concl = normalize_run_level_conclusion(raw_run_concl)
-                debug_log(
-                    "Run-level conclusion for job_id={}: raw={}, normalized={}",
-                    job_id,
-                    raw_run_concl,
-                    run_concl,
-                )
-
-                if run_concl in ("failure", "success"):
-                    rr = dict(row); rr["conclusion"] = run_concl
-                    inferred_resolved.append(rr)
-                    json.dump(rr, streamf); streamf.write("\n")
-                    debug_log(
-                        "Job inferred from run-level: job_id={}, conclusion={}, row={}",
-                        job_id,
-                        run_concl,
-                        rr,
-                    )
-                else:
-                    undecided_after_api.append(row)
-                    debug_log(
-                        "Job still UNDECIDED after GH API: job_id={}, keeping in await",
-                        job_id,
-                    )
-
-            except requests.RequestException as e:
-                undecided_after_api.append(row)
-                debug_log(
-                    "RequestException for job_id={} during GH API checks: {}",
-                    job_id,
-                    repr(e),
-                )
+            if inferred_concl in ("", "waiting", "queued", "in_progress"):
+                final_waiting.append(row2)
+            else:
+                resolved_map[str(row2.get("id"))] = row2
+                json.dump(row2, streamf)
+                streamf.write("\n")
 
             time.sleep(REQ_DELAY)
 
-    if inferred_resolved:
-        jobs_results.extend(inferred_resolved)
-        debug_log(
-            "Step2 complete: inferred_resolved_count={}, jobs_results now={}",
-            len(inferred_resolved),
-            len(jobs_results),
-        )
-    else:
-        debug_log("Step2 complete: no jobs inferred via GH API")
+    # ---- Step 3: rewrite dedicated result files (no stale rows) ----
+    # Full resolved list (only pushed)
+    resolved_all = [resolved_map[i] for i in sorted(resolved_map.keys(), key=lambda x: int(x) if x.isdigit() else x)]
+    invalid_all = [invalid_map[i] for i in sorted(invalid_map.keys(), key=lambda x: int(x) if x.isdigit() else x)]
 
-    debug_log(
-        "Final undecided_after_api count (will remain in jobs_ids_await): {}",
-        len(undecided_after_api),
+    success_rows, failure_rows, cancelled_rows, timeout_rows = [], [], [], []
+    for r in resolved_all:
+        c = normalize_conclusion(r.get("conclusion") or "")
+        if c == "success":
+            success_rows.append(r)
+        elif c == "failure":
+            failure_rows.append(r)
+        elif c == "cancelled":
+            cancelled_rows.append(r)
+        elif c in ("timed_out", "timeout"):
+            rr = dict(r); rr["conclusion"] = "timed_out"
+            timeout_rows.append(rr)
+        else:
+            # unknown completed state -> keep it as waiting-ish (rare)
+            final_waiting.append(dict(r, conclusion="waiting"))
+
+    # Paths
+    success_path   = os.path.join(out_dir, f"jobs_success_{model_name}.jsonl")
+    failure_path   = os.path.join(out_dir, f"jobs_failure_{model_name}.jsonl")
+    cancelled_path = os.path.join(out_dir, f"jobs_cancelled_{model_name}.jsonl")
+    timeout_path   = os.path.join(out_dir, f"jobs_timeout_{model_name}.jsonl")
+    invalid_path   = os.path.join(out_dir, f"jobs_invalid_{model_name}.jsonl")
+    waiting_path   = os.path.join(out_dir, f"jobs_awaiting_{model_name}.jsonl")
+
+    # Combined results file (optional): success+failure only (common evaluation assumption)
+    results_path = os.path.join(out_dir, f"jobs_results_{model_name}.jsonl")
+
+    _write_jsonl_overwrite(success_path, success_rows)
+    _write_jsonl_overwrite(failure_path, failure_rows)
+    _write_jsonl_overwrite(cancelled_path, cancelled_rows)
+    _write_jsonl_overwrite(timeout_path, timeout_rows)
+    _write_jsonl_overwrite(invalid_path, invalid_all)
+    _write_jsonl_overwrite(waiting_path, final_waiting)
+
+    _write_jsonl_overwrite(results_path, success_rows + failure_rows)
+
+    # ---- Step 4: print ONE final report ----
+    pushed = len(pushed_jobs)
+    passed = len(success_rows)
+    failed = len(failure_rows)
+    cancelled = len(cancelled_rows)
+    timed_out = len(timeout_rows)
+    invalid = len(invalid_all)
+    waiting = len(final_waiting)
+
+    # accuracy on pushed (attempted/pushed)
+    denom_pushed = max(pushed, 1)
+    acc_pushed = (passed / denom_pushed) * 100.0
+
+    # dataset grounded
+    repo_root = _find_repo_root(Path(__file__).resolve())
+    if dataset_path is None:
+        dataset_path = str(repo_root / "dataset" / "lca_dataset.parquet")
+
+    # Try to load dataset rows count safely without adding pandas dependency here
+    # (your evaluation_plot function already reads the dataset; we’ll use its result too)
+    dataset_rows = None
+
+    print("\n=== Overall outcome stats (attempted-only; dataset-grounded) ===")
+    print(f"Repo root: {repo_root}")
+    if dataset_rows is None:
+        # We'll fill dataset_rows after calling run_error_type_accuracy_evaluation
+        pass
+    print(f"Attempted/pushed: {pushed}  (coverage: 100.0%)")
+    print(f"Not pushed: 0  <-- NOT counted as failed")
+    print(f"Passed:  {passed}")
+    print(f"Failed:  {failed}")
+    print(f"Cancelled: {cancelled}")
+    print(f"Timed out: {timed_out}")
+    print(f"Invalid: {invalid}")
+    print(f"Waiting: {waiting}")
+    print(f"Accuracy (passed/attempted*100): {acc_pushed:.2f}%")
+
+    # ---- Step 5: plots + per-error-type accuracy ----
+    stats = run_error_type_accuracy_evaluation(
+        dataset_path=Path(dataset_path),
+        success_path=Path(success_path),
+        output_dir=repo_root / "evaluation_plot",
+        jobs_ids_invalid=invalid_all,
+        jobs_ids_await=final_waiting,
+        stream_results_path=results_path,  # use success+failure file as stream for eval
     )
 
-    # ---------- 3) Replace caller's waiting list with final undecided rows ----------
-    jobs_ids_await[:] = undecided_after_api
+    # Update dataset rows / dataset accuracy from returned stats (authoritative)
+    overall = stats.get("overall", {})
+    dataset_rows = overall.get("dataset_rows") or overall.get("dataset_size") or overall.get("total_dataset_size")
+
+    if dataset_rows:
+        acc_dataset = (passed / max(int(dataset_rows), 1)) * 100.0
+        print(f"\nDataset rows: {dataset_rows}")
+        print(f"Global accuracy (passed/dataset*100): {acc_dataset:.2f}%")
+
     debug_log(
-        "End finalize_after_last_poll: jobs_results={}, jobs_ids_await={}, jobs_ids_invalid={}",
-        len(jobs_results),
-        len(jobs_ids_await),
-        len(jobs_ids_invalid),
+        "FINAL: passed={} failed={} cancelled={} timed_out={} invalid={} waiting={} accuracy_pushed={:.2f}%",
+        passed, failed, cancelled, timed_out, invalid, waiting, acc_pushed
     )

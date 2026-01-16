@@ -1,0 +1,10 @@
+{
+    "sha_fail": "c6e622ac4765055bd95f5358a6f19ed3970da9b4",
+    "changed_files": [
+        {
+            "commit": "c6e622ac4765055bd95f5358a6f19ed3970da9b4",
+            "file_path": "test/functional/toolchains/env/test_virtualenv_powershell.py",
+            "diff": "diff --git a/test/functional/toolchains/env/test_virtualenv_powershell.py b/test/functional/toolchains/env/test_virtualenv_powershell.py\nindex 79ac2e8d5..08f643b55 100644\n--- a/test/functional/toolchains/env/test_virtualenv_powershell.py\n+++ b/test/functional/toolchains/env/test_virtualenv_powershell.py\n@@ -254,16 +254,11 @@ def test_powershell_quoting(powershell):\n \n \n @pytest.mark.skipif(platform.system() != \"Windows\", reason=\"Requires Windows\")\n-@pytest.mark.parametrize(\"ps\", [\"powershell.exe\", None])\n def test_verbosity_flag(ps):\n     tc = TestClient()\n-    ps_arg = f'-c tools.env.virtualenv:powershell={ps}' if ps else \"\"\n     tc.run(\"new cmake_lib -d name=pkg -d version=1.0\")\n-    tc.run(f'create . -tf=\"\" -c tools.build:verbosity=verbose {ps_arg}')\n+    tc.run('create . -tf=\"\" -c tools.build:verbosity=verbose '\n+           '-c tools.env.virtualenv:powershell=powershell.exe')\n \n-    if ps:\n-        assert \"/verbosity:Detailed\" in tc.out\n-        assert \"-verbosity:Detailed\" not in tc.out\n-    else:\n-        assert \"/verbosity:Detailed\" not in tc.out\n-        assert \"-verbosity:Detailed\" in tc.out\n+    assert \"/verbosity:Detailed\" in tc.out\n+    assert \"-verbosity:Detailed\" not in tc.out\n"
+        }
+    ]
+}

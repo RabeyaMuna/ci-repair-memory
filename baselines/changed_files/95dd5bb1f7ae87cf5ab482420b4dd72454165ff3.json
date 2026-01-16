@@ -1,0 +1,15 @@
+{
+    "sha_fail": "95dd5bb1f7ae87cf5ab482420b4dd72454165ff3",
+    "changed_files": [
+        {
+            "commit": "95dd5bb1f7ae87cf5ab482420b4dd72454165ff3",
+            "file_path": "apps/application/flow/step_node/parameter_extraction_node/impl/base_parameter_extraction_node.py",
+            "diff": "diff --git a/apps/application/flow/step_node/parameter_extraction_node/impl/base_parameter_extraction_node.py b/apps/application/flow/step_node/parameter_extraction_node/impl/base_parameter_extraction_node.py\nindex fa950cf0a..f8a81a9f1 100644\n--- a/apps/application/flow/step_node/parameter_extraction_node/impl/base_parameter_extraction_node.py\n+++ b/apps/application/flow/step_node/parameter_extraction_node/impl/base_parameter_extraction_node.py\n@@ -86,7 +86,7 @@ class BaseParameterExtractionNode(IParameterExtractionNode):\n \n     def save_context(self, details, workflow_manage):\n         for key, value in details.get('result').items():\n-            self.context['key'] = value\n+            self.context[key] = value\n         self.context['result'] = details.get('result')\n \n     def execute(self, input_variable, variable_list, model_params_setting, model_id, **kwargs) -> NodeResult:\n"
+        },
+        {
+            "commit": "95dd5bb1f7ae87cf5ab482420b4dd72454165ff3",
+            "file_path": "apps/application/flow/step_node/variable_splitting_node/impl/base_variable_splitting_node.py",
+            "diff": "diff --git a/apps/application/flow/step_node/variable_splitting_node/impl/base_variable_splitting_node.py b/apps/application/flow/step_node/variable_splitting_node/impl/base_variable_splitting_node.py\nindex 0d2cc964c..a13764467 100644\n--- a/apps/application/flow/step_node/variable_splitting_node/impl/base_variable_splitting_node.py\n+++ b/apps/application/flow/step_node/variable_splitting_node/impl/base_variable_splitting_node.py\n@@ -34,7 +34,7 @@ def smart_jsonpath_search(data: dict, path: str):\n class BaseVariableSplittingNode(IVariableSplittingNode):\n     def save_context(self, details, workflow_manage):\n         for key, value in details.get('result').items():\n-            self.context['key'] = value\n+            self.context[key] = value\n         self.context['result'] = details.get('result')\n \n     def execute(self, input_variable, variable_list, **kwargs) -> NodeResult:\n"
+        }
+    ]
+}

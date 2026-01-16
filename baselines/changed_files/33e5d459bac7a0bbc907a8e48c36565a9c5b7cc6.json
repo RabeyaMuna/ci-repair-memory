@@ -1,0 +1,10 @@
+{
+    "sha_fail": "33e5d459bac7a0bbc907a8e48c36565a9c5b7cc6",
+    "changed_files": [
+        {
+            "commit": "33e5d459bac7a0bbc907a8e48c36565a9c5b7cc6",
+            "file_path": "test/integration/configuration/profile_test.py",
+            "diff": "diff --git a/test/integration/configuration/profile_test.py b/test/integration/configuration/profile_test.py\nindex 434e06233..e368ba461 100644\n--- a/test/integration/configuration/profile_test.py\n+++ b/test/integration/configuration/profile_test.py\n@@ -636,3 +636,10 @@ def test_consumer_invalid_profile_multiple_groups():\n                assert_error=True)\n     assert (\"ERROR: Error reading 'myprofs/myprofile' profile: ConfigParser: \"\n             \"Duplicated section: [settings]\") in client.out\n+\n+def test_compose_numeric_values_scoped_pkg():\n+    tc = TestClient(light=True)\n+    tc.save({\"conanfile.py\": GenConanfile(\"hello\", \"0.1\"),\n+             \"profile\": \"\"\"[conf]\\nuser.var:value=8.1\\nhello/*:user.var:value=10\\n\"\"\"})\n+\n+    tc.run(\"create . -pr=profile\")\n"
+        }
+    ]
+}

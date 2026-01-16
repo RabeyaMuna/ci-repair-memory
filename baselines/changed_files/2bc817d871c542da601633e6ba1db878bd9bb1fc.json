@@ -1,0 +1,10 @@
+{
+    "sha_fail": "2bc817d871c542da601633e6ba1db878bd9bb1fc",
+    "changed_files": [
+        {
+            "commit": "2bc817d871c542da601633e6ba1db878bd9bb1fc",
+            "file_path": "conan/tools/sbom/cyclonedx.py",
+            "diff": "diff --git a/conan/tools/sbom/cyclonedx.py b/conan/tools/sbom/cyclonedx.py\nindex 27514d861..f49e78cdf 100644\n--- a/conan/tools/sbom/cyclonedx.py\n+++ b/conan/tools/sbom/cyclonedx.py\n@@ -198,9 +198,9 @@ def _calculate_licenses(component):\n     ]\n \n def _calculate_bomref(component):\n-    user, channel = component.ref.user, component.ref.channel\n-    user_channel = f\"?user={user}?channel={channel}\" if user and channel else f\"?user={user}\" if user else \"\"\n-    return f\"pkg:conan/{component.name}@{component.ref.version}?rref={component.ref.revision}{user_channel}\"\n+    user = \"&user={component.ref.user}\" if component.ref.user else \"\"\n+    channel = \"&channel={component.ref.channel}\" if component.ref.channel else \"\"\n+    return f\"pkg:conan/{component.name}@{component.ref.version}?rref={component.ref.revision}{user}{channel}\"\n \n \n \n"
+        }
+    ]
+}

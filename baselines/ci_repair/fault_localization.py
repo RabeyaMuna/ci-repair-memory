@@ -7,16 +7,21 @@ import re
 import yaml
 import time
 from pathlib import Path
-import json, re, demjson3
+import demjson3
 from dotenv import load_dotenv
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
+
+from utilities.model_token_limits import get_prompt_token_budget
 from utilities.load_config import load_config
 from utilities.snippet_extractor import extract_snippet_from_line_range, find_line_range
-from utilities.chunking_logic import chunk_log_by_tokens
 from utilities.symbols_outline import build_outline, format_outline
+from utilities.chunking_logic import chunk_log_by_tokens, chunk_lines_with_overlap, estimate_tokens
+from utilities.model_token_limits import is_large_context_model
+
 
 load_dotenv()
 
@@ -26,7 +31,32 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 
 class FaultLocalization:
-    def __init__(self, sha_fail: str, repo_path: str, error_logs: dict, workflow: str, llm: ChatOpenAI, model_name: str=None):
+    def __init__(
+        self,
+        sha_fail: str,
+        repo_path: str,
+        error_logs: dict,
+        workflow: str,
+        llm: ChatOpenAI,
+        model_name: Optional[str] = None,
+        changed_files_info: Optional[dict] = None,
+    ):
+        """
+        FaultLocalization agent.
+
+        changed_files_info format (from collect_changed_files_for_fail_and_parent):
+        {
+          "sha_fail": "<sha_fail>",
+          "changed_files": [
+            {
+              "commit": "<commit_sha>",
+              "file_path": "<path/to/file>",
+              "diff": "<unified diff>",
+            },
+            ...
+          ]
+        }
+        """
         # Unpack OmegaConf + project root if your loader returns a tuple
         cfg_result = load_config()
         if isinstance(cfg_result, tuple) and len(cfg_result) == 2:
@@ -35,91 +65,296 @@ class FaultLocalization:
             self.config, self.project_root = cfg_result, None
 
         self.error_logs = error_logs or {}
+        self.changed_files_info = changed_files_info or {"changed_files": []}
+
         # Use correct defaults/types
         self.error_context = self.error_logs.get("error_context", [])         # list
         self.error_types = self.error_logs.get("error_types", [])             # list
+
         # Handle both singular/plural to be robust
-        self.failed_jobs = self.error_logs.get("failed_jobs",
-                           self.error_logs.get("failed_job", []))              # list
+        self.failed_jobs = self.error_logs.get(
+            "failed_jobs",
+            self.error_logs.get("failed_job", []),
+        )  # list
+
         # Fix tuple-as-key bug
         self.relevant_files = self.error_logs.get("relevant_files", [])       # list
+
         self._has_checked_out = False
         self.workflow = workflow
         self.repo_path = repo_path
         self.failed_commit = sha_fail
-        
-        self.model_name = model_name
+        self.id = self.error_logs.get("id", "")
 
-        # Make sure api_key is defined/imported where this runs
+        self.model_name = model_name
         self.llm = llm
 
         self.parser = JsonOutputParser()
 
+    # ------------------------------------------------------------------ #
+    # Public entry
+    # ------------------------------------------------------------------ #
 
     def run(self) -> Dict:
         try:
+            self._force_clean_and_checkout(self.failed_commit)
             self._checkout_failed_commit_once()
+            self._ensure_repo_at_commit(self.failed_commit, require_clean=True)
 
-            print("[Step 3] Running final fault localization...")
-            result = self._final_fault_localization()
-
+            print("[Step 1] Running File Selection...")
+            suspecious_files = self.select_suspecious_files()
+            print("[Step 2] Running final fault localization...")
+            result = self._final_fault_localization(suspecious_files)
+            result["id"] = self.id 
             return result
 
         except Exception as e:
-            base_dir = os.path.join(self.config["exception_dir"], "interrupted_fault_localization")
+            base_dir = os.path.join(
+                self.config["exception_dir"],
+                "interrupted_fault_localization",
+            )
             os.makedirs(base_dir, exist_ok=True)
             filepath = os.path.join(base_dir, f"{self.failed_commit}_bug.json")
             error_info = {
                 "sha_fail": self.failed_commit,
                 "error": str(e),
-                "tool": "FaultLocalization"
+                "tool": "FaultLocalization",
             }
-            with open(filepath, "w") as f:
+            with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(error_info, f, indent=4)
             return error_info
-    
-          
+
+    # ------------------------------------------------------------------ #
+    # Git helpers
+    # ------------------------------------------------------------------ #
+
     def _checkout_failed_commit_once(self):
         try:
-            subprocess.run(["git", "checkout", self.failed_commit], cwd=self.repo_path, check=True, capture_output=True)
+            subprocess.run(
+                ["git", "checkout", self.failed_commit],
+                cwd=self.repo_path,
+                check=True,
+                capture_output=True,
+            )
             self._has_checked_out = True
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Git checkout failed: {e.stderr.decode()}")
-        
-    def _final_fault_localization(self) -> List[Dict]:
-        print("[Tool] read_error_file called")
+    
+    def _force_clean_and_checkout(self, sha: str) -> None:
+        """Hard reset, remove untracked files/dirs, and detach-checkout the exact sha."""
+        def _run(args: list[str]) -> subprocess.CompletedProcess:
+            return subprocess.run(
+                ["git", *args],
+                cwd=self.repo_path,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
 
-        fault_localization = []
+        # Make sure we are in a repo
+        _run(["rev-parse", "--is-inside-work-tree"])
+
+        # 1) Discard local changes
+        _run(["reset", "--hard"])
+
+        # 2) Remove untracked files/dirs (keeps ignored files)
+        _run(["clean", "-fd"])
+
+        # If you ALSO want to remove ignored files (like .venv, build artifacts), use:
+        # _run(["clean", "-fdx"])
+
+        # 3) Checkout the exact commit in detached HEAD
+        _run(["checkout", "--detach", sha])
+
+        # 4) Verify exact sha + clean tree
+        head = _run(["rev-parse", "HEAD"]).stdout.strip()
+        if head != sha:
+            raise RuntimeError(f"Repo HEAD mismatch after checkout. expected={sha} got={head}")
+
+        status = _run(["status", "--porcelain"]).stdout.strip()
+        if status:
+            raise RuntimeError(
+                f"Working tree not clean after force clean at {sha}.\n{status}"
+            )
+
+    def _ensure_repo_at_commit(self, sha: str, *, require_clean: bool = False) -> None:
+        """Ensure repo HEAD is exactly at sha. Optionally require clean working tree."""
+        def _run(args: list[str]) -> subprocess.CompletedProcess:
+            return subprocess.run(
+                ["git", *args],
+                cwd=self.repo_path,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        # 1) Verify HEAD
+        head = _run(["rev-parse", "HEAD"]).stdout.strip()
+        if head != sha:
+            # Force checkout to the exact sha
+            _run(["checkout", "--detach", sha])
+            head2 = _run(["rev-parse", "HEAD"]).stdout.strip()
+            if head2 != sha:
+                raise RuntimeError(f"Repo HEAD mismatch after checkout. expected={sha} got={head2}")
+
+        # 2) Optionally verify clean working tree
+        if require_clean:
+            status = _run(["status", "--porcelain"]).stdout.strip()
+            if status:
+                raise RuntimeError(
+                    f"Working tree not clean at {sha}. "
+                    f"Refusing to proceed because files may not match the commit.\n{status}"
+                )
+
+    # ------------------------------------------------------------------ #
+    # Suspicious file selection
+    # ------------------------------------------------------------------ #
+
+    def select_suspecious_files(self) -> List[Dict[str, Any]]:
+        """
+        1) Start from log_analyzer `relevant_files` (filtered by extension).
+        2) Add extra files from `changed_files_info["changed_files"]` if the LLM
+        says the diff is suspicious for the failed jobs.
+
+        Returns a list of dicts that at least contain "file" so that
+        _final_fault_localization can resolve paths.
+        """
+        suspecious_files: List[Dict[str, Any]] = []
+
+        # 1) Relevant files from error_logs
         for item in self.relevant_files:
-            
             file_path = (item.get("file") or item.get("path") or "").strip()
             if not file_path:
                 continue
-            
+
             ext = Path(file_path).suffix.lower()
-            
+            if ext not in {".py", ".txt", ".toml", ".md", ".rst", ".tsx"}:
+                continue
+
+            suspecious_files.append({"file": file_path})
+
+        # Build a set of already-selected file paths from suspecious_files
+        seen_paths: set[str] = set()
+        for entry in suspecious_files:
+            p = (entry.get("file") or entry.get("path") or "").strip()
+            if p:
+                seen_paths.add(p)
+
+        # 2) Changed files from changed_files_info
+        changed_files_list = self.changed_files_info.get("changed_files", []) or []
+        if not changed_files_list:
+            return suspecious_files
+
+        failed_jobs_text = json.dumps(self.failed_jobs, indent=2, ensure_ascii=False)
+
+        for item in changed_files_list:
+            file_path = (item.get("file_path") or "").strip()
+            if not file_path:
+                continue
+
+            # If this file is already in suspecious_files, skip immediately
+            if file_path in seen_paths:
+                # Already included from relevant_files or earlier changed_files
+                continue
+
+            ext = Path(file_path).suffix.lower()
+            if ext not in {".py", ".txt"}:
+                continue
+
+            changed_content = item.get("diff", "")
+
+            prompt = f"""
+You are a **Suspicious File Selector** for CI failures.
+
+Goal:
+Given a file path, the unified diff of that file for a failed commit, and the CI failed jobs description, decide whether this file's changes are likely responsible for (or closely related to) the CI failure. 
+If you have strong evident of the change of code(diff) in the failed commit is the reason of failed jobs, only then set `is_suspicious` as true. Do not speculate.
+
+Return **only** a JSON object with this exact schema, as plain text:
+
+{{
+  "is_suspicious": true or false
+}}
+
+Hard rules:
+- Do NOT add any markdown fences (no ```json, no ```).
+- Do NOT add any extra keys, comments, or explanation.
+- Do NOT add any surrounding text before or after the JSON.
+- The response must be a single valid JSON object only.
+
+========================================
+FILE PATH:
+{file_path}
+
+UNIFIED DIFF FOR THIS FILE:
+{changed_content}
+
+FAILED JOBS (CI context):
+{failed_jobs_text}
+========================================
+"""
+
+            try:
+                raw_response = self.llm.invoke(prompt).content.strip()
+                if raw_response.startswith("```"):
+                    raw_response = raw_response.strip("` \n")
+
+                try:
+                    parsed = json.loads(raw_response)
+                except json.JSONDecodeError:
+                    parsed = demjson3.decode(raw_response)
+
+                if isinstance(parsed, dict) and parsed.get("is_suspicious") is True:
+                    suspecious_files.append({"file": file_path})
+                    seen_paths.add(file_path)  # so we never process it again
+                    print(f"[Selector] Marked '{file_path}' as suspicious based on diff.")
+                else:
+                    print(f"[Selector] '{file_path}' not suspicious.")
+            except Exception as e:
+                print(f"[Selector] Error deciding for {file_path}: {e}")
+
+        return suspecious_files
+
+
+    # ------------------------------------------------------------------ #
+    # Final fault localization over selected files
+    # ------------------------------------------------------------------ #
+
+    def _final_fault_localization(self, suspecious_files: list) -> Dict[str, Any]:
+        print("[Tool] read_error_file called")
+
+        fault_localization: List[Dict[str, Any]] = []
+        for item in suspecious_files:
+            file_path = (item.get("file") or item.get("path") or "").strip()
+            if not file_path:
+                continue
+
+            ext = Path(file_path).suffix.lower()
             if ext not in {".py", ".toml", ".txt"}:
                 continue
-            
+
             resolved = self.find_full_file_path(file_path)
             if resolved["status"] != "found":
+                print(f"[WARN] Could not resolve path for {file_path}")
                 continue
 
             full_file_path = resolved["full_path"]
-            
+
             content = self._read_file_content(full_file_path)
             if not content:
                 continue
-            
+
             file_type = self.detect_file_type(file_path)
             outline = build_outline(content) if file_type == "python" else ""
             numbered_full_content = self._numbered_file_content(content)
+
             chunks = self._chunk_file(numbered_full_content)
+
             num_chunks = len(chunks)
 
             # Per-chunk strict FL
             all_faults: List[Dict[str, Any]] = []
-            
+            print(f"[FL] Analyzing file: {full_file_path} ({num_chunks} chunks)")
             for idx, ch in enumerate(chunks):
                 file_summary = (
                     f"File: {file_path}\n"
@@ -130,36 +365,218 @@ class FaultLocalization:
                     f"Chunk lines ({ch['valid_start']}–{ch['valid_end']}):\n\n"
                     f"```{file_type}\n{ch['content']}\n```"
                 )
-                
+
                 faults = self.fault_localization_based_on_ci_log(
                     file_path=file_path,
                     full_file_path=full_file_path,
                     file_summary=file_summary,
                     valid_start=ch["valid_start"],
                     valid_end=ch["valid_end"],
-                    original_content=content,  # unnumbered
+                    original_content=content,
                     chunk_idx=idx,
                     num_chunks=num_chunks,
                     faults=all_faults,
-                    outline=outline
+                    outline=outline,
+                    chunk=ch["content"]
                 )
-                
+
                 if faults:
                     all_faults.extend(faults)
-                    
-            fault_localization.append({
-                "file_path": file_path,
-                "full_file_path": full_file_path,
-                "faults": all_faults
-            })
             
+            if all_faults:
+                fault_localization.append(
+                    {
+                        "file_path": file_path,
+                        "full_file_path": full_file_path,
+                        "faults": all_faults,
+                    }
+                )
+
         results = {
             "sha_fail": self.failed_commit,
-            "fault_localization_data": fault_localization
+            "fault_localization_data": fault_localization,
         }
-        
+
         return results
 
+    # ------------------------------------------------------------------ #
+    # Core FL for one chunk
+    # ------------------------------------------------------------------ #
+    
+    def prompt_for_fault_localization(
+    self,
+    *,
+    file_summary: str,
+    valid_start: int,
+    valid_end: int,
+    faults: list,
+    ) -> str:
+        """
+        Build the strict fault-localization prompt for a single (sub)chunk.
+
+        - file_summary: includes file metadata + outline + the code chunk (already fenced).
+        - valid_start/valid_end: absolute (file-level) line numbers for this chunk window.
+        - faults: previously detected faults (used only to avoid duplicates).
+        """
+        return f"""
+You are a **Strict Fault Localization Agent**.
+
+Your task:
+Given a numbered source-code CHUNK, CI error context, workflow jobs, and a file outline,
+identify **ALL distinct faults** in THIS chunk that are relevant to the CI failures. Analysis each line of code based CI error context and failed jobs to detect faults.
+
+IMPORTANT:
+• Do NOT stop after the first fault.
+• Do NOT speculate beyond the shown lines.
+• Do NOT expand scope beyond numeric containment rules.
+• Output **valid JSON only** (array or empty array). No prose, no markdown.
+
+==============================================================================
+INPUT
+------------------------------------------------------------------------------
+SOURCE CODE (numbered lines; 1-based) with Outline:
+{file_summary}
+
+Each outline entry contains:
+- kind: "func" | "class" | "import_block" | "const"
+- name
+- start
+- end
+
+FAILED JOBS:
+{self.failed_jobs}
+
+ERROR CONTEXT FROM CI LOGS:
+{json.dumps(self.error_context, indent=2, ensure_ascii=False)}
+
+ERROR TYPES:
+{json.dumps(self.error_types, indent=2, ensure_ascii=False)}
+
+RELEVANT FILES FROM LOGS:
+{json.dumps(self.relevant_files, indent=2, ensure_ascii=False)}
+
+CHUNK WINDOW: lines {valid_start}–{valid_end}
+
+==============================================================================
+CORE DETECTION RULES
+------------------------------------------------------------------------------
+
+R1. Exhaustive Fault Detection (MANDATORY)
+- Scan EVERY line from {valid_start}–{valid_end}.
+- Add EVERY distinct fault that directly explains CI failures
+- Continue scanning even after finding a valid fault.
+
+R2. Evidence-Only Rule
+- Every fault MUST be directly supported by:
+  • CI log message OR
+  •reason of the failure of given failed jobs
+- No speculative or “possible” issues.
+
+R3. Code Verification
+- Each fault must be observable in this chunk OR
+  provably absent (e.g., missing import or symbol).
+- If CI claims something missing, confirm absence here.
+
+==============================================================================
+OUTLINE-BASED SCOPE CLASSIFICATION (STRICT — NUMERIC ONLY)
+------------------------------------------------------------------------------
+
+Numeric containment definition:
+An outline entry CONTAINS [s,e] IFF entry.start <= s AND e <= entry.end
+
+Apply rules IN ORDER. First match wins.
+
+1) import_block
+   If [s,e] is inside an outline entry with kind == "import_block"
+
+2) method
+   If [s,e] is inside an outline entry with kind == "func"
+
+3) class
+   If [s,e] is inside an outline entry with kind == "class"
+   AND NOT inside any func entry
+
+4) line (DEFAULT)
+   If [s,e] is not inside ANY outline entry
+
+- NEVER infer ownership.
+- NEVER expand line_range to outline boundaries.
+- NEVER escalate scope.
+
+==============================================================================
+DECORATOR RULE (CRITICAL)
+------------------------------------------------------------------------------
+- Decorator lines are OUTSIDE a function unless their line number
+  is numerically inside func.start–func.end.
+- If decorator line < func.start → fault_localization_level MUST be "line".
+
+==============================================================================
+FAULT OBJECT REQUIREMENTS (HARD)
+------------------------------------------------------------------------------
+
+For EACH fault, "reason" MUST include ALL THREE:
+
+1) WHAT
+   - Exact issue description.
+   - Cite CI message or rule code explicitly.
+
+2) FIX
+   - Concrete imperative fix.
+   - Example: "Add missing import X", "Remove unused variable Y".
+
+3) WHERE
+   - Exact line numbers in THIS chunk.
+   - Allowed formats ONLY:
+       • Fault at line N
+       • Fault at lines N–M
+       • Fault at line N (and line K)
+
+If you cannot name exact line numbers → DO NOT return the fault.
+
+==============================================================================
+LINE RANGE RULES
+------------------------------------------------------------------------------
+- "line_range" MUST include the faulty line(s).
+- Must stay within {valid_start}–{valid_end}.
+- Use displayed line numbers as integers (no leading zeros).
+
+==============================================================================
+FAULT MERGING RULE
+------------------------------------------------------------------------------
+- Only merge faults if:
+  • Same underlying issue AND
+  • Same outline element AND
+  • Same fix.
+- Otherwise, return separate objects.
+
+==============================================================================
+OUTPUT CONTRACT (STRICT)
+------------------------------------------------------------------------------
+Return ONLY:
+- []  (if no new faults), OR
+- A JSON array of objects:
+
+[
+  {{
+    "line_range": [start, end],
+    "reason": "...",
+    "issue_type": "formatting | linting | type_error | runtime_error | test_failure | dependency_error | docstring | complexity | other",
+    "fault_localization_level": "line | method | class | import_block"
+  }}
+]
+
+No markdown. No comments. No extra keys. No trailing commas.
+
+==============================================================================
+FINAL CHECK
+------------------------------------------------------------------------------
+- All faults in this chunk are included
+- No speculation
+- Numeric containment strictly respected
+- Exact line numbers cited
+- Valid JSON only
+""".strip()
+                            
     def fault_localization_based_on_ci_log(
     self,
     *,
@@ -173,201 +590,163 @@ class FaultLocalization:
     num_chunks: int,
     faults: list,
     outline: List[Dict[str, Any]],
-) -> list:
-        """
-        Runs the strict FL prompt for a single chunk and returns a list of fault objects.
-        Expects the LLM to return [] or [ { ... }, ... ] per your original schema.
-        """
+    chunk: str,
+    ) -> list:
+        fault_locations: List[Dict[str, Any]] = []
+        token_limit = get_prompt_token_budget(self.model_name)
 
-        fault_locations = []
-        prompt = f"""
-You are a **Strict Fault Localization Agent**.
+        prompt = self.prompt_for_fault_localization(
+            file_summary=file_summary,
+            valid_start=valid_start,
+            valid_end=valid_end,
+            faults=faults,
+        )
 
-Your task:
-Given a numbered source-code CHUNK, the CI error context, workflow jobs, and a file outline, identify **all** distinct faults that explain the CI failure — not just the first one. 
-Use the outline to expand detected faults to full method/class/import/file scopes where appropriate. 
-Output must be **valid JSON only** (array or empty array). No markdown, no commentary, no extra text.
-
-==============================================================================
-INPUT
-------------------------------------------------------------------------------
-SOURCE CODE (numbered lines; 1-based) with Outline of the file is given:
-{file_summary}
-
-Each outline entry contains:
-  - name: symbol or construct name (function/class/import)
-  - type: one of "method" | "class" | "import_block"
-  - start_line: first numbered line of the element
-  - end_line: last numbered line of the element
-Use this outline to determine which scope a fault belongs to and to expand line ranges correctly.
-
-FAILED JOBS:
-{self.failed_jobs}
-
-ERROR TYPES:
-{self.error_types}
-
-ERROR CONTEXT:
-{self.error_context}
-
-WORKFLOW (high-level summary):
-{self.workflow}
-
-ALREADY DETECTED FAULTS (skip/avoid duplicates):
-{faults}
-
-CHUNK WINDOW: lines {valid_start}–{valid_end}
-
-==============================================================================
-RULES
-------------------------------------------------------------------------------
-R1. Detect All Matches
-  - Read every numbered line between {valid_start}–{valid_end}.
-  - Add every new fault that directly explains CI messages or rule codes (ruff, pylint, mypy, pytest, etc.).
-  - Include formatting, linting, typing, runtime, and test failures if indicated by the logs.
-
-R2. Verify in Code
-  - Each fault must be observable in these lines or provably absent (for missing imports/symbols).
-  - Confirm CI log claims (missing symbol, unused import, annotation absence, etc.) against code shown.
-
-R3. Outline-Based Scope Expansion
-  - For each detected fault, check the file outline to identify which structural element it belongs to.
-  - Expand the line_range to cover the full element boundaries:
-      • If inside a method: return the full method range.
-      • If inside a class: return the full class range.
-      • If within an import block: return all contiguous import lines + 2 lines after.
-      • If spanning multiple non-overlapping outline elements, escalate to "file".
-  - If faults occur in the same outline element, merge them into one JSON object and combine reasons.
-
-R4. Reason–Snippet Consistency
-  - Each "reason" must cite concrete CI evidence (messages or rule codes such as F401, E1101, I001, etc.).
-  - Reference actual code or confirm omission explicitly. Avoid vague speculation.
-  -  If unable to find code evidence for a claimed fault, do NOT include it.
-
-R5. Line Range Integrity
-  - "line_range" must match **exact first and last lines** of the chosen scope according to the outline.
-  - Always use the displayed (numbered) line indices, not inferred offsets.
-
-R6. Fault Type & Level
-  - Choose "issue_type" precisely (formatting, linting, type_error, runtime_error, test_failure, dependency_error, docstring, complexity, other).
-  - Set "fault_localization_level" to reflect the expanded scope: line | method | class | import_block | file.
-
-R7. Extended Reason Context
-  - In "reason", you may mention related decorators, helper calls, or affected functions that clarify the cause.
-  - Do NOT expand snippet scope beyond the chosen element — just mention those links textually.
-
-R8. Missing Elements
-  - If CI cites a missing construct (e.g., import, symbol, type hint), confirm absence and record it with the correct scope, usually "import_block" or "method".
-
-R9. Output Contract (Hard)
-  - Return **strict JSON only**:
-      • Either [] or a JSON array of objects matching the schema below.
-      • No markdown fences, comments, or trailing commas.
-  - Do NOT include "code_snippet" — it will be added later by the caller.
-
-==============================================================================
-OUTPUT SCHEMA (JSON array)
-------------------------------------------------------------------------------
-[
-  {{
-    "file_path": "{file_path}",
-    "full_file_path": "{full_file_path}",
-    "line_range": [start_line, end_line],
-    "reason": "Comprehensive explanation citing CI log messages and rule codes. If merged, include concise bullet-like sub-fault summaries. Mention lines or absence of code as needed if required and also mention line numbers which contains the issues.",
-    "issue_type": "formatting | linting | type_error | runtime_error | test_failure | dependency_error | docstring | complexity | other",
-    "fault_localization_level": "line | method | class | import_block | file"
-  }},
-  ...
-]
-
-==============================================================================
-CHECKLIST BEFORE RETURNING
-------------------------------------------------------------------------------
-1) All new faults in {valid_start}–{valid_end} are included.
-2) Overlapping or nested faults are merged under a common expanded scope.
-3) "line_range" matches the exact outline boundaries for the chosen scope.
-4) Each "reason" references concrete CI evidence or rule code.
-5) No duplicates of ALREADY DETECTED FAULTS.
-6) Output is valid JSON only — no markdown, prose, or trailing commas. Return **only valid JSON** — no markdown, commentary, or code fences.
-7) If nothing new is found, return [].
-"""
         print(f"[Chunk {chunk_idx+1}/{num_chunks}] Analyzing lines {valid_start}-{valid_end}...")
 
-        try:
-            raw_response = self.llm.invoke(prompt).content.strip()
-            # Clean any markdown fences
+        def _invoke_and_parse(p: str):
+            raw_response = self.llm.invoke([HumanMessage(content=p)]).content.strip()
             if raw_response.startswith("```"):
                 raw_response = raw_response.strip("` \n")
 
-            # Must be pure JSON
             try:
-        # Try strict JSON parsing
-                parsed_result = json.loads(raw_response)
+                parsed = json.loads(raw_response)
             except json.JSONDecodeError:
-                # Fallback to demjson3 for messy JSON
-                parsed_result = demjson3.decode(raw_response)
+                parsed = demjson3.decode(raw_response)
 
-            if not isinstance(parsed_result, list) or not parsed_result:
+            if not isinstance(parsed, list) or not parsed:
+                return []
+            return parsed
+
+        model_for_count = self.model_name or "gpt-4o-mini"
+
+        # -----------------------------
+        # Case 1: prompt fits -> normal path
+        # -----------------------------
+        if estimate_tokens(prompt, model=model_for_count) <= token_limit:
+            try:
+                parsed_result = _invoke_and_parse(prompt)
+            except Exception as e:
+                self._save_fault_localization_error(
+                    self.failed_commit,
+                    e,
+                    tool_name="fault_localization_based_on_ci_log",
+                    prompt_name="llm_invocation",
+                )
+                print(f"[Chunk {chunk_idx}] LLM invocation error: {e}")
+                return []
+        else:
+            # -----------------------------
+            # Case 2: prompt too big -> subchunk the PROVIDED chunk only
+            # sub_lines = (n_lines // 2) + 50 ; overlap stays 50
+            # -----------------------------
+            n_lines = len((chunk or "").splitlines())
+            sub_lines = max(1, (n_lines // 2) + 50)
+
+            print(
+                f"[Chunk {chunk_idx+1}] Prompt too large "
+                f"({estimate_tokens(prompt, model=model_for_count)} > {token_limit}). "
+                f"Sub-chunking chunk content: {n_lines} lines -> {sub_lines} lines/chunk with 50 overlap."
+            )
+
+            subchunks = chunk_lines_with_overlap(
+                chunk,
+                lines_per_chunk=sub_lines,
+                overlap=50,
+            )
+
+            parsed_result = []
+
+            for sub_i, (sub_start_1b, sub_end_1b, sub_text) in enumerate(subchunks):
+                # sub_start_1b/sub_end_1b are line numbers *within this chunk* (1-based)
+                abs_start = (valid_start - 1) + sub_start_1b
+                abs_end = (valid_start - 1) + sub_end_1b
+
+                sub_file_summary = (
+                    f"File: {file_path}\n"
+                    f"Full Path: {full_file_path}\n\n"
+                    f"**File Outline (symbol → [start–end] lines)**\n{outline}\n\n"
+                    f"Chunk index: {chunk_idx+1} of {num_chunks} (sub {sub_i+1} of {len(subchunks)})\n"
+                    f"Chunk lines ({abs_start}–{abs_end}):\n\n"
+                    f"```text\n{sub_text}\n```"
+                )
+
+                sub_prompt = self.prompt_for_fault_localization(
+                    file_summary=sub_file_summary,
+                    valid_start=abs_start,
+                    valid_end=abs_end,
+                    faults=faults,
+                )
+
+                if estimate_tokens(sub_prompt, model=model_for_count) > token_limit:
+                    print(
+                        f"[Chunk {chunk_idx+1}] Skipping subchunk {sub_i+1}: "
+                        f"prompt still too large ({estimate_tokens(sub_prompt, model=model_for_count)} > {token_limit})."
+                    )
+                    continue
+
+                try:
+                    sub_parsed = _invoke_and_parse(sub_prompt)
+                except Exception as e:
+                    self._save_fault_localization_error(
+                        self.failed_commit,
+                        e,
+                        tool_name="fault_localization_based_on_ci_log",
+                        prompt_name="llm_invocation_subchunk",
+                    )
+                    print(f"[Chunk {chunk_idx+1}] Subchunk LLM error: {e}")
+                    continue
+
+                parsed_result.extend(sub_parsed)
+
+            if not parsed_result:
                 print(f"[Chunk {chunk_idx}] No faults found.")
                 return []
 
-            # --------------------------------------------------------
-            # Fetch local snippets using the expanded line ranges
-            # -------------------------------------------------------
-            for fault in parsed_result:
-                line_range = fault.get("line_range")
-                fault_level = fault.get("fault_localization_level")
-                
-                if not line_range:
-                    continue  # Skip if no snippet present
+        # -----------------------------
+        # Process parsed_result (unchanged)
+        # -----------------------------
+        for fault in parsed_result:
+            line_range = fault.get("line_range")
+            fault_level = fault.get("fault_localization_level")
 
-                start, end = line_range
-                if valid_start <= start and end <= valid_end:
-                    extended_range = self._expand_line_range_with_outline(
-                                            line_range=line_range,
-                                            outline=outline,
-                                            fault_level=fault_level,
-                                        )
-                    fault["line_range"] = extended_range
-                    print("\n--- After Extended Line range ---", extended_range)
-                    # Normal case: attach found range
-                    snippet = extract_snippet_from_line_range(original_file_content=original_content, line_range=extended_range)
-                    
-                    fault["code_snippet"] = snippet
-                    
-                    fault_locations.append(fault)
-                    print("\n--- Fault Detected ---")
-                    print("Code Snippet:\n", snippet)
-                    print("Line Range:", extended_range)
-                    print("---------------------\n")
+            if not line_range:
+                continue
+
+            start, end = line_range
+            if valid_start <= start and end <= valid_end:
+                extended_range = self._expand_line_range_with_outline(
+                    line_range=line_range,
+                    outline=outline,
+                    fault_level=fault_level,
+                )
+                print("\n--- Before Line range ---", line_range)
+                fault["line_range"] = extended_range
+
+                snippet = extract_snippet_from_line_range(
+                    original_file_content=original_content,
+                    line_range=extended_range,
+                )
+
+                fault["code_snippet"] = snippet
+
+                fault_locations.append(fault)
+                print("\n--- Fault Detected ---")
+                print("Code Snippet:\n", snippet)
+                print("After Extending, Line Range:", extended_range)
+                print("---------------------\n")
             else:
-                # Skip fault outside this chunk
-                print(f"[Chunk {chunk_idx+1}] Skipping fault outside chunk range {valid_start}-{valid_end}: {line_range}")
-
-
-        except json.JSONDecodeError as e:
-            # Save parsing error for analysis
-            self._save_fault_localization_error(
-                self.failed_commit, e,
-                tool_name="fault_localization_based_on_ci_log",
-                prompt_name="json_parsing"
-            )
-            print(f"[Chunk {chunk_idx}] JSON parse error: {e}")
-            print(f"[Chunk {chunk_idx}] Raw response:\n{raw_response}")
-            return []
-
-        except Exception as e:
-            # Save unexpected errors
-            self._save_fault_localization_error(
-                self.failed_commit, e,
-                tool_name="fault_localization_based_on_ci_log",
-                prompt_name="chunk_processing"
-            )
-            print(f"[Chunk {chunk_idx}] Error processing chunk: {e}")
-            return []
+                print(
+                    f"[Chunk {chunk_idx+1}] Skipping fault outside chunk range "
+                    f"{valid_start}-{valid_end}: {line_range}"
+                )
 
         return fault_locations
-                
+
+    # ------------------------------------------------------------------ #
+    # Path & file helpers
+    # ------------------------------------------------------------------ #
+
     def find_full_file_path(self, file_path: str) -> dict:
         """
         Find the best matching full path for a given relative file_path inside repo_path.
@@ -378,25 +757,29 @@ CHECKLIST BEFORE RETURNING
         file_name = os.path.basename(normalized)
 
         try:
-            # Direct full path exists
             if os.path.exists(abs_path):
                 return {"status": "found", "full_path": abs_path}
 
             candidates = []
-            # Walk the repo and collect all candidates
             for root, _, files in os.walk(self.repo_path):
                 if file_name in files:
                     candidate = os.path.join(root, file_name)
                     rel_candidate = os.path.relpath(candidate, self.repo_path)
-                    # Compute similarity: longest common suffix with the requested path
-                    score = len(os.path.commonprefix([rel_candidate[::-1], normalized[::-1]]))
+                    score = len(
+                        os.path.commonprefix(
+                            [rel_candidate[::-1], normalized[::-1]]
+                        )
+                    )
                     candidates.append((score, candidate))
 
             if candidates:
-                # Pick the highest scoring match
                 candidates.sort(key=lambda x: x[0], reverse=True)
                 best_match = candidates[0][1]
-                return {"status": "found", "full_path": best_match, "all_candidates": [c[1] for c in candidates]}
+                return {
+                    "status": "found",
+                    "full_path": best_match,
+                    "all_candidates": [c[1] for c in candidates],
+                }
 
         except Exception as e:
             return {"status": "error", "error": str(e)}
@@ -405,11 +788,11 @@ CHECKLIST BEFORE RETURNING
 
     def _read_file_content(self, resolved_path: str) -> str:
         """Return file content as a string, or '' if file is missing/unreadable."""
-        
+        self._ensure_repo_at_commit(self.failed_commit, require_clean=True)
         if not os.path.exists(resolved_path):
             print(f"[WARN] File not found: {resolved_path}")
             return ""
-        
+
         try:
             with open(resolved_path, "r", encoding="utf-8") as f:
                 return f.read()
@@ -417,16 +800,22 @@ CHECKLIST BEFORE RETURNING
             print(f"[WARN] Could not read {resolved_path}: {e}")
             return ""
 
+    # ------------------------------------------------------------------ #
+    # LLM helpers
+    # ------------------------------------------------------------------ #
+
     def _call_llm_directly(self, prompt: str) -> dict:
         chunks = chunk_log_by_tokens(prompt, max_tokens=90000, model=self.model_name)
 
         for chunk in chunks:
             try:
                 raw_response = self.llm.invoke([HumanMessage(content=chunk)]).content.strip()
-
-                # Remove markdown fences if present
-                raw_response = re.sub(r"^```(?:json)?\s*|```$", "", raw_response.strip(), flags=re.DOTALL)
-
+                raw_response = re.sub(
+                    r"^```(?:json)?\s*|```$",
+                    "",
+                    raw_response.strip(),
+                    flags=re.DOTALL,
+                )
                 return self.safe_parse_json(raw_response)
             except Exception as e:
                 print(f"[ERROR] LLM call failed while parsing: {e}")
@@ -444,8 +833,14 @@ CHECKLIST BEFORE RETURNING
                 print("[!] Fallback parsing failed.")
                 raise ValueError(f"JSON parsing failed: {e}\n\nRaw:\n{text}")
 
+    # ------------------------------------------------------------------ #
+    # Misc helpers
+    # ------------------------------------------------------------------ #
+
     def _numbered_file_content(self, content: str, offset: int = 0) -> str:
-        return "\n".join(f"{idx+1:04d}: {line}" for idx, line in enumerate(content.splitlines()))
+        return "\n".join(
+            f"{idx+1:04d}: {line}" for idx, line in enumerate(content.splitlines())
+        )
 
     def detect_file_type(self, file_path: str) -> str:
         """Detect programming/config language based on file extension."""
@@ -462,63 +857,74 @@ CHECKLIST BEFORE RETURNING
             ".rst": "restructuredtext",
             ".md": "markdown",
         }
-        
-        # Handle Dockerfile without extension
+
         if ext == "" and Path(file_path).name.lower() == "dockerfile":
             return "dockerfile"
-        return mapping.get(ext, "text")  # default to plain text if unknown
+        return mapping.get(ext, "text")
 
-    # Helper method for all other file types
-    def _chunk_file(self, file_content):
-        chunk_size = 500
-        overlap = 50
+    def _chunk_file(self, file_content: str) -> List[Dict[str, Any]]:
+        if is_large_context_model(self.model_name):
+            chunk_size = 600
+            overlap = 50
+        else:
+            chunk_size = 300
+            overlap = 50
         lines = file_content.splitlines()
         total_lines = len(lines)
-        chunks = []
-        
-        num_chunks = math.ceil(total_lines / (chunk_size - overlap)) if chunk_size > overlap else 1
+        chunks: List[Dict[str, Any]] = []
 
-        for chunk_idx in range(num_chunks):
-            start_idx = max(0, chunk_idx * chunk_size - overlap)
-            end_idx = min(start_idx + chunk_size + overlap, total_lines)
-            
-            valid_start = start_idx + overlap if chunk_idx != 0 else start_idx
-            valid_end = end_idx - overlap if chunk_idx != num_chunks - 1 else end_idx
+        if total_lines == 0:
+            return chunks
 
-            chunk_lines = lines[start_idx:end_idx]
-            
-            chunks.append({
-                "content": "\n".join(chunk_lines),
-                "line_range": (start_idx + 1, end_idx),
-                "valid_start": valid_start + 1,
-                "valid_end": valid_end
-            })
+        step = max(1, chunk_size - overlap)
+
+        slice_start = 0
+        while slice_start < total_lines:
+            slice_end = min(slice_start + chunk_size, total_lines)
+
+            # NO-GAP VALID WINDOW:
+            # include the leading overlap in the current chunk
+            # only trim the trailing overlap (except last chunk)
+            valid_start = slice_start  # 0-based inclusive
+            valid_end = slice_end if slice_end == total_lines else (slice_end - overlap)
+
+            # defensive
+            if valid_end < valid_start:
+                valid_start = slice_start
+                valid_end = slice_end
+
+            chunk_lines = lines[slice_start:slice_end]
+
+            chunks.append(
+                {
+                    "content": "\n".join(chunk_lines),
+                    "line_range": (slice_start + 1, slice_end),      # absolute 1-based
+                    "valid_start": valid_start + 1,                 # absolute 1-based
+                    "valid_end": valid_end,                         # absolute 1-based
+                }
+            )
+
+            slice_start += step
 
         return chunks
-    
+
+
     def _save_fault_localization_error(
-    self,
-    sha: str,
-    error: Exception,
-    tool_name: str = "",
-    prompt_name: str = "",
-    extra_context: dict | None = None
+        self,
+        sha: str,
+        error: Exception,
+        tool_name: str = "",
+        prompt_name: str = "",
+        extra_context: Optional[dict] = None,
     ):
         """
         Save detailed fault localization error info to JSON file.
-
-        Args:
-            sha (str): Commit SHA where the error occurred.
-            error (Exception): The raised exception.
-            tool_name (str): The internal tool/method where failure occurred.
-            prompt_name (str): The specific prompt/stage (e.g., 'json_parsing', 'line_range').
-            extra_context (dict): Optional contextual info (chunk_idx, file_path, etc.)
         """
-
-        base_dir = os.path.join(self.config["exception_dir"], "interrupted_fault_localization")
+        base_dir = os.path.join(
+            self.config["exception_dir"], "interrupted_fault_localization"
+        )
         os.makedirs(base_dir, exist_ok=True)
 
-        # timestamped filename to avoid overwriting
         fname = f"{self.failed_commit}.json"
         filepath = os.path.join(base_dir, fname)
 
@@ -531,7 +937,6 @@ CHECKLIST BEFORE RETURNING
             "Agent": "FaultLocalization",
         }
 
-        # attach any extra context (e.g., chunk_idx, file_path)
         if extra_context:
             error_info["context"] = extra_context
 
@@ -539,72 +944,174 @@ CHECKLIST BEFORE RETURNING
             json.dump(error_info, f, indent=4)
 
         return error_info
-    
+
     def _expand_line_range_with_outline(
-        self,
-        line_range: list[int],
-        outline: list[dict],
-        fault_level: str | None = None,
-    ) -> list[int]:
+    self,
+    line_range: List[int],
+    outline: List[dict],
+    fault_level: Optional[str] = None,
+    ) -> List[int]:
         """
-        Expand the given [start, end] line_range using the file outline.
+        Expand/normalize [start, end] using the outline.
 
-        - If the range falls inside a function/method → return the full function range.
-        - If inside a class → return the full class range.
-        - If inside a const/import-like element → return that full range.
-        - If nothing matches, return the original line_range.
+        Contract by fault_level:
+        - "method": return the entire containing function/method (tightest).
+        - "import_block": return the containing import block (tightest).
+        - "line": if inside decorator_block -> return that block; else return +/-5 lines.
+        - "class": return the dedicated class per rules (as before).
+        - anything else / None: return tightest containing node of any kind.
         """
 
-        if not outline or not line_range:
+        if not line_range:
             return line_range
 
         start, end = line_range
-
-        # Flatten outline: handle children recursively
-        flat: list[dict] = []
-
-        def visit(node: dict):
-            flat.append(node)
-            for child in node.get("children") or []:
-                visit(child)
-
-        for node in outline:
-            visit(node)
-
-        # All elements that contain the start line
-        candidates = [
-            n for n in flat
-            if isinstance(n.get("start"), int)
-            and isinstance(n.get("end"), int)
-            and n["start"] <= start <= n["end"]
-        ]
-
-        if not candidates:
+        if not (isinstance(start, int) and isinstance(end, int)):
             return line_range
 
-        # Map localization level to preferred kinds (if LLM gave a level)
-        preferred_kinds_by_level = {
-            "method": {"func", "method"},
-            "class": {"class"},
-            "import_block": {"import_block", "const"},  # treat const as import-like
-        }
-        preferred_kinds = preferred_kinds_by_level.get(fault_level or "", set())
+        # Normalize ordering defensively
+        if end < start:
+            start, end = end, start
 
-        if preferred_kinds:
-            preferred = [c for c in candidates if c.get("kind") in preferred_kinds]
-        else:
-            preferred = []
+        # ------------------------------------------------------------------
+        # LINE LEVEL:
+        # 1) If (start,end) is inside a decorator_block, return decorator_block span
+        # 2) Otherwise, return +/-5 lines around the original range
+        # ------------------------------------------------------------------
+        if fault_level == "line":
+            if outline:
+                # flatten outline (no side effects)
+                flat_nodes: List[dict] = []
 
-        if preferred:
-            chosen = min(
-                preferred,
-                key=lambda n: (n["end"] - n["start"], n["start"]),
-            )
-        else:
-            # fallback: smallest enclosing element of any kind
-            chosen = min(
-                candidates,
-                key=lambda n: (n["end"] - n["start"], n["start"]),
-            )
+                def _visit(node: dict):
+                    if not isinstance(node, dict):
+                        return
+                    flat_nodes.append(node)
+                    for ch in (node.get("children") or []):
+                        _visit(ch)
 
-        return [chosen["start"], chosen["end"]]
+                for node in outline:
+                    _visit(node)
+
+                def _contains(node: dict, s: int, e: int) -> bool:
+                    a, b = node.get("start"), node.get("end")
+                    return isinstance(a, int) and isinstance(b, int) and a <= s and e <= b
+
+                dec_blocks = [
+                    n for n in flat_nodes
+                    if n.get("kind") == "decorator_block" and _contains(n, start, end)
+                ]
+
+                if dec_blocks:
+                    # tightest decorator block (smallest span, then earliest start)
+                    chosen = min(
+                        dec_blocks,
+                        key=lambda n: (int(n["end"]) - int(n["start"]), int(n["start"]))
+                    )
+                    expanded = [int(chosen["start"]), int(chosen["end"])]
+                    # ensure it still contains original range
+                    return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+
+            # fallback: +/- 5 lines
+            s = max(1, start - 5)
+            e = end + 5
+            return [s, e] if s <= start and end <= e else [start, end]
+
+        # If outline missing/unusable, we can't expand to method/class/import boundaries
+        if not outline:
+            return [start, end]
+
+        # Flatten with parent pointers (without mutating the original outline dicts).
+        flat: List[dict] = []
+
+        def visit(node: dict, parent: Optional[dict] = None):
+            if not isinstance(node, dict):
+                return
+            n = dict(node)  # copy to avoid side effects
+            n["_parent"] = parent
+            children = node.get("children") or []
+            n["children"] = children
+            flat.append(n)
+            for child in children:
+                visit(child, n)
+
+        for node in outline:
+            visit(node, None)
+
+        def contains(node: dict, s: int, e: int) -> bool:
+            a, b = node.get("start"), node.get("end")
+            return isinstance(a, int) and isinstance(b, int) and a <= s and e <= b
+
+        candidates = [n for n in flat if contains(n, start, end)]
+        if not candidates:
+            return [start, end]
+
+        def tightest(nodes: List[dict]) -> dict:
+            return min(nodes, key=lambda n: (int(n["end"]) - int(n["start"]), int(n["start"])))
+
+        # ---------------------------
+        # METHOD LEVEL: tightest containing function/method
+        # ---------------------------
+        if fault_level == "method":
+            funcs = [c for c in candidates if c.get("kind") in {"func", "method"}]
+            if funcs:
+                chosen = tightest(funcs)
+                expanded = [int(chosen["start"]), int(chosen["end"])]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+            return [start, end]
+
+        # ---------------------------
+        # IMPORT BLOCK LEVEL: tightest containing import block
+        # ---------------------------
+        if fault_level == "import_block":
+            imps = [c for c in candidates if c.get("kind") == "import_block"]
+            if imps:
+                chosen = tightest(imps)
+                expanded = [int(chosen["start"]), int(chosen["end"])]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+            return [start, end]
+
+        # ---------------------------
+        # CLASS LEVEL: dedicated class per rules (your existing logic)
+        # ---------------------------
+        if fault_level == "class":
+            class_candidates = [c for c in candidates if c.get("kind") == "class"]
+            if not class_candidates:
+                return [start, end]
+
+            owning = tightest(class_candidates)
+            cls_start, cls_end = int(owning["start"]), int(owning["end"])
+
+            parent = owning.get("_parent")
+            if parent and parent.get("kind") == "class":
+                expanded = [cls_start, cls_end]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+
+            direct_nested = [
+                ch for ch in (owning.get("children") or [])
+                if isinstance(ch, dict)
+                and ch.get("kind") == "class"
+                and isinstance(ch.get("start"), int)
+                and isinstance(ch.get("end"), int)
+            ]
+            direct_nested.sort(key=lambda n: int(n["start"]))
+
+            if not direct_nested:
+                expanded = [cls_start, cls_end]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+
+            first_child_start = int(direct_nested[0]["start"])
+            header_end = first_child_start - 1
+
+            if cls_start <= start and end <= header_end:
+                expanded = [cls_start, header_end]
+                return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]
+
+            return [start, end]
+
+        # ---------------------------
+        # DEFAULT: tightest containing node of any kind
+        # ---------------------------
+        chosen = tightest(candidates)
+        expanded = [int(chosen["start"]), int(chosen["end"])]
+        return expanded if expanded[0] <= start and end <= expanded[1] else [start, end]

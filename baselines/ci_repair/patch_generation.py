@@ -1,10 +1,14 @@
 import os
 import re
 import sys
+import demjson3
 from pathlib import Path
 import json
 import subprocess
 import logging
+import shlex
+import traceback
+import py_compile
 from dotenv import load_dotenv
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel
@@ -14,6 +18,9 @@ from langchain_core.output_parsers import JsonOutputParser
 from utilities.chunking_logic import chunk_log_by_tokens
 from utilities.load_config import load_config
 from utilities.symbols_outline import get_outline_for_file
+from utilities.chunking_logic import chunk_lines_with_overlap
+from utilities.model_token_limits import get_prompt_token_budget, get_max_output_tokens
+
 
 load_dotenv()
 
@@ -175,24 +182,34 @@ class PatchGeneration:
     # =========================================================
 
     def _call_llm_directly(self, prompt: str) -> Any:
-        """Chunk long prompts and call the LLM, parsing valid JSON output."""
-        chunks = chunk_log_by_tokens(prompt, max_tokens=50000, model=self.model_name)
-        for chunk in chunks:
+        try:
+            response = self.llm.invoke([HumanMessage(content=prompt)]).content.strip()
+            match = re.search(r"```(?:json)?\s*\n(.*?)```", response, re.DOTALL)
+            extracted = match.group(1).strip() if match else response
+            
             try:
-                response = self.llm.invoke([HumanMessage(content=chunk)]).content.strip()
-                match = re.search(r"```(?:json)?\s*\n(.*?)```", response, re.DOTALL)
-                extracted = match.group(1).strip() if match else response
-                return self.parser.parse(extracted)
-            except Exception as e:
-                logger.error(f"Failed to parse LLM response: {e}")
-                logger.debug(f"Raw LLM Output:\n{response}")
+                data = json.loads(extracted)
+            except Exception:
+                data = demjson3.decode(extracted)
+
+            return data
+
+        except Exception as e:
+            logger.error(f"Failed to parse LLM response: {e}")
+            logger.debug(f"Raw LLM Output:\n{response}")
+            self._save_interrupted_patch_error(
+                "_call_llm_directly",
+                file_path="(llm)",
+                e=e,
+                extra={"response_snippet": (response or "")[:2000]},
+            )
         return None
-    
+
     def _extract_outline_block_for_fault(
-    self,
-    outline: List[Dict[str, Any]],
-    file_content: str,
-    line_range: List[int]
+        self,
+        outline: List[Dict[str, Any]],
+        file_content: str,
+        line_range: List[int]
     ) -> Dict[str, Any]:
         """
         Given an outline and a fault's line_range, find the enclosing block (class/func/const)
@@ -211,12 +228,10 @@ class PatchGeneration:
             for node in nodes:
                 start, end = node["start"], node["end"]
                 if start <= fault_start <= end or start <= fault_end <= end:
-                    # Candidate node
                     span = end - start
-                    if span < best_span:  # prefer smaller enclosing scope
+                    if span < best_span:
                         best_match = node
                         best_span = span
-                # recurse into children
                 if node.get("children"):
                     search_outline(node["children"])
 
@@ -235,290 +250,533 @@ class PatchGeneration:
                 },
             }
 
-        # Fallback: not inside any outline block
         snippet = "\n".join(lines[fault_start - 1:fault_end])
         return {
             "original_snippet": snippet,
-            "block_info": {"name": "top_level", "kind": "unknown", "start": fault_start, "end": fault_end},
+            "block_info": {
+                "name": "top_level",
+                "kind": "unknown",
+                "start": fault_start,
+                "end": fault_end,
+            },
         }
+        
+    def _estimate_tokens(self, text: str) -> int:
+        """Best-effort token estimator."""
+        try:
+            import tiktoken  # type: ignore
+            enc = tiktoken.encoding_for_model(self.model_name or "gpt-4o-mini")
+            return len(enc.encode(text))
+        except Exception:
+            return max(1, len(text) // 4)
 
+    def _dedupe_preserve_order(self, responses: List[Any], full_path: str) -> Dict[str, List[str]]:
+        """
+        responses: list of LLM responses; each element may be:
+        - {} dict
+        - {"installation_commands":[...], "fix_commands":[...]}
+        - [{...},{...}] (rare, but supported upstream)
+        Returns:
+        {"installation_commands": [...], "fix_commands": [...]}
+        """
+        def normalize_cmd(cmd: str) -> str:
+            cmd = (cmd or "").strip()
+            if not cmd:
+                return ""
+            
+            cmd = cmd.replace("{{file_or_dir}}", full_path).strip()
+            cmd = " ".join(cmd.split())
+            return cmd
+
+        results: Dict[str, List[str]] = {"installation_commands": [], "fix_commands": []}
+        seen_install = set()
+        seen_fix = set()
+
+        def add_install(c: str) -> None:
+            c2 = normalize_cmd(c)
+            if c2 and c2 not in seen_install:
+                seen_install.add(c2)
+                results["installation_commands"].append(c2)
+
+        def add_fix(c: str) -> None:
+            c2 = normalize_cmd(c)
+            if c2 and c2 not in seen_fix:
+                seen_fix.add(c2)
+                results["fix_commands"].append(c2)
+
+        def absorb_one(res: Any) -> None:
+            if not res:
+                return
+            if isinstance(res, list):
+                for item in res:
+                    absorb_one(item)
+                return
+            if not isinstance(res, dict):
+                return
+
+            for c in (res.get("installation_commands") or []):
+                add_install(c)
+            for c in (res.get("fix_commands") or []):
+                add_fix(c)
+
+        for r in responses:
+            absorb_one(r)
+
+        return results
+
+    def _build_automated_fix_prompt(self, *, full_path: str, faults_payload: Any, pyproject_cfg: str) -> str:
+        return f"""
+You are a CI Repair Analyst AI.
+
+Your task is to decide whether the CI failure is 100% deterministically fixable
+by running existing automated tools only (linters, formatters, static analyzers)
+that are part of the CI validation for the failed job.
+
+If there is any doubt, you MUST return an empty JSON object: {{}}.
+
+---
+
+CONTEXT INFORMATION
+
+1) FILE INFO
+Full Path: {full_path}
+
+2) FAULT CONTEXT (Detected by Fault Localization)
+{json.dumps(faults_payload, indent=2)}
+
+3) CI ERROR LOGS
+{json.dumps(self.error_details, indent=2)}
+
+4) FAILED JOB VALIDATION COMMANDS (source of truth)
+These are the exact validation tools/commands executed in the failed CI job:
+{json.dumps(self.error_details.get("failed_job", {}), indent=2)}
+
+5) AUTOMATED TOOLS REFERENCE
+Verified tools and valid commands:
+{json.dumps(automated_commands_available, indent=2)}
+
+6) PROJECT CONFIG (pyproject.toml raw content, may be empty)
+{pyproject_cfg}
+
+---
+
+OUTPUT FORMAT (STRICT JSON ONLY)
+
+Return EXACTLY one of the following:
+
+A) If automated tooling CAN deterministically fix this CI failure:
+{{
+"installation_commands": ["..."],
+"fix_commands": ["..."]
+}}
+
+B) If automated tooling CANNOT fix it, OR if you are not 100% sure, OR if there are no commands to run:
+{{}}
+
+Rules:
+- Return the MINIMAL set of commands to fix the failure.
+- Prefer only relevant tools (highest confidence) rather than chaining multiple tools.
+- If Ruff is present in FAILED JOB VALIDATION COMMANDS, ALWAYS prefer Ruff over isort/black/flake8 for Python formatting/import issues.
+- Do NOT include commands that are not required for this specific failure.
+- Output ONLY valid JSON (no markdown, no backticks, no extra text).
+- Do not invent tools.
+- ONLY use commands that appear verbatim in FAILED JOB VALIDATION COMMANDS (source of truth).
+- If FAILED JOB VALIDATION COMMANDS does not include a tool, you MUST NOT suggest it.
+- NEVER install runtime dependencies (e.g. huggingface-hub).
+- installation_commands may ONLY install tools listed in AUTOMATED TOOLS REFERENCE.
+
+""".strip()
 
     # =========================================================
     # ---------------- AUTOMATED TOOL FIX ---------------------
     # =========================================================
 
-    def _try_automated_fix(self, faults: List[Dict[str, Any]], full_path: str) -> bool:
-        """Try to fix the file automatically using appropriate tools (ruff, black, isort, etc.)"""
-        prompt = f"""
-You are a **CI Repair Analyst AI**, specialized in automated build and validation repair.
+    def _load_pyproject(self) -> str:
+        """
+        Read pyproject.toml as plain text and return its contents.
+        No TOML parsing, no tomllib/tomli – just raw text.
 
-Your goal is to determine whether the following Python file can be automatically fixed using
-the tools and validation commands that are actually part of this repository's CI workflow
-(e.g., ruff, black, isort, flake8, pylint, mypy, pytest).
+        Returns:
+            The file content as a string, or "" if the file does not
+            exist or cannot be read.
+        """
+        path = os.path.join(self.repo_path, "pyproject.toml")
 
----
-
-### CONTEXT INFORMATION
-
-#### 1. FILE INFO
-Full Path: {full_path}
-
-#### 2. FAULT CONTEXT (Detected by Fault Localization)
-{json.dumps(faults, indent=2)}
-
-#### 3. CI ERROR LOGS
-{json.dumps(self.error_details, indent=2)}
-
-#### 4. WORKFLOW VALIDATION COMMANDS
-These are the exact validation tools or commands extracted from the project's CI workflow file:
-{json.dumps(self.workflow, indent=2)}
-
-#### 5. AUTOMATED FIXATION TOOLS AND COMMAND REFERENCE
-Below is a verified reference of all available automated tools and their valid fix/check commands.
-You must select only those that align with the CI workflow and detected error type.
-{json.dumps(automated_commands_available, indent=2)}
-
----
-
-### OBJECTIVE
-Select the most accurate automated fix strategy that:
-- Matches the actual **tools used in the CI workflow**.
-- Addresses the specific **errors found in fault localization or CI logs**.
-- Uses **correct and compatible CLI syntax** for each tool (from the provided command reference).
-- Ensures the commands target the provided file path only.
-
----
-
-### INSTRUCTIONS
-
-1. First, infer which tools are available in this project by inspecting the workflow commands
-   in section 4. For example, if any command string contains "ruff", then Ruff is available.
-
-2. If **Ruff is available** and the issues are related to formatting, style, imports, or
-   other lintable errors (flake8-like, pycodestyle-like, isort-like), you MUST prefer a
-   **Ruff-only strategy**:
-   - Use: `ruff check --fix {full_path}` followed by `ruff format {full_path}`.
-   - In this case, DO NOT also use `black`, `isort`, `autopep8`, or `yapf` on this file.
-   - Ruff is treated as the unified linter/formatter for Python.
-
-3. Only when Ruff is NOT available or clearly does NOT cover the error type
-   (e.g., purely type-checking, complex logic bug, etc.), you may fall back to
-   other tools like:
-   - `black` / `isort` for formatting/imports,
-   - `flake8` / `pylint` for linting,
-   - or other tools from the reference.
-
-4. Provide the **installation commands** as a list of shell commands
-   (e.g., `["pip install ruff"]`).
-
-5. Provide the **automated fix commands** as a list of shell commands
-   (e.g., `["ruff check --fix {full_path}", "ruff format {full_path}"]`).
-
-6. Avoid redundant tools when a single tool is sufficient. If Ruff can fix it, use only Ruff.
-
-7. Only return tools that are explicitly mentioned in the CI workflow or are clearly compatible with it.
-
-8. If no tool can fix the issue automatically (e.g., logical errors, missing return statements),
-   return empty lists for both `installation_commands` and `fix_commands`.
-
----
-
-### RESPONSE FORMAT (MUST BE STRICTLY VALID JSON)
-
-{{
-  "installation_commands": [
-    "pip install <tool1>",
-    "pip install <tool2>"
-  ],
-  "fix_commands": [
-    "<command1>",
-    "<command2>"
-  ],
-  "tool_explanation": "Briefly explain which tools were chosen, why they apply to this error type, and how they align with the CI workflow."
-}}
-
----
-
-### EXAMPLES
-
-#### Example 1: Import / Formatting Errors with Ruff Available
-Error: "Import block is un-sorted or un-formatted"
-Workflow uses: a command containing "ruff"
-Output:
-{{
-  "installation_commands": ["pip install ruff"],
-  "fix_commands": [
-    "ruff check --fix {full_path}",
-    "ruff format {full_path}"
-  ],
-  "tool_explanation": "Ruff is part of the CI workflow and can handle import sorting, linting, and formatting. We use only Ruff (check --fix + format) to avoid redundant tools like black or isort."
-}}
-
-#### Example 2: Line-Length Violation (E501) with Ruff Available
-Error: "line too long (E501)"
-Workflow uses: a command containing "ruff"
-Output:
-{{
-  "installation_commands": ["pip install ruff"],
-  "fix_commands": [
-    "ruff check --fix {full_path}",
-    "ruff format {full_path}"
-  ],
-  "tool_explanation": "Ruff can automatically fix E501 and other style violations. We rely solely on Ruff since it is included in the workflow."
-}}
-
-#### Example 3: Logical or Type Error (Not Auto-fixable)
-Error: "Function missing a return statement"
-Workflow uses: `pytest`, `mypy`
-
-### RESPONSE RULES (CRITICAL)
-- Your **entire** response must be a single JSON value.
-- Do NOT include markdown headings, backticks, or any text before or after the JSON.
-- Do NOT wrap the JSON in ```json``` fences.
-- No explanations outside the JSON object.
-
-
-Output:
-{{
-  "installation_commands": [
-    "pip install <tool1>",
-    "pip install <tool2>"
-  ],
-  "fix_commands": [
-    "<command1>",
-    "<command2>"
-  ],
-  "tool_explanation": "Briefly explain which tools were chosen, why they apply to this error type, and how they align with the CI workflow."
-}}
-""".strip()
-
+        if not os.path.exists(path):
+            logger.info("No pyproject.toml found for this repo.")
+            return ""
 
         try:
-            result = self._call_llm_directly(prompt)
-            if not (result and isinstance(result, dict)):
-                logger.warning(f"No valid response from LLM for automated fix in {full_path}")
-                return False
-
-            install_cmds = result.get("installation_commands", [])
-            fix_cmds = result.get("fix_commands", [])
-
-            explanation = result.get("tool_explanation", "")
-
-            logger.info(f"Tool explanation: {explanation}")
-
-            # Step 1: install tools
-            for cmd in install_cmds:
-                try:
-                    cmd_parts = cmd.split()
-                    logger.info(f"Installing tool: {cmd}")
-                    result = subprocess.run(
-                        cmd_parts, cwd=self.repo_path, capture_output=True, text=True, timeout=120
-                    )
-                    
-                    if result.returncode == 0:
-                        logger.info(f"Tool installed successfully: {cmd}")
-                    else:
-                        logger.warning(f"Tool installation failed: {cmd}\n{result.stderr}")
-                except Exception as e:
-                    logger.error(f"Tool installation failed ({cmd}): {e}")
-
-            # Step 2: execute automated fix commands
-            success = False
-            for cmd in fix_cmds:
-                try:
-                    cmd_parts = cmd.split()
-                    logger.info(f"Running automated fix command: {cmd}")
-                    fix_proc = subprocess.run(
-                        cmd_parts, cwd=self.repo_path, capture_output=True, text=True, timeout=120
-                    )
-
-                    if fix_proc.returncode == 0:
-                        logger.info(f"Automated fix succeeded: {cmd}")
-                        success = True
-                    else:
-                        success = False
-                        logger.warning(f"Command failed: {cmd}\n{fix_proc.stderr}")
-                except Exception as e:
-                    logger.error(f"Failed running command {cmd}: {e}")
-
-            return success
-
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+                logger.info("Loaded pyproject.toml successfully.")
+                return content
         except Exception as e:
-            logger.error(f"Automated fix analysis failed: {e}")
+            logger.warning(f"Failed to read pyproject.toml: {e}")
+            return ""
+
+
+    def _try_automated_fix(self, faults: List[Dict[str, Any]], full_path: str) -> bool:
+        """Try to fix the file automatically using appropriate tools (ruff, black, isort, etc.)"""
+        pyproject_cfg = self._load_pyproject()
+        TOKEN_LIMIT = get_prompt_token_budget(self.model_name)
+
+        collected: List[Any] = []  # collect raw LLM outputs here
+
+        base_prompt = self._build_automated_fix_prompt(
+            full_path=full_path, faults_payload=faults, pyproject_cfg=pyproject_cfg
+        )
+
+        base_tokens = self._estimate_tokens(base_prompt)
+        if base_tokens <= TOKEN_LIMIT:
+            res = self._call_llm_directly(base_prompt)
+            collected.append(res)
+        else:
+            logger.warning(
+                f"Base context alone is {base_tokens} tokens (>= {TOKEN_LIMIT}). "
+                "Proceeding with per-fault prompts."
+            )
+
+            for i, fault in enumerate(faults):
+                single_prompt = self._build_automated_fix_prompt(
+                    full_path=full_path, faults_payload=[fault], pyproject_cfg=pyproject_cfg
+                )
+                single_tokens = self._estimate_tokens(single_prompt)
+
+                if single_tokens <= TOKEN_LIMIT:
+                    part_res = self._call_llm_directly(single_prompt)
+                    collected.append(part_res)
+                    continue
+
+                logger.warning(f"[fault {i}] exceeds {TOKEN_LIMIT} tokens. Proceeding with snippet chunking.")
+
+                fault_meta = dict(fault)
+                full_snippet = fault_meta.pop("code_snippet", "")
+
+                snippet_chunks = chunk_log_by_tokens(
+                    full_snippet,
+                    max_tokens=60000,
+                    model=self.model_name,
+                )
+
+                for j, snip_chunk in enumerate(snippet_chunks):
+                    fault_piece = dict(fault_meta)
+                    fault_piece["code_snippet"] = snip_chunk
+                    fault_piece["chunk_info"] = {
+                        "chunk_index": j,
+                        "chunk_count": len(snippet_chunks),
+                        "chunk_field": "code_snippet",
+                    }
+
+                    piece_prompt = self._build_automated_fix_prompt(
+                        full_path=full_path, faults_payload=[fault_piece], pyproject_cfg=pyproject_cfg
+                    )
+                    piece_res = self._call_llm_directly(piece_prompt)
+                    collected.append(piece_res)
+
+        # ---- FINAL: aggregate unique commands (once) ----
+        results = self._dedupe_preserve_order(collected, full_path)
+
+        if not results["installation_commands"] and not results["fix_commands"]:
+            logger.warning(f"No automated commands returned for automated fix in {full_path}")
             return False
+        
+        # ---- Execute install commands (with trusted-host fallback) ----
+                # ---- Execute install commands (no sys.executable; trusted-host fallback) ----
+        for cmd in results["installation_commands"]:
+            try:
+                logger.info(f"Installing tool: {cmd}")
+                tokens = shlex.split(cmd)
+
+                # 1) Try original command as returned (e.g., "pip install docformatter")
+                try:
+                     # --- IGNORE ---
+                    proc = subprocess.run(
+                        tokens,
+                        cwd=self.repo_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=120,
+                    )
+                except FileNotFoundError:
+                    # e.g., 'pip' not found -> try python -m pip install ...
+                    if len(tokens) >= 3 and tokens[0] == "pip" and tokens[1] == "install":
+                        pkgs = tokens[2:]
+                        fallback = ["python", "-m", "pip", "install"] + pkgs
+                        logger.info(f"'pip' not found; retrying via: {' '.join(fallback)}")
+                        proc = subprocess.run(
+                            fallback,
+                            cwd=self.repo_path,
+                            capture_output=True,
+                            text=True,
+                            timeout=120,
+                        )
+                    else:
+                        raise
+
+                if proc.returncode == 0:
+                    logger.info(f"Tool installation succeeded: {cmd}")
+                    continue
+
+                logger.warning(
+                    f"Tool installation failed (normal): {cmd}\n"
+                    f"Return code: {proc.returncode}\n"
+                    f"STDOUT:\n{proc.stdout}\n"
+                    f"STDERR:\n{proc.stderr}"
+                )
+
+                # 2) If it's a pip install, retry with trusted-host (still NOT sys.executable)
+                if len(tokens) >= 3 and tokens[0] == "pip" and tokens[1] == "install":
+                    pkgs = tokens[2:]
+                    retry_cmd = (
+                        ["python", "-m", "pip", "install",
+                         "--trusted-host", "pypi.org",
+                         "--trusted-host", "files.pythonhosted.org"]
+                        + pkgs
+                    )
+                    logger.info(f"Retrying with trusted-host: {' '.join(retry_cmd)}")
+
+                    proc2 = subprocess.run(
+                        retry_cmd,
+                        cwd=self.repo_path,
+                        capture_output=True,
+                        text=True,
+                        timeout=120,
+                    )
+                    if proc2.returncode == 0:
+                        logger.info(f"Tool installation succeeded (trusted-host): {cmd}")
+                    else:
+                        logger.warning(
+                            f"Tool installation failed (trusted-host): {cmd}\n"
+                            f"Return code: {proc2.returncode}\n"
+                            f"STDOUT:\n{proc2.stdout}\n"
+                            f"STDERR:\n{proc2.stderr}"
+                        )
+
+            except Exception as e:
+                logger.error(f"Tool installation errored ({cmd}): {e}")
+                self._save_interrupted_patch_error("_try_automated_fix:install", full_path, e, extra={"cmd": cmd})
+                logger.exception("Tool installation errored (%s: %s) cmd=%r", type(e).__name__, e, cmd)
+
+
+
+        # ---- Execute fix commands ----
+        any_success = False
+        for cmd in results["fix_commands"]:
+            try:
+                logger.info(f"Running automated fix command: {cmd}")
+                fix_proc = subprocess.run(
+                    shlex.split(cmd),
+                    cwd=self.repo_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                )
+
+                if fix_proc.returncode == 0:
+                    logger.info(f"Automated fix succeeded: {cmd}")
+                    any_success = True
+                else:
+                    logger.warning(f"Command failed: {cmd}\n{fix_proc.stderr}")
+            except Exception as e:
+                self._save_interrupted_patch_error("_try_automated_fix:fix", full_path, e, extra={"cmd": cmd})
+                logger.error(f"Failed running command {cmd}: {e}")
+
+        # If automated fix succeeded, return True so caller skips LLM fallback
+        return any_success
+
+
+    def _llm_patch_prompt(self, *, full_path: str, faults_payload: Any, outline: str) -> str:
+        return f"""
+    You are a Senior Software Engineer responsible for repairing code faults by fixing any kind of issues in the code.
+    Each fault entry describes a specific issue detected by CI validation tools.
+
+    ---
+
+    ### FILE PATH
+    {full_path}
+
+    ### FILE OUTLINE
+    {outline}
+
+    ### FAULT LOCALIZATION DATA
+    {json.dumps(faults_payload, indent=2)}
+
+    ### Failed Job
+    {json.dumps(self.error_details.get("failed_job", {}), indent=2)}
+
+    ---
+
+    ### INSTRUCTIONS
+    - For each issue, identify the **exact original snippet** to fix.
+    - ALWAYS return full, syntactically valid code blocks so that we can replace the given one with updated one.
+    - Do NOT remove or modify unrelated code.
+    - Keep indentation and structure consistent with the original code.
+    - Do NOT return the entire file content, only the minimally necessary blocks which is given with fixation.
+    - IMPORTANT: If there is **no required modification** in the provided `code_snippet`, return an **empty JSON list**: [].
+
+    ---
+
+    ### RESPONSE RULES (CRITICAL)
+    - Your **entire** response must be a single JSON value.
+    - Do NOT include markdown headings, backticks, or any text before or after the JSON.
+    - Do NOT wrap the JSON in ```json``` fences.
+    - No explanations outside the JSON object. No markdown, commentary, or code fences.
+    - Code format should be preserved as-is; return patched code without any corruption.
+
+    ### RESPONSE FORMAT
+    Return one of:
+    1) []   (if no changes are needed)
+    2) [
+        {{
+        "original_snippet": "<exact code block that was modified>",
+        "fixed_snippet": "<corrected version of that code block>"
+        }}
+    ]
+    """.strip()
 
     # =========================================================
     # ------------------- LLM PATCH FIX ------------------------
     # =========================================================
 
     def _generate_llm_patch(
-        self, faults: List[Dict[str, Any]], file_path: str, full_path: str, original_content: str
+    self,
+    faults: List[Dict[str, Any]],
+    file_path: str,
+    full_path: str,
+    original_content: str,
     ) -> bool:
         """
         Generate snippet-level patches using LLM and apply them to the file.
-        Each patch includes 'original_snippet' and 'fixed_snippet'.
+        - Try combined faults prompt if within token limit
+        - Else per-fault
+        - If a per-fault prompt is too large, chunk that fault's code_snippet and try per chunk
+        After collecting all patches for the file, apply them to the file content and write once.
         """
         outline = get_outline_for_file(full_path) or "No outline available."
+        token_limit = get_prompt_token_budget(self.model_name)
 
-        prompt = f"""
-You are a Senior Software Engineer responsible for repairing code faults by fixing any kind of issues in the code.
-Each fault entry describes a specific issue detected by CI validation tools.
+        collected_patches: List[Dict[str, Any]] = []
 
----
-
-### FILE PATH
-{full_path}
-
-### FILE OUTLINE
-{outline}
-
-### FAULT LOCALIZATION DATA
-{json.dumps(faults, indent=2)}
-
----
-
-### INSTRUCTIONS
-- For each issue, identify the **exact original snippet** to fix.
-- Return a **list** of patches, each containing:
-  - `original_snippet`: exact code to replace
-  - `fixed_snippet`: corrected version
-  - `explanation`: short summary
-- Keep structure and indentation consistent.
-- Do NOT return the entire file content.
-
----
-
-### RESPONSE RULES (CRITICAL)
-- Your **entire** response must be a single JSON value.
-- Do NOT include markdown headings, backticks, or any text before or after the JSON.
-- Do NOT wrap the JSON in ```json``` fences.
-- No explanations outside the JSON object. No markdown, commentary, or code fences.
-- code formate should be as it, return patched code without any corruption.
-
-
-### RESPONSE FORMAT
-[
-  {{
-    "original_snippet": "<exact code block that was modified>",
-    "fixed_snippet": "<corrected version of that code block>",
-    "explanation": "Brief explanation of what was fixed and why"
-  }}
-]
-""".strip()
+        # --------------------------
+        # 1) Combined faults prompt
+        # --------------------------
+        full_prompt = self._llm_patch_prompt(
+            full_path=full_path, faults_payload=faults, outline=outline
+        )
 
         try:
-            result = self._call_llm_directly(prompt)
-            if not (result and isinstance(result, list)):
+            combined_tokens = self._estimate_tokens(full_prompt)
+
+            if combined_tokens <= token_limit:
+                res = self._call_llm_directly(full_prompt)
+                    
+                if res and isinstance(res, list):
+                    for item in res:
+                        if isinstance(item, dict):
+                            collected_patches.append(item)
+                else:
+                    logger.warning(
+                        f"No valid snippet patches returned by LLM for {file_path} (combined)."
+                    )
+            else:
+                logger.warning(
+                    f"{file_path}: combined prompt too large ({combined_tokens} > {token_limit}); "
+                    "proceeding per-fault."
+                )
+
+                # --------------------------
+                # 2) Per-fault prompts
+                # --------------------------
+                for i, fault in enumerate(faults):
+                    fault_prompt = self._llm_patch_prompt(
+                        full_path=full_path, faults_payload=fault, outline=outline
+                    )
+
+                    fault_tokens = self._estimate_tokens(fault_prompt)
+
+                    # If fault prompt fits -> call directly
+                    if fault_tokens <= token_limit:
+                        fault_res = self._call_llm_directly(fault_prompt)
+                        if fault_res and isinstance(fault_res, list):
+                            for item in fault_res:
+                                if isinstance(item, dict):
+                                    collected_patches.append(item)
+                        else:
+                            logger.warning(f"{file_path}: fault {i} returned no valid patches.")
+                        continue
+
+                    # --------------------------
+                    # 3) Fault too large -> chunk code_snippet only
+                    # --------------------------
+                    logger.warning(
+                        f"{file_path}: fault {i} prompt too large ({fault_tokens} > {token_limit}); "
+                        "chunking code_snippet."
+                    )
+
+                    snippet = (fault.get("code_snippet") or "")
+                    if not snippet.strip():
+                        logger.warning(f"{file_path}: fault {i} has empty code_snippet; skipping.")
+                        continue
+
+                    fault_meta = dict(fault)
+                    fault_meta.pop("code_snippet", None)
+
+                    # Chunk by lines: 300 lines per chunk, 50 line overlap
+                    snippet_chunks = chunk_lines_with_overlap(
+                        snippet,
+                        lines_per_chunk=200,
+                        overlap=50,
+                    )
+
+                    chunk_count = len(snippet_chunks)
+                    for j, chunk_tuple in enumerate(snippet_chunks):
+                        # chunk_lines_with_overlap returns (start_line, end_line, chunk_text)
+                        snip_chunk = chunk_tuple[2]
+
+                        fault_piece = dict(fault_meta)
+                        fault_piece["code_snippet"] = snip_chunk
+                        fault_piece["chunk_info"] = {
+                            "chunk_index": j,
+                            "chunk_count": chunk_count,
+                            "chunk_field": "code_snippet",
+                        }
+
+                        chunk_prompt = self._llm_patch_prompt(
+                            full_path=full_path, faults_payload=fault_piece, outline=outline
+                        )
+
+                        chunk_tokens = self._estimate_tokens(chunk_prompt)
+                        if chunk_tokens > token_limit:
+                            logger.warning(
+                                f"{file_path}: fault {i} chunk {j} still too large "
+                                f"({chunk_tokens} > {token_limit}); skipping chunk."
+                            )
+                            continue
+
+                        chunk_res = self._call_llm_directly(chunk_prompt)
+                        if chunk_res and isinstance(chunk_res, list):
+                            for item in chunk_res:
+                                if isinstance(item, dict):
+                                    collected_patches.append(item)
+                        else:
+                            logger.warning(
+                                f"{file_path}: fault {i} chunk {j} returned no valid patches."
+                            )
+
+            # --------------------------
+            # Apply ALL collected patches at the end
+            # --------------------------
+            if not collected_patches:
                 logger.warning(f"No valid snippet patches returned by LLM for {file_path}")
                 return False
 
             updated_content = original_content
-            success = False
+            any_applied = False
 
-            for idx, patch in enumerate(result, start=1):
-                original_snippet = patch.get("original_snippet", "")
-                fixed_snippet = patch.get("fixed_snippet", "")
-                explanation = patch.get("explanation", "")
+            for idx, patch in enumerate(collected_patches, start=1):
+                original_snippet = (patch.get("original_snippet") or "")
+                fixed_snippet = (patch.get("fixed_snippet") or "")
 
                 if not original_snippet.strip() or not fixed_snippet.strip():
                     logger.warning(f"Patch {idx} missing snippet data, skipping.")
@@ -532,28 +790,35 @@ Each fault entry describes a specific issue detected by CI validation tools.
                     logger.warning(f"Patch {idx}: snippet not found in {file_path}, skipping.")
                     continue
 
-                success = self._write_updated_file(full_path, replaced_content)
-                if success:
-                    updated_content = replaced_content
-                    logger.info(f"Patch {idx} applied successfully to {file_path}: {explanation}")
-                else:
-                    logger.error(f"Patch {idx} failed to apply to {file_path}.")
-            
-                    return False
-            
-            return success
-        
+                updated_content = replaced_content
+                any_applied = True
+                logger.info(f"Patch {idx} applied to {file_path}")
+
+            if not any_applied:
+                logger.warning(
+                    f"{file_path}: patches were generated but none applied (snippets not found)."
+                )
+                return False
+
+            # Write once
+            if not self._write_updated_file(full_path, updated_content):
+                logger.error(f"{file_path}: failed to write updated file.")
+                return False
+
+            return True
+
         except Exception as e:
             logger.error(f"LLM patch generation failed for {file_path}: {e}")
+            self._save_interrupted_patch_error("_generate_llm_patch", full_path, e)
             return False
-        
-
 
     # =========================================================
     # ---------------------- REPLACEMENT ----------------------
     # =========================================================
 
-    def _replace_snippet_in_code(self, code: str, original_snippet: str, fixed_snippet: str) -> str:
+    def _replace_snippet_in_code(
+        self, code: str, original_snippet: str, fixed_snippet: str
+    ) -> str:
         """Replace a snippet of code safely with normalization."""
         if not original_snippet.strip():
             return code
@@ -571,11 +836,7 @@ Each fault entry describes a specific issue detected by CI validation tools.
         return code
 
     def _write_updated_file(self, full_path: str, content: str) -> bool:
-        """Write updated content to disk with newline normalization.
-
-        Returns:
-            True if the file was written successfully, False otherwise.
-        """
+        """Write updated content to disk with newline normalization."""
         try:
             with open(full_path, "w", encoding="utf-8") as f:
                 for line in content.splitlines(keepends=True):
@@ -585,7 +846,6 @@ Each fault entry describes a specific issue detected by CI validation tools.
         except Exception as e:
             logger.error(f"Failed to write updated file {full_path}: {e}")
             return False
-
 
     # =========================================================
     # -------------------- PATCH PROCESS ----------------------
@@ -598,7 +858,7 @@ Each fault entry describes a specific issue detected by CI validation tools.
             file_path = faults["file_path"]
             full_path = faults["full_file_path"]
             faults = faults["faults"]
-            
+
             if faults == []:
                 logger.info(f"No faults listed for {file_path}, skipping.")
                 continue
@@ -612,62 +872,209 @@ Each fault entry describes a specific issue detected by CI validation tools.
                 logger.warning(f"Could not read file: {full_path}")
                 continue
 
-            if not self._try_automated_fix(faults, full_path):
-                logger.info(f"Falling back to LLM patch for {file_path}")
-                patched_applied = self._generate_llm_patch(faults, file_path, full_path, original)
-            
-                if patched_applied:
-                    try:
-                        logger.info("Installing ruff for this repo (if not already installed)...")
-                        install_proc = subprocess.run(
-                            [sys.executable, "-m", "pip", "install", "ruff"],
-                            cwd=self.repo_path,
-                            capture_output=True,
-                            text=True,
-                            timeout=300,
-                        )
-                        if install_proc.returncode != 0:
-                            logger.warning(
-                                "pip install ruff failed (continuing without formatting):\n"
-                                f"{install_proc.stderr}"
-                            )
-                    except Exception as e:
-                        logger.error(f"Error while installing ruff: {e}")
+            # 1) Try automated fix first
+            automated_ok = self._try_automated_fix(faults, full_path)
 
-                        # 2) Run Ruff on the *applied* file only
-                        #    We use full_path; ruff can handle absolute paths.
-                        
-                    if Path(full_path).suffix == ".py":
-                        for cmd in (
-                            ["ruff", "check", "--fix", full_path],
-                            ["ruff", "format", full_path],
-                        ):
-                            try:
-                                logger.info(f"Running Ruff command: {' '.join(cmd)}")
-                                ruff_proc = subprocess.run(
-                                    cmd,
-                                    cwd=self.repo_path,
-                                    capture_output=True,
-                                    text=True,
-                                    timeout=300,
-                                )
-                                if ruff_proc.returncode != 0:
-                                    logger.warning(
-                                        f"Ruff command failed: {' '.join(cmd)}\n{ruff_proc.stderr}"
-                                    )
-                            except Exception as e:
-                                logger.error(f"Failed to run Ruff command {' '.join(cmd)}: {e}")
+            if not automated_ok:
+                logger.info(f"Falling back to LLM patch for {file_path}")
+                patched_applied = self._generate_llm_patch(
+                    faults, file_path, full_path, original
+                )
+
+                # Only if LLM actually changed the file do we consider running Ruff
+                if patched_applied:
+                    self._safe_format_python(full_path)
+
             modified_content = self._read_file(full_path)
-                
+
             if modified_content != original:
-                self.patch_results.append({
-                    "file_path": file_path,
-                    "full_file_path": full_path,
-                    "original_content": original,
-                    "fixed_content": modified_content,
-                    "fix_method": "automated_tool"})
+                self.patch_results.append(
+                    {
+                        "file_path": file_path,
+                        "full_file_path": full_path,
+                        "original_content": original,
+                        "fixed_content": modified_content,
+                        "fix_method": "automated_or_llm",
+                    }
+                )
 
         return self.patch_results
+    
+    def _ruff_config_error(self, out: str) -> bool:
+        s = (out or "").lower()
+        return (
+            ("failed to parse" in s and "pyproject.toml" in s)
+            or "unknown rule selector" in s
+            or "toml parse error" in s
+        )
+
+    def _run_cmd(self, cmd: List[str], timeout: int = 300) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            cmd,
+            cwd=self.repo_path,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+    def _safe_format_python(self, full_path: str) -> None:
+        """Format a Python file respecting project settings when possible; never hard-fail."""
+        if Path(full_path).suffix != ".py":
+            return
+
+        tools_dir = os.path.join(self.repo_path, ".ci_tools")
+        os.makedirs(tools_dir, exist_ok=True)
+
+        def _run_py_module(module: str, args: List[str], timeout: int = 300) -> subprocess.CompletedProcess:
+            """Run `python -m module ...` with repo-local PYTHONPATH and cwd=self.repo_path."""
+            env = os.environ.copy()
+            env["PYTHONPATH"] = tools_dir + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+
+            return subprocess.run(
+                [sys.executable, "-m", module] + args,
+                cwd=self.repo_path,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+
+        def _pip_install_repo_local(pkgs: List[str], timeout: int = 300) -> bool:
+            """Install packages into repo-local tools_dir using --target."""
+            cmd = [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--no-input",
+                "--disable-pip-version-check",
+                "--target",
+                tools_dir,
+            ] + pkgs
+
+            proc = subprocess.run(
+                cmd,
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+
+            if proc.returncode == 0:
+                return True
+
+            # optional trusted-host retry (keeps same repo-local target)
+            cmd_retry = cmd[:]
+            cmd_retry.insert(cmd_retry.index("install") + 1, "--trusted-host")
+            cmd_retry.insert(cmd_retry.index("install") + 2, "pypi.org")
+            cmd_retry.insert(cmd_retry.index("install") + 3, "--trusted-host")
+            cmd_retry.insert(cmd_retry.index("install") + 4, "files.pythonhosted.org")
+
+            proc2 = subprocess.run(
+                cmd_retry,
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+            if proc2.returncode != 0:
+                logger.warning(
+                    f"Repo-local pip install failed for {pkgs}\n"
+                    f"STDERR:\n{proc2.stderr}\nSTDOUT:\n{proc2.stdout}"
+                )
+                return False
+
+            return True
+
+        # --------------------
+        # 1) Try Ruff first
+        # --------------------
+        try:
+            if _pip_install_repo_local(["ruff"], timeout=300):
+                check = _run_py_module("ruff", ["check", full_path], timeout=300)
+                combined = (check.stdout or "") + "\n" + (check.stderr or "")
+
+                # Your helper catches parse/config errors (like TC001 / TOML issues)
+                if self._ruff_config_error(combined):
+                    logger.warning(
+                        "Skipping Ruff due to Ruff config/pyproject parse error:\n"
+                        f"{check.stderr}"
+                    )
+                else:
+                    # 0) Never run formatters on invalid Python (prevents "corruption" cases)
+                    try:
+                        py_compile.compile(full_path, doraise=True)
+                    except Exception as e:
+                        logger.warning(f"Skipping formatting; invalid Python: {full_path}\n{e}")
+                        return
+
+                    # 1) OPTIONAL: attempt safe autofixes (won't rename vars; may still return 1)
+                    fix = _run_py_module(
+                        "ruff", ["check", "--force-exclude", "--fix", full_path], timeout=300
+                    )
+                    if fix.returncode != 0 and (fix.stdout or fix.stderr):
+                        # Not fatal for formatting; Ruff puts diagnostics in STDOUT.
+                        logger.info(
+                            f"Ruff check --fix reported remaining issues for {full_path} (rc={fix.returncode}):\n"
+                            f"STDOUT:\n{fix.stdout}\nSTDERR:\n{fix.stderr}"
+                        )
+
+                    # 2) Format (this is what fixes indentation/line breaks)
+                    fmt = _run_py_module(
+                        "ruff", ["format", "--force-exclude", full_path], timeout=300
+                    )
+                    if fmt.returncode != 0:
+                        logger.warning(
+                            f"Ruff format failed for {full_path}:\nSTDOUT:\n{fmt.stdout}\nSTDERR:\n{fmt.stderr}"
+                        )
+                        return
+
+                    # 3) Imports-only fix (keeps imports grouped at top; doesn't touch variables)
+                    imp = _run_py_module(
+                        "ruff", ["check", "--select", "I", "--fix", "--force-exclude", full_path], timeout=300
+                    )
+                    if imp.returncode != 0 and (imp.stdout or imp.stderr):
+                        logger.info(
+                            f"Ruff import pass reported issues for {full_path} (rc={imp.returncode}):\n"
+                            f"STDOUT:\n{imp.stdout}\nSTDERR:\n{imp.stderr}"
+                        )
+
+                    # 4) Format again after import edits (keeps spacing consistent)
+                    fmt2 = _run_py_module(
+                        "ruff", ["format", "--force-exclude", full_path], timeout=300
+                    )
+                    if fmt2.returncode != 0:
+                        logger.warning(
+                            f"Ruff format (second pass) failed for {full_path}:\nSTDOUT:\n{fmt2.stdout}\nSTDERR:\n{fmt2.stderr}"
+                        )
+                        return
+
+                    print(f"[FORMAT] Ruff format + import ordering completed for {full_path}")
+                    return
+
+            else:
+                logger.warning("Failed to install Ruff repo-locally; falling back to isort/black.")
+        except Exception as e:
+            logger.warning(f"Ruff formatting attempt errored; falling back: {e}")
+
+                        # --------------------
+        # 2) Fallback: isort + black
+        # # --------------------
+        # try:
+        #     ok = _pip_install_repo_local(["isort", "black"], timeout=300)
+        #     if not ok:
+        #         logger.warning("Failed to install isort/black repo-locally; skipping formatting.")
+        #         return
+
+        #     isort_proc = _run_py_module("isort", [full_path], timeout=300)
+        #     if isort_proc.returncode != 0:
+        #         logger.warning(f"isort failed for {full_path}:\n{isort_proc.stderr}")
+
+        #     black_proc = _run_py_module("black", [full_path], timeout=300)
+        #     if black_proc.returncode != 0:
+        #         logger.warning(f"black failed for {full_path}:\n{black_proc.stderr}")
+        # except Exception as e:
+        #     logger.warning(f"isort/black fallback failed for {full_path}: {e}")
 
     # =========================================================
     # ---------------------- DIFF CREATION --------------------
@@ -744,6 +1151,53 @@ Each fault entry describes a specific issue detected by CI validation tools.
             text=True,
         )
         return result.stdout.strip() == self.sha_fail
+
+    # 2) ADD these methods inside PatchGeneration (e.g., under CORE METHODS)
+
+    def _interrupted_dir(self) -> str:
+        base = "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/exceptions/interrupted_patches"
+        os.makedirs(base, exist_ok=True)
+        return base
+
+    def _save_interrupted_patch_error(
+        self,
+        method: str,
+        file_path: str,
+        e: BaseException,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """
+        Save a record to:
+        .../baselines/exceptions/interrupted_patches/<sha_fail>.jsonl
+        """
+        try:
+            folder = self._interrupted_dir()
+            sha = (self.sha_fail or "unknown_sha").strip() or "unknown_sha"
+            sha = re.sub(r"[^a-zA-Z0-9._-]+", "_", sha)
+
+            out_path = os.path.join(folder, f"{sha}.jsonl")
+
+            record: Dict[str, Any] = {
+                "sha_fail": self.sha_fail,
+                "id": self.task_id,
+                "method": method,
+                "file_path": file_path,
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "traceback": traceback.format_exc(),
+            }
+            if extra:
+                record["extra"] = extra
+
+            with open(out_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+        except Exception as inner:
+            logger.exception(
+                "Failed to save interrupted_patches record (%s: %s)",
+                type(inner).__name__,
+                inner,
+            )
 
     # =========================================================
     # ---------------------- MAIN ENTRY -----------------------

@@ -74,3 +74,7 @@ passing the `jobs_ids.jsonl` file.
 
 ## 📩 Contact info
 If you have any questions or requests concerning this dataset, please contact lca@jetbrains.com
+
+Screts to add:
+
+deepeval: OPENAI_API_KEY

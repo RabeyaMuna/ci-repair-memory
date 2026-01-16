@@ -1,0 +1,10 @@
+{
+    "sha_fail": "a6fe43891c18bd852285700abf2b9f32c9c44441",
+    "changed_files": [
+        {
+            "commit": "a6fe43891c18bd852285700abf2b9f32c9c44441",
+            "file_path": "tests/ci/test_filesystem.py",
+            "diff": "diff --git a/tests/ci/test_filesystem.py b/tests/ci/test_filesystem.py\nindex a2abb9ea2..666c7fb5d 100644\n--- a/tests/ci/test_filesystem.py\n+++ b/tests/ci/test_filesystem.py\n@@ -422,8 +422,12 @@ class TestFileSystem:\n \t\tassert len(fs2.files) == len(fs.files)\n \n \t\t# Verify file contents\n-\t\tassert fs2.get_file('results.md').content is not None and fs2.get_file('results.md').content == '# Original Results'\n-\t\tassert fs2.get_file('custom.txt').content is not None and fs2.get_file('custom.txt').content == 'Custom content'\n+\t\tfile_obj = fs2.get_file('results.md')\n+\t\tassert file_obj is not None\n+\t\tassert file_obj.content == '# Original Results'\n+\t\tfile_obj = fs2.get_file('custom.txt')\n+\t\tassert file_obj is not None\n+\t\tassert file_obj.content == 'Custom content'\n \t\tassert (\n \t\t\tfs2.get_file('extracted_content_0.md').content is not None\n \t\t\tand fs2.get_file('extracted_content_0.md').content == 'Extracted data'\n"
+        }
+    ]
+}

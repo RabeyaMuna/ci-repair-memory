@@ -1,0 +1,10 @@
+{
+    "sha_fail": "405a68ca74619681c6be38a1e4fb8b9fe90e5bff",
+    "changed_files": [
+        {
+            "commit": "405a68ca74619681c6be38a1e4fb8b9fe90e5bff",
+            "file_path": "deepeval/simulator/conversation_simulator.py",
+            "diff": "diff --git a/deepeval/simulator/conversation_simulator.py b/deepeval/simulator/conversation_simulator.py\nindex 0f38afc4..d08a3c4e 100644\n--- a/deepeval/simulator/conversation_simulator.py\n+++ b/deepeval/simulator/conversation_simulator.py\n@@ -37,6 +37,7 @@ class ConversationSimulator:\n         opening_message: Optional[str] = None,\n         max_concurrent: int = 5,\n         async_mode: bool = True,\n+        language: str = \"English\",\n     ):\n         self.model_callback = model_callback\n         self.is_callback_async = inspect.iscoroutinefunction(\n@@ -48,7 +49,7 @@ class ConversationSimulator:\n         self.opening_message = opening_message\n         self.semaphore = asyncio.Semaphore(max_concurrent)\n         self.async_mode = async_mode\n-        self.language = \"English\"\n+        self.language = language\n         self.simulated_conversations: List[ConversationalTestCase] = []\n         self.template = ConversationSimulatorTemplate\n \n"
+        }
+    ]
+}

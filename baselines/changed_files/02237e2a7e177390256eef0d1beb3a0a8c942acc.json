@@ -1,0 +1,10 @@
+{
+    "sha_fail": "02237e2a7e177390256eef0d1beb3a0a8c942acc",
+    "changed_files": [
+        {
+            "commit": "02237e2a7e177390256eef0d1beb3a0a8c942acc",
+            "file_path": "src/axolotl/utils/data/utils.py",
+            "diff": "diff --git a/src/axolotl/utils/data/utils.py b/src/axolotl/utils/data/utils.py\nindex 0807c5288..b278bb38a 100644\n--- a/src/axolotl/utils/data/utils.py\n+++ b/src/axolotl/utils/data/utils.py\n@@ -94,7 +94,9 @@ def deduplicate_dataset(\n     other_hashes = set()\n     if other_dataset is not None:\n         other_hashed = other_dataset.map(\n-            compute_row_hash, remove_columns=other_dataset.column_names, num_proc=num_proc\n+            compute_row_hash,\n+            remove_columns=other_dataset.column_names,\n+            num_proc=num_proc\n         )\n         other_hashes = set(other_hashed[\"row_hash\"])\n         del other_hashed\n"
+        }
+    ]
+}

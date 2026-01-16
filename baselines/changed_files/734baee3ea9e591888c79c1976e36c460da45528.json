@@ -1,0 +1,10 @@
+{
+    "sha_fail": "734baee3ea9e591888c79c1976e36c460da45528",
+    "changed_files": [
+        {
+            "commit": "734baee3ea9e591888c79c1976e36c460da45528",
+            "file_path": "src/axolotl/utils/data/rl.py",
+            "diff": "diff --git a/src/axolotl/utils/data/rl.py b/src/axolotl/utils/data/rl.py\nindex feaf66681..887726e7e 100644\n--- a/src/axolotl/utils/data/rl.py\n+++ b/src/axolotl/utils/data/rl.py\n@@ -305,9 +305,11 @@ def _load_or_create_dataset_split(\n         dataset = _try_load_from_hub(cfg, dataset_hash, split)\n \n     # Attempt to load preprocessed dataset\n-    dataset = load_preprocessed_dataset(cfg, dataset_hash)\n-    if dataset:\n-        return dataset\n+    if dataset is None:\n+        dataset = load_preprocessed_dataset(cfg, dataset_hash)\n \n     # Otherwise, load it\n-    return _load_split(cfg, split=split)\n+    if dataset is None:\n+        dataset = _load_split(cfg, split=split)\n+\n+    return dataset\n"
+        }
+    ]
+}

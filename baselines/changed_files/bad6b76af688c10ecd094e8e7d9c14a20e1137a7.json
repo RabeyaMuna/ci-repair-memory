@@ -1,0 +1,10 @@
+{
+    "sha_fail": "bad6b76af688c10ecd094e8e7d9c14a20e1137a7",
+    "changed_files": [
+        {
+            "commit": "bad6b76af688c10ecd094e8e7d9c14a20e1137a7",
+            "file_path": "examples/agents/movie_buff_assistant.ipynb",
+            "diff": "diff --git a/examples/agents/movie_buff_assistant.ipynb b/examples/agents/movie_buff_assistant.ipynb\nindex e5f4e2a..b06ab58 100644\n--- a/examples/agents/movie_buff_assistant.ipynb\n+++ b/examples/agents/movie_buff_assistant.ipynb\n@@ -234,7 +234,7 @@\n     \"    model=\\\"openai:gpt-4o\\\",\\n\",\n     \"    messages=[{\\n\",\n     \"        \\\"role\\\": \\\"user\\\",\\n\",\n-    \"        \\\"content\\\": \\\"\\\"\\\"Based on what you know about my movie preferences from memory:\\n\",\n+    \"        \\\"content\\\": \\\"\\\"\\\"Tell me what you know about my movie preferences from memory, and suggest something new:\\n\",\n     \"        \\n\",\n     \"        1. Remind me what movies I liked\\n\",\n     \"        2. Suggest 3 movies I'd probably enjoy\\n\",\n"
+        }
+    ]
+}

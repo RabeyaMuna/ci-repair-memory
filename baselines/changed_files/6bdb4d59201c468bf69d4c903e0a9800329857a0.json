@@ -1,0 +1,10 @@
+{
+    "sha_fail": "6bdb4d59201c468bf69d4c903e0a9800329857a0",
+    "changed_files": [
+        {
+            "commit": "6bdb4d59201c468bf69d4c903e0a9800329857a0",
+            "file_path": "browser_use/llm/openai/chat.py",
+            "diff": "diff --git a/browser_use/llm/openai/chat.py b/browser_use/llm/openai/chat.py\nindex 7cc299ee1..8119b41c3 100644\n--- a/browser_use/llm/openai/chat.py\n+++ b/browser_use/llm/openai/chat.py\n@@ -33,7 +33,7 @@ class ChatOpenAI(BaseChatModel):\n \n \t# Model params\n \ttemperature: float | None = None\n-\treasoning_effort: str | None = 'low'\n+\treasoning_effort: str = 'low'\n \n \t# Client initialization parameters\n \tapi_key: str | None = None\n"
+        }
+    ]
+}

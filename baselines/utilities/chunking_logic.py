@@ -1,73 +1,121 @@
-from typing import List, Dict, Any
-import json
-import os
-import time
+# /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/utilities/chunking_logic.py
+
+from __future__ import annotations
+
+from typing import List, Tuple
 import tiktoken
 from tiktoken import encoding_for_model
 
-def _get_encoder_from_model(model: str):
-    name = (model or "").lower()
 
-    # OpenAI GPT-family models: use the exact encoding if possible
+def _get_encoder_from_model(model: str):
+    """
+    Return a tiktoken encoder:
+    - If the exact model is known to tiktoken, use it.
+    - Otherwise fall back to cl100k_base (good generic BPE for many OpenAI-like APIs).
+    """
+    name = (model or "").strip().lower()
+
+    # OpenAI GPT-family models: use exact encoding if possible
     if name.startswith("gpt") or "gpt-" in name:
         try:
             return encoding_for_model(model)
         except Exception:
-            # If tiktoken doesn't recognize the exact model, fall back
             pass
 
-    # For "cl100k_base" explicitly, or for Claude/DeepSeek/etc. → generic BPE
-    try:
-        return tiktoken.get_encoding("cl100k_base")
-    except Exception as e:
-        # This should basically never happen, but just in case:
-        raise RuntimeError(f"Failed to load cl100k_base encoding: {e}")
+    # DeepSeek/Claude/unknown: generic BPE fallback
+    return tiktoken.get_encoding("cl100k_base")
 
-def count_tokens(text: str, model: str = "cl100k_base"):
-    encoding = tiktoken.encoding_for_model(model)
-    return len(encoding.encode(text))
-
-def chunk_log_by_tokens(log_text: str, max_tokens: int = 60000, overlap: int = 100, model: str = "cl100k_base") -> List[str]:
-    # Safe encoding that accepts all special tokens as plain text
+def count_tokens(text: str, model: str = "cl100k_base") -> int:
+    """
+    Count tokens using a safe encoder. If model is unknown, uses cl100k_base.
+    """
+    
     enc = _get_encoder_from_model(model)
+    return len(enc.encode(text or "", disallowed_special=()))
 
-    lines = log_text.splitlines()
-    chunks = []
-    current_chunk = []
+
+def estimate_tokens(text: str, model: str = "gpt-4o-mini") -> int:
+    """
+    Backward-compatible alias for token counting. Uses safe fallback for unknown models.
+    """
+    return count_tokens(text, model=model)
+
+
+def chunk_log_by_tokens(
+    log_text: str,
+    max_tokens: int = 60_000,
+    overlap: int = 100,
+    model: str = "cl100k_base",
+) -> List[str]:
+    """
+    Chunk text by *token budget* while preserving line boundaries.
+
+    - max_tokens: token target per chunk (approx).
+    - overlap: number of *lines* to overlap between consecutive chunks.
+      (Yes: overlap is line-based, not token-based.)
+    - model: used only for token estimation; unknown models fall back to cl100k_base.
+
+    Notes:
+    - If a single line exceeds max_tokens by itself, it will be placed in its own chunk.
+    - Overlap is applied after a chunk flush.
+    """
+    enc = _get_encoder_from_model(model)
+    lines = (log_text or "").splitlines()
+
+    chunks: List[str] = []
+    current_lines: List[str] = []
     current_tokens = 0
 
     for line in lines:
-        line_tokens = len(enc.encode(line))
+        # token count per line (including a newline approximation to reduce overflow risk)
+        line_tokens = len(enc.encode(line, disallowed_special=())) + 1
 
-        if current_tokens + line_tokens > max_tokens:
-            chunks.append("\n".join(current_chunk))
+        # If adding this line exceeds the budget, flush current chunk first
+        if current_lines and (current_tokens + line_tokens > max_tokens):
+            chunks.append("\n".join(current_lines))
 
-            # Start new chunk with overlap
+            # Apply overlap in *lines*
             if overlap > 0:
-                overlap_lines = current_chunk[-overlap:] if len(current_chunk) >= overlap else current_chunk
-                current_chunk = list(overlap_lines)
-                current_tokens = sum(len(enc.encode(l)) for l in current_chunk)
+                overlap_lines = (
+                    current_lines[-overlap:] if len(current_lines) >= overlap else current_lines
+                )
+                current_lines = list(overlap_lines)
+                current_tokens = sum((len(enc.encode(l, disallowed_special=())) + 1) for l in current_lines)
             else:
-                current_chunk = []
+                current_lines = []
                 current_tokens = 0
 
-        current_chunk.append(line)
+        # If the line itself is huge and chunk is empty, still add it (single-line chunk)
+        current_lines.append(line)
         current_tokens += line_tokens
 
-    if current_chunk:
-        chunks.append("\n".join(current_chunk))
+        # Optional safety: if a single line made the chunk blow up massively, flush immediately
+        if current_tokens > max_tokens and len(current_lines) == 1:
+            chunks.append(current_lines[0])
+            current_lines = []
+            current_tokens = 0
+
+    if current_lines:
+        chunks.append("\n".join(current_lines))
 
     return chunks
 
 
-
-   
-def chunk_lines_with_overlap(content: str, lines_per_chunk=200, overlap=20):
-    lines = content.splitlines()
+def chunk_lines_with_overlap(
+    content: str,
+    lines_per_chunk: int = 250,
+    overlap: int = 50,
+) -> List[Tuple[int, int, str]]:
+    """
+    Chunk by line counts (not tokens). Returns:
+      [(start_line_1_based, end_line_1_based, chunk_text), ...]
+    with 'overlap' lines shared between neighboring chunks.
+    """
+    lines = (content or "").splitlines()
     total = len(lines)
-    chunks = []
-    i = 0
+    chunks: List[Tuple[int, int, str]] = []
 
+    i = 0
     while i < total:
         start = max(i - overlap, 0)
         end = min(i + lines_per_chunk, total)
@@ -76,7 +124,3 @@ def chunk_lines_with_overlap(content: str, lines_per_chunk=200, overlap=20):
         i += lines_per_chunk
 
     return chunks
-
-def _estimate_tokens(text: str, model: str = "gpt-4o-mini") -> int:
-    enc = tiktoken.encoding_for_model(model)
-    return len(enc.encode(text))

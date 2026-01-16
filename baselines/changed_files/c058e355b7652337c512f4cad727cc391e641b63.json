@@ -1,0 +1,10 @@
+{
+    "sha_fail": "c058e355b7652337c512f4cad727cc391e641b63",
+    "changed_files": [
+        {
+            "commit": "c058e355b7652337c512f4cad727cc391e641b63",
+            "file_path": "litellm/__init__.py",
+            "diff": "diff --git a/litellm/__init__.py b/litellm/__init__.py\nindex caffd2427e..0c7e649663 100644\n--- a/litellm/__init__.py\n+++ b/litellm/__init__.py\n@@ -16,6 +16,7 @@ from litellm.types.utils import (\n     all_litellm_params,\n     all_litellm_params as _litellm_completion_params,\n     CredentialItem,\n+    get_valid_models,\n )  # maintain backwards compatibility for root param\n from litellm._logging import (\n     set_verbose,\n"
+        }
+    ]
+}

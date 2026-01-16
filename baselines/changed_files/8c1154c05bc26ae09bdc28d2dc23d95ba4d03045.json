@@ -1,0 +1,10 @@
+{
+    "sha_fail": "8c1154c05bc26ae09bdc28d2dc23d95ba4d03045",
+    "changed_files": [
+        {
+            "commit": "8c1154c05bc26ae09bdc28d2dc23d95ba4d03045",
+            "file_path": "setup.py",
+            "diff": "diff --git a/setup.py b/setup.py\ndeleted file mode 100644\nindex e69de29..0000000\n"
+        }
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "sha_fail": "9a7e04e18229fb2ecea1a992ade0e4098bd675e0",
+    "changed_files": [
+        {
+            "commit": "9a7e04e18229fb2ecea1a992ade0e4098bd675e0",
+            "file_path": "tests/gui/utils/test_types.py",
+            "diff": "diff --git a/tests/gui/utils/test_types.py b/tests/gui/utils/test_types.py\nindex eb791ad4d..0492fa45f 100644\n--- a/tests/gui/utils/test_types.py\n+++ b/tests/gui/utils/test_types.py\n@@ -52,7 +52,6 @@ def test_taipy_date():\n     assert _TaipyDate(None, \"x\").get() is None\n     _TaipyDate(\"\", \"x\").cast_value(\"2022-03-03 00:00:00 UTC\")\n     _TaipyDate(\"\", \"x\").cast_value(_string_to_date(\"2022-03-03 00:00:00 UTC\"))\n-\n def test_taipy_to_json():\n     class TestJson(JsonProperty):\n         def to_json(self):\n"
+        }
+    ]
+}

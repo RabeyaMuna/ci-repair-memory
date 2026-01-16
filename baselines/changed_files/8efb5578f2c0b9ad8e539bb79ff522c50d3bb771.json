@@ -1,0 +1,10 @@
+{
+    "sha_fail": "8efb5578f2c0b9ad8e539bb79ff522c50d3bb771",
+    "changed_files": [
+        {
+            "commit": "8efb5578f2c0b9ad8e539bb79ff522c50d3bb771",
+            "file_path": "tests/test_todo_tool.py",
+            "diff": "diff --git a/tests/test_todo_tool.py b/tests/test_todo_tool.py\nindex 73c7f6c2..15359f91 100644\n--- a/tests/test_todo_tool.py\n+++ b/tests/test_todo_tool.py\n@@ -1,7 +1,6 @@\n-import datetime\n import pytest\n from application.agents.tools.todo_list import TodoListTool\n-\n+from application.core.settings import settings\n \n @pytest.fixture\n def todo_tool(monkeypatch) -> TodoListTool:\n@@ -42,7 +41,7 @@ def todo_tool(monkeypatch) -> TodoListTool:\n             return type(\"res\", (), {\"deleted_count\": 0})\n \n     fake_collection = FakeCollection()\n-    fake_client = {\"my_db\": {\"todos\": fake_collection}}\n+    fake_client = {settings.MONGO_DB_NAME: {\"todos\": fake_collection}}\n \n     monkeypatch.setattr(\"application.core.mongo_db.MongoDB.get_client\", lambda: fake_client)\n \n@@ -114,7 +113,7 @@ def test_isolation_and_default_tool_id(monkeypatch):\n             return type(\"res\", (), {\"deleted_count\": 0})\n \n     fake_collection = FakeCollection()\n-    fake_client = {\"my_db\": {\"todos\": fake_collection}}\n+    fake_client = {settings.MONGO_DB_NAME: {\"todos\": fake_collection}}\n \n     monkeypatch.setattr(\"application.core.mongo_db.MongoDB.get_client\", lambda: fake_client)\n \n"
+        }
+    ]
+}
