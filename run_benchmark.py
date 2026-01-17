@@ -44,7 +44,7 @@ all_ids = [row["id"] for row in CIBenchPython.get_dataset(dataset_info=dataset_i
 
 # Select datapoints from 327 to end
 # selected_ids = all_ids[68:]
-# selected_ids = ['71', '72', '73', '74', '75', '76', '77', '78', '79', '80', '81', '82', '83', '84', '85', '86', '87', '88', '89', '90', '91', '129', '150', '151', '152', '153', '154', '155', '156', '157', '158', '159', '160', '161', '162', '163', '164', '165', '166', '167', '168', '169', '170', '171', '172', '173', '174', '175', '176', '177', '178', '179', '180', '181', '182', '183', '184', '185', '186', '187', '188', '189', '190', '191', '192', '193', '194', '195', '196', '197', '198', '199', '200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '295']
+selected_ids = ['71', '72', '73', '74', '76', '77', '78', '79', '80', '82', '83', '84', '86', '87', '88', '89', '90', '91', '150', '151', '152', '153', '154', '155', '156', '157', '158', '159', '160', '161', '162', '163', '164', '165', '166', '167', '168', '169', '170', '171', '173', '174', '175', '176', '177', '179', '181', '182', '183', '184', '186', '187', '189', '191', '192', '193', '194', '196', '197', '198', '199', '201', '202', '203', '204', '205', '207', '208', '209']
 
 # ---------- OPTION 2: Online Dataset ----------
 # Uncomment this block if you want to fetch dataset from an online source (e.g., Hugging Face)
@@ -59,7 +59,7 @@ CIBenchPython.eval_dataset(
     fix_repo_function=fix_apply_generated_patch,
     dataset_info=dataset_info,
     num_dp=None,           # Limit number of datapoints (optional)
-    ids_list= None,         # Provide specific IDs if needed
+    ids_list=selected_ids,         # Provide specific IDs if needed
     force_download=False   # Set True to re-download from online
 )
 

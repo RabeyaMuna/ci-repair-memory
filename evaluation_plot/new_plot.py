@@ -3,8 +3,6 @@
 
 import json
 import ast
-import hashlib
-import colorsys
 from pathlib import Path
 from collections import defaultdict
 from collections.abc import Iterable
@@ -70,14 +68,9 @@ def _load_jsonl_rows(path: Path) -> list[dict]:
 
 
 def _ids_from_list(rows: list | None) -> set[str]:
-    """
-    Extract ids from common formats.
-    Supports keys: id, job_id, run_id (extend if needed).
-    """
     out: set[str] = set()
     if not rows:
         return out
-
     for r in rows:
         if not isinstance(r, dict):
             continue
@@ -144,13 +137,6 @@ def compute_overall_outcomes(
     jobs_ids_error: list | None = None,
     stream_results_path: str | Path | None = None,
 ) -> dict:
-    """
-    Fixed behavior:
-    - Auto counts "attempted" using any evidence of an attempt:
-      results/invalid/waiting/stream OR success/failure/error files.
-    - "not_pushed" = dataset - attempted.
-    - passed from success_ids, failed from failure_ids (plus fallback).
-    """
     total_dataset = len(dataset_ids)
 
     results_ids = _ids_from_list(jobs_results)
@@ -222,21 +208,6 @@ def compute_overall_outcomes(
     }
 
 
-def _stable_index(label: str, n: int) -> int:
-    """Deterministic mapping across machines/runs."""
-    h = hashlib.md5(label.encode("utf-8")).hexdigest()
-    return int(h[:8], 16) % n
-
-
-def _darken_rgba(rgba, factor: float = 0.55):
-    """factor < 1 => darker"""
-    r, g, b, a = rgba
-    h, l, s = colorsys.rgb_to_hls(r, g, b)
-    l = max(0.0, l * factor)
-    r2, g2, b2 = colorsys.hls_to_rgb(h, l, s)
-    return (r2, g2, b2, a)
-
-
 def run_error_type_accuracy_evaluation(
     dataset_path: str | Path | None = None,
     success_path: str | Path | None = None,
@@ -266,7 +237,7 @@ def run_error_type_accuracy_evaluation(
     jobs_ids_failure = _load_jsonl_rows(results_dir / "jobs_failure_diff.jsonl")
     jobs_ids_error = _load_jsonl_rows(results_dir / "jobs_error_diff.jsonl")
 
-    accuracy_plot_path = output_dir / "error_type_accuracy_lollipop.png"
+    accuracy_plot_path = output_dir / "error_type_accuracy_paper.png"
     accuracy_table_path = output_dir / "error_type_accuracy_table.png"
     overall_path = output_dir / "overall.json"
 
@@ -292,17 +263,8 @@ def run_error_type_accuracy_evaluation(
     )
 
     print("\n=== Overall outcome stats (attempted-only; dataset-grounded) ===")
-    print(f"Repo root: {repo_root}")
-    print(f"Dataset rows: {overall['total_dataset']}")
-    print(f"Attempted/pushed: {overall['attempted']}  (coverage: {overall['coverage_percent']}%)")
-    print(f"Not pushed: {overall['not_pushed']}  <-- NOT counted as failed")
-    print(f"Passed:  {overall['passed']}")
-    print(f"Failed:  {overall['failed']}")
-    print(f"Invalid: {overall['invalid']}")
-    print(f"Error:   {overall['error']}")
-    print(f"Waiting: {overall['waiting']}")
-    print(f"Accuracy (passed/attempted*100): {overall['accuracy_percent_attempted']}%")
-
+    for k in ("total_dataset", "attempted", "coverage_percent", "not_pushed", "passed", "failed", "invalid", "error", "waiting", "accuracy_percent_attempted"):
+        print(f"{k}: {overall[k]}")
     with open(overall_path, "w", encoding="utf-8") as f:
         json.dump(overall, f, indent=2)
     print(f"\nSaved overall JSON → {overall_path}")
@@ -344,135 +306,121 @@ def run_error_type_accuracy_evaluation(
     print("\n=== Per-Error-Type Accuracy ===\n")
     print(acc_df.to_string(index=False))
 
-    # ===================== FIXED + DISTINCT DARK COLORS LOLLIPOP =====================
-    sorted_by = "accuracy"  # or "volume"
+    # ===================== PAPER FIGURE (CATEGORY COLORS, SORT MOST SOLVED) =====================
+    # NOTE: no legend (you asked not to mention solved/unsolved in legend)
 
     plot_df = acc_df.copy()
-    if sorted_by == "volume":
-        plot_df = plot_df.sort_values(["total_cases", "accuracy_percent"], ascending=[False, True])
-    else:
-        plot_df = plot_df.sort_values(["accuracy_percent", "total_cases"], ascending=[True, False])
+    plot_df["unsolved_cases"] = plot_df["total_cases"] - plot_df["solved_cases"]
 
-    fig_h = max(5.2, 0.55 * len(plot_df))
-    fig, ax = plt.subplots(figsize=(13.5, fig_h))
+    # Sort: most solved -> least solved (ties: higher accuracy, then bigger total)
+    plot_df = plot_df.sort_values(
+        ["solved_cases", "accuracy_percent", "total_cases", "error_type"],
+        ascending=[False, False, False, True],
+    ).reset_index(drop=True)
 
-    # Reserve space on the right for the summary box (prevents overlap)
-    fig.subplots_adjust(right=0.78)
+    def _lighten_rgba(rgba, factor=0.65):
+        r, g, b, a = rgba
+        r = r + (1 - r) * factor
+        g = g + (1 - g) * factor
+        b = b + (1 - b) * factor
+        return (r, g, b, a)
+
+    def _darken_rgba(rgba, factor=0.25):
+        r, g, b, a = rgba
+        r = r * (1 - factor)
+        g = g * (1 - factor)
+        b = b * (1 - factor)
+        return (r, g, b, a)
+
+    base_cmap = plt.get_cmap("tab20")
+
+    def _cat_idx(label: str, n: int) -> int:
+        import hashlib
+        h = hashlib.md5(label.encode("utf-8")).hexdigest()
+        return int(h[:8], 16) % n
+
+    labels = plot_df["error_type"].tolist()
+    base_colors = [base_cmap(_cat_idx(lab, base_cmap.N)) for lab in labels]
+    solved_colors = [_darken_rgba(c, factor=0.25) for c in base_colors]
+    unsolved_colors = [_lighten_rgba(c, factor=0.65) for c in base_colors]
+
+    fig_h = max(5.5, 0.55 * len(plot_df))
+    fig, ax = plt.subplots(figsize=(14.8, fig_h))
+
+    # Space at top for summary (everything "content" goes on top)
+    fig.subplots_adjust(top=0.82)
 
     y = np.arange(len(plot_df))
-    x = plot_df["accuracy_percent"].to_numpy(dtype=float)
+    solved = plot_df["solved_cases"].to_numpy(dtype=float)
+    unsolved = plot_df["unsolved_cases"].to_numpy(dtype=float)
+    total = plot_df["total_cases"].to_numpy(dtype=float)
+    acc = plot_df["accuracy_percent"].to_numpy(dtype=float)
 
-    # Distinct per-error-type colors (categorical) + darker tone
-    base_cmap = plt.get_cmap("tab20")  # good for up to ~20 distinct groups
-    labels = plot_df["error_type"].tolist()
-    colors = []
-    for lab in labels:
-        idx = _stable_index(lab, base_cmap.N)
-        colors.append(_darken_rgba(base_cmap(idx), factor=0.55))
-
-    # Lollipop stems and heads
-    ax.hlines(y=y, xmin=0, xmax=x, linewidth=2.6, alpha=0.35, color=colors)
-    ax.scatter(x, y, s=125, c=colors, edgecolors="white", linewidths=1.2, zorder=3)
-
-    # Volume bubble at origin (scaled gently)
-    totals = plot_df["total_cases"].to_numpy(dtype=float)
-    bubble_sizes = 35 + 3.0 * np.sqrt(np.clip(totals, 0, 400))
-    ax.scatter(
-        np.zeros_like(y),
-        y,
-        s=bubble_sizes,
-        c="#E6E6E6",
-        edgecolors="white",
-        linewidths=0.9,
-        zorder=2,
-    )
+    # Stacked bars (same category hue family)
+    ax.barh(y, unsolved, color=unsolved_colors, edgecolor="white", linewidth=0.8)
+    ax.barh(y, solved, left=unsolved, color=solved_colors, edgecolor="white", linewidth=0.8)
 
     ax.set_yticks(y)
-    ax.set_yticklabels(plot_df["error_type"], fontsize=10)
+    ax.set_yticklabels(labels, fontsize=10)
 
-    ax.set_xlim(0, 100)
-    ax.set_xlabel("Repair Accuracy (%)", fontsize=12)
-    ax.set_title("Per-Error-Type Repair Accuracy", fontsize=16, pad=12)
+    ax.set_xlabel("Number of cases", fontsize=12)
+    ax.set_title("Per-Error-Type Repair Outcomes (Sorted by Solved Count)", fontsize=14, pad=10)
 
     ax.grid(axis="x", linestyle="--", alpha=0.25)
     ax.set_axisbelow(True)
     for spine in ("top", "right", "left"):
         ax.spines[spine].set_visible(False)
 
-    # Median line + label above plot (avoids collisions)
-    median_acc = float(np.nanmedian(x)) if len(x) else 0.0
-    ax.axvline(median_acc, linestyle=":", linewidth=1.7, alpha=0.75)
-    ax.annotate(
+    # Highest solved at top
+    ax.invert_yaxis()
+
+    # Accuracy dots on top axis
+    ax2 = ax.twiny()
+    ax2.set_xlim(0, 100)
+    ax2.set_xlabel("Repair Accuracy (%)", fontsize=12)
+    ax2.scatter(acc, y, s=40, color="#111111", zorder=5)
+
+    median_acc = float(np.nanmedian(acc)) if len(acc) else 0.0
+    ax2.axvline(median_acc, linestyle=":", linewidth=1.2, alpha=0.7, color="#111111")
+    ax2.text(
+        median_acc, 1.02,
         f"median {median_acc:.1f}%",
-        xy=(median_acc, 1.0),
-        xycoords=("data", "axes fraction"),
-        xytext=(0, 10),
-        textcoords="offset points",
+        transform=ax2.get_xaxis_transform(),
         ha="center",
         va="bottom",
         fontsize=9,
-        alpha=0.95,
     )
 
-    # Value labels on the right of each dot
-    for xi, yi, solved, total, acc in zip(
-        plot_df["accuracy_percent"].to_numpy(),
-        y,
-        plot_df["solved_cases"].to_numpy(),
-        plot_df["total_cases"].to_numpy(),
-        plot_df["accuracy_percent"].to_numpy(),
-    ):
+    # Right-side labels: solved/total and %
+    max_total = float(np.nanmax(total)) if len(total) else 1.0
+    ax.set_xlim(0, max_total * 1.22)
+    x_text = max_total * 1.01
+    for yi, s, t, a in zip(y, solved, total, acc):
         ax.text(
-            min(xi + 1.0, 98.5),
+            x_text,
             yi,
-            f"{solved}/{total} ({acc:.1f}%)",
+            f"{int(s)}/{int(t)} ({a:.1f}%)",
             va="center",
             ha="left",
             fontsize=9,
             alpha=0.95,
         )
 
-    # Best/worst markers (subtle, inside plot)
-    k = min(3, len(plot_df))
-    if k > 0:
-        best_rows = plot_df.nlargest(k, "accuracy_percent")
-        worst_rows = plot_df.nsmallest(k, "accuracy_percent")
-        idx_to_ypos = {idx: int(pos) for pos, idx in enumerate(plot_df.index)}
-        for idx in best_rows.index:
-            yi = idx_to_ypos[idx]
-            ax.text(99.2, yi, "★", va="center", ha="right", fontsize=12, alpha=0.9)
-        for idx in worst_rows.index:
-            yi = idx_to_ypos[idx]
-            ax.text(0.8, yi, "×", va="center", ha="left", fontsize=12, alpha=0.65)
-
-    # Summary box: TOP-RIGHT outside axes (no overlap)
-    summary = (
-        f"Dataset rows: {overall['total_dataset']}\n"
-        f"Attempted: {overall['attempted']} (coverage {overall['coverage_percent']}%)\n"
-        f"Passed: {overall['passed']}  Failed: {overall['failed']}  Waiting: {overall['waiting']}\n"
-        f"Invalid: {overall['invalid']}  Error: {overall['error']}  Not pushed: {overall['not_pushed']}\n"
+    # TOP summary (single place; no boxes inside plot)
+    top_summary = (
+        f"Dataset rows: {overall['total_dataset']} | "
+        f"Attempted: {overall['attempted']} (coverage {overall['coverage_percent']}%) | "
+        f"Passed: {overall['passed']} | Failed: {overall['failed']} | "
+        f"Invalid: {overall['invalid']} | Error: {overall['error']} | "
+        f"Waiting: {overall['waiting']} | Not pushed: {overall['not_pushed']} | "
         f"Accuracy (passed/attempted): {overall['accuracy_percent_attempted']}%\n"
-        f"Total error labels: {total_error_labels}\n"
-        f"Unique error types: {unique_error_types}\n"
-        f"Sorted by: {sorted_by}\n"
-        f"Bubble @ 0% ~ √(total_cases)"
+        f"Total error labels: {total_error_labels} | Unique error types: {unique_error_types}"
     )
+    fig.text(0.01, 0.98, top_summary, ha="left", va="top", fontsize=10)
 
-    ax.text(
-        1.01,
-        1.0,
-        summary,
-        transform=ax.transAxes,
-        fontsize=9.5,
-        va="top",
-        ha="left",
-        bbox=dict(boxstyle="round,pad=0.55", facecolor="white", alpha=0.92, edgecolor="#D0D0D0"),
-        clip_on=False,
-    )
-
-    plt.savefig(accuracy_plot_path, dpi=250, bbox_inches="tight")
+    plt.savefig(accuracy_plot_path, dpi=300, bbox_inches="tight")
     plt.close()
-    print(f"\nSaved improved accuracy plot → {accuracy_plot_path}")
+    print(f"\nSaved paper-friendly plot → {accuracy_plot_path}")
     # ============================================================================
 
     # -------- Table image ----------
