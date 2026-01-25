@@ -1,8 +1,8 @@
-# Long Code Arena CI Builds Repair Benchmark
+# CI-REPAIR-BENCH
 
-This repository provides a benchmark for evaluating automated CI build repair methods.
-It downloads failing repositories, applies repair strategies, runs GitHub Actions,
-and evaluates whether the CI passes.
+CI-REPAIR-BENCH is a benchmark for evaluating automated repair of failing CI builds under real GitHub Actions workflows.
+It collects real CI failure instances, applies candidate patches, and re-runs the original CI pipeline to verify correctness.
+A repair is successful only if the full CI workflow transitions from failure to pass.
 
 ---
 
@@ -78,6 +78,18 @@ Commands to set up and run benchmark:
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+```
+
+## One Time Setup: Forking Repositories
+To run the benchmark using repositories own GitHub account, fork everything first:
+
+```bash
+python setup/bulk_fork_repositories.py
+```
+
+- Run the Benchmark
+
+```bash
 python run_benchmark.py
 ```
 
