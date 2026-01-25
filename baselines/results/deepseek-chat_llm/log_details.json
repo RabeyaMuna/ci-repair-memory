@@ -97,7 +97,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Failure \u2013 AttributeError in unit test due to incorrect mock assertion",
+                "subcategory": "Test Failure – AttributeError in unit test due to incorrect mock assertion",
                 "evidence": "AttributeError: 'has_calls' is not a valid assertion. Use a spec for the mock if 'has_calls' is meant to be an attribute."
             }
         ],
@@ -130,7 +130,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Failure \u2013 Exception due to missing expected log",
+                "subcategory": "Test Failure – Exception due to missing expected log",
                 "evidence": "Exception: did not get expected log message"
             }
         ],
@@ -158,7 +158,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "'F401 [*] `typing.Optional` imported but unused'"
             }
         ],
@@ -191,7 +191,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Pylint",
+                "subcategory": "Linting Error – Pylint",
                 "evidence": "Pylint errors E0213 (no-self-argument) and E1101 (no-member) found in 'tests/unittests/test_net_activators.py' at lines 329 and 330, causing the linter to exit with code 2."
             }
         ],
@@ -224,7 +224,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Variables",
+                "subcategory": "Linting Error – Unused Variables",
                 "evidence": "Pylint reported two 'unused-variable' (W0612) warnings in 'cloudinit/net/dhcp.py' at line 575, causing a non-zero exit code."
             },
             {
@@ -300,7 +300,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Pylint unsupported-binary-operation",
+                "subcategory": "Linting Error – Pylint unsupported-binary-operation",
                 "evidence": "pylint reported: 'cloudinit/distros/__init__.py:154: [E1131(unsupported-binary-operation), Distro] unsupported operand type(s) for |' and a similar error on line 158."
             }
         ],
@@ -361,7 +361,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Style Check Failure \u2013 Trailing Whitespace",
+                "subcategory": "Style Check Failure – Trailing Whitespace",
                 "evidence": "yapf --diff command exited with code 1 due to a formatting difference: '--- ./sky/data/storage.py\\t(original)\\n+++ ./sky/data/storage.py\\t(reformatted)\\n...\\n-        if not isinstance(source, list): \\n+        if not isinstance(source, list):'"
             }
         ],
@@ -389,7 +389,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Style Warning",
+                "subcategory": "Linting Violation – Style Warning",
                 "evidence": "sky/resources.py:839:0: C0301: Line too long (81/80) (line-too-long)"
             }
         ],
@@ -745,7 +745,7 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'matrix' job during the step 'Run codespell/5_\ud83c\udfc3 Run the check (codespell).txt'. The pre-commit hook 'codespell' executed in manual stage and failed with exit code 65 because it detected a spelling error in a source file. This single spelling mistake caused the pre-commit check to fail, which resulted in the overall CI step and job failing."
+            "The CI run failed in the 'matrix' job during the step 'Run codespell/5_🏃 Run the check (codespell).txt'. The pre-commit hook 'codespell' executed in manual stage and failed with exit code 65 because it detected a spelling error in a source file. This single spelling mistake caused the pre-commit check to fail, which resulted in the overall CI step and job failing."
         ],
         "relevant_files": [
             {
@@ -764,7 +764,7 @@
         "failed_job": [
             {
                 "job": "matrix",
-                "step": "Run codespell/5_\ud83c\udfc3 Run the check (codespell).txt",
+                "step": "Run codespell/5_🏃 Run the check (codespell).txt",
                 "command": "pre-commit run --hook-stage manual codespell --all-files --config .github/pre-commit-config.yaml"
             }
         ],
@@ -773,7 +773,7 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'matrix' job during the step 'Run pyupgrade/5_\ud83c\udfc3 Run the check (pyupgrade).txt'. The 'pyupgrade' pre-commit hook was executed in manual mode and successfully reformatted the file 'tests/common.py' to update its syntax. However, the hook is configured to exit with code 1 when it makes changes, which it did, causing the step and the overall job to fail. This is a standard practice to enforce that developers review and commit automated code updates."
+            "The CI run failed in the 'matrix' job during the step 'Run pyupgrade/5_🏃 Run the check (pyupgrade).txt'. The 'pyupgrade' pre-commit hook was executed in manual mode and successfully reformatted the file 'tests/common.py' to update its syntax. However, the hook is configured to exit with code 1 when it makes changes, which it did, causing the step and the overall job to fail. This is a standard practice to enforce that developers review and commit automated code updates."
         ],
         "relevant_files": [
             {
@@ -792,7 +792,7 @@
         "failed_job": [
             {
                 "job": "matrix",
-                "step": "Run pyupgrade/5_\ud83c\udfc3 Run the check (pyupgrade).txt",
+                "step": "Run pyupgrade/5_🏃 Run the check (pyupgrade).txt",
                 "command": "pre-commit run --hook-stage manual pyupgrade --all-files --config .github/pre-commit-config.yaml"
             }
         ],
@@ -801,7 +801,7 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'Run pyupgrade/5_\ud83c\udfc3 Run the check (pyupgrade).txt' step. The root cause is that the 'pyupgrade' pre-commit hook successfully executed but modified two Python files to update their syntax to a newer Python version. According to the pre-commit framework's configuration, any file modification by this hook is treated as a failure, causing the hook to exit with code 1 and the CI step to fail."
+            "The CI run failed in the 'Run pyupgrade/5_🏃 Run the check (pyupgrade).txt' step. The root cause is that the 'pyupgrade' pre-commit hook successfully executed but modified two Python files to update their syntax to a newer Python version. According to the pre-commit framework's configuration, any file modification by this hook is treated as a failure, causing the hook to exit with code 1 and the CI step to fail."
         ],
         "relevant_files": [
             {
@@ -825,7 +825,7 @@
         "failed_job": [
             {
                 "job": "Run pyupgrade",
-                "step": "Run pyupgrade/5_\ud83c\udfc3 Run the check (pyupgrade).txt",
+                "step": "Run pyupgrade/5_🏃 Run the check (pyupgrade).txt",
                 "command": "pre-commit run --hook-stage manual pyupgrade --all-files --config .github/pre-commit-config.yaml"
             }
         ],
@@ -950,7 +950,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 flake8 violation",
+                "subcategory": "Linting Error – flake8 violation",
                 "evidence": "flake8 hook failed with exit code 1. tests/core/tests/test_resources/test_resources.py:4:1: F401 'copy.deepcopy' imported but unused"
             }
         ],
@@ -983,7 +983,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 flake8 line length violation",
+                "subcategory": "Linting Error – flake8 line length violation",
                 "evidence": "The 'flake8' pre-commit hook failed with exit code 1, reporting two E501 (line too long) violations in 'import_export/admin.py' at lines 749 and 756."
             }
         ],
@@ -1011,7 +1011,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Failure \u2013 flake8 style violation",
+                "subcategory": "Linting Failure – flake8 style violation",
                 "evidence": "The 'flake8' pre-commit hook failed with exit code 1. The failure is a style violation (E501) reported in the file 'import_export/resources.py' at line 1360, column 89, stating 'line too long (101 > 88 characters)'."
             }
         ],
@@ -1039,7 +1039,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 flake8 violation (F401)",
+                "subcategory": "Linting Error – flake8 violation (F401)",
                 "evidence": "The 'flake8' pre-commit hook failed with exit code 1. The specific error message is: 'F401 'copy.deepcopy' imported but unused'."
             }
         ],
@@ -1100,7 +1100,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in unit test",
+                "subcategory": "Runtime Error – TypeError in unit test",
                 "evidence": "TypeError: '<' not supported between instances of 'list' and 'tuple'"
             }
         ],
@@ -1252,7 +1252,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Unsorted/Unformatted Imports",
+                "subcategory": "Linting Violation – Unsorted/Unformatted Imports",
                 "evidence": "ruff check reported: 'Import block is un-sorted or un-formatted' in two files, causing the step to fail with exit code 1."
             }
         ],
@@ -1371,7 +1371,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Unsorted/Unformatted Imports",
+                "subcategory": "Linting Violation – Unsorted/Unformatted Imports",
                 "evidence": "'httpx/__init__.py:1:1: I001 [*] Import block is un-sorted or un-formatted' (reported across multiple Python version jobs)."
             }
         ],
@@ -1475,7 +1475,7 @@
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "Documentation Build Error \u2013 Malformed Docstring",
+                "subcategory": "Documentation Build Error – Malformed Docstring",
                 "evidence": "SphinxWarning (treated as an error) for line 6 of the docstring of the 'Document' class, citing 'Inline emphasis start-string without end-string.'"
             }
         ],
@@ -1546,7 +1546,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Import Sorting/Style",
+                "subcategory": "Linting Error – Import Sorting/Style",
                 "evidence": "'ruff' linter finds two import sorting/style violations (I001) in test files, causing the 'make quality' command to fail."
             }
         ],
@@ -1584,7 +1584,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Import Sorting",
+                "subcategory": "Linting Error – Import Sorting",
                 "evidence": "'ruff' linter check reported two I001 errors for unsorted/unformatted import blocks in 'src/accelerate/utils/__init__.py' and 'src/accelerate/utils/modeling.py'."
             }
         ],
@@ -1757,17 +1757,17 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 JSONDecodeError in test client",
+                "subcategory": "Runtime Error – JSONDecodeError in test client",
                 "evidence": "Test 'test_url_for_with_root_path' failed with 'json.decoder.JSONDecodeError: Expecting value' when trying to parse a 'Not Found' response as JSON."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 WebSocketDisconnect",
+                "subcategory": "Runtime Error – WebSocketDisconnect",
                 "evidence": "Test 'test_partial_async_ws_endpoint' failed with 'starlette.websockets.WebSocketDisconnect' when attempting to connect a websocket."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Test logic error \u2013 Expected exception not raised",
+                "subcategory": "Test logic error – Expected exception not raised",
                 "evidence": "Test 'test_exception_on_mounted_apps' failed with 'Failed: DID NOT RAISE <class 'Exception'>'."
             }
         ],
@@ -1800,7 +1800,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in test execution",
+                "subcategory": "Runtime Error – TypeError in test execution",
                 "evidence": "E       TypeError: unhashable type: 'dict'"
             }
         ],
@@ -1838,22 +1838,22 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "WebSocket Protocol Test Failure \u2013 Server Response Error",
+                "subcategory": "WebSocket Protocol Test Failure – Server Response Error",
                 "evidence": "Test `test_server_reject_connection_with_body_nolength` failed with `httpx.RemoteProtocolError: Server disconnected without sending a response.`"
             },
             {
                 "category": "Test Failure",
-                "subcategory": "WebSocket Protocol Test Failure \u2013 Invalid HTTP Response",
+                "subcategory": "WebSocket Protocol Test Failure – Invalid HTTP Response",
                 "evidence": "Test `test_server_reject_connection_with_missing_body` failed with `websockets.exceptions.InvalidMessage: did not receive a valid HTTP response.`"
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Integration Test Failure \u2013 WebSocket Protocol Error",
+                "subcategory": "Integration Test Failure – WebSocket Protocol Error",
                 "evidence": "The test 'test_server_reject_connection_with_body_nolength[websockets-httptools]' failed with 'httpx.RemoteProtocolError: Server disconnected without sending a response.'"
             },
             {
                 "category": "Test Failure",
-                "subcategory": "WebSocket Protocol Error \u2013 Server disconnects client on invalid request",
+                "subcategory": "WebSocket Protocol Error – Server disconnects client on invalid request",
                 "evidence": "Client raised 'httpx.RemoteProtocolError: Server disconnected without sending a response.' and 'websockets.exceptions.InvalidMessage: did not receive a valid HTTP response'."
             }
         ],
@@ -1929,7 +1929,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ValueError in test",
+                "subcategory": "Runtime Error – ValueError in test",
                 "evidence": "FAILED tests/test_categorical.py::TestBarPlot::test_datetime_native_scale_axis - ValueError: Invalid frequency: ME"
             }
         ],
@@ -1962,7 +1962,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name",
+                "subcategory": "Linting Error – Undefined Name",
                 "evidence": "seaborn/_core/plot.py:1815:22: F821 undefined name 'get_layout_engine'"
             }
         ],
@@ -2000,7 +2000,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ZeroDivisionError in unit test",
+                "subcategory": "Runtime Error – ZeroDivisionError in unit test",
                 "evidence": "The pytest test 'TestLinePlotter.test_weights' failed with a ZeroDivisionError. The error message 'Weights sum to zero, can't be normalized' was raised from 'numpy.lib.function_base.average'."
             }
         ],
@@ -2028,7 +2028,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Variable",
+                "subcategory": "Linting Error – Unused Variable",
                 "evidence": "'tests/test_octodns_processor_filter.py:199:13: local variable 'filter_private' is assigned to but never used'"
             }
         ],
@@ -2172,7 +2172,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Spelling mistake in comment",
+                "subcategory": "Linting Error – Spelling mistake in comment",
                 "evidence": "'Wrong spelling of a word 'redunant' in a comment' and 'Did you mean: ''redundant' or 'redundancy''? (wrong-spelling-in-comment)'."
             }
         ],
@@ -2256,7 +2256,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Line too long",
+                "subcategory": "Linting Violation – Line too long",
                 "evidence": "'openvino/tools/accuracy_checker/annotation_converters/amazon.py:42:0: C0301: Line too long (125/120) (line-too-long)'."
             }
         ],
@@ -2284,7 +2284,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Trailing Whitespace",
+                "subcategory": "Linting Violation – Trailing Whitespace",
                 "evidence": "'openvino/tools/accuracy_checker/evaluators/model_evaluator.py:805:0: C0303: Trailing whitespace (trailing-whitespace)'"
             }
         ],
@@ -2366,7 +2366,7 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'build (3.10)' step during test execution. The root cause is a single bug in the InputOutput class constructor in `aider/io.py`. At line 311, the `__init__` method attempts to create a directory for the `input_history_file` attribute by calling `Path(self.input_history_file).parent.mkdir(...)`, but `self.input_history_file` is None at this point. Passing None to `pathlib.Path` triggers a TypeError because `os.fspath(None)` expects a string, bytes, or os.PathLike object. This error cascades across the entire test suite, causing 228 test failures. Any test that creates an InputOutput instance\u2014either directly or indirectly through dependent classes like Coder or GitRepo\u2014fails immediately, which explains the widespread failures reported in diverse test files."
+            "The CI run failed in the 'build (3.10)' step during test execution. The root cause is a single bug in the InputOutput class constructor in `aider/io.py`. At line 311, the `__init__` method attempts to create a directory for the `input_history_file` attribute by calling `Path(self.input_history_file).parent.mkdir(...)`, but `self.input_history_file` is None at this point. Passing None to `pathlib.Path` triggers a TypeError because `os.fspath(None)` expects a string, bytes, or os.PathLike object. This error cascades across the entire test suite, causing 228 test failures. Any test that creates an InputOutput instance—either directly or indirectly through dependent classes like Coder or GitRepo—fails immediately, which explains the widespread failures reported in diverse test files."
         ],
         "relevant_files": [
             {
@@ -2448,7 +2448,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in InputOutput constructor",
+                "subcategory": "Runtime Error – TypeError in InputOutput constructor",
                 "evidence": "Multiple test methods failed with 'TypeError: expected str, bytes or os.PathLike object, not NoneType' when instantiating InputOutput, as shown in the repeated failure pattern across all chunks."
             }
         ],
@@ -2476,7 +2476,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError during multiprocessing pickle serialization",
+                "subcategory": "Runtime Error – AttributeError during multiprocessing pickle serialization",
                 "evidence": "AttributeError: Can't get local object 'test_dataloader_epoch_diversity.<locals>.SimpleDataset'"
             }
         ],
@@ -2504,7 +2504,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name (F821)",
+                "subcategory": "Linting Error – Undefined Name (F821)",
                 "evidence": "'ruff check' command failed due to two F821 errors (undefined name) in the file 'agno/tools/firecrawl.py' at line 95, for the names 'Dict' and 'Any'."
             }
         ],
@@ -2537,7 +2537,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import (F401)",
+                "subcategory": "Linting Error – Unused Import (F401)",
                 "evidence": "The 'ruff check . --target-version py39' step failed due to linting errors. An F401 error ('`pydantic.BaseModel` imported but unused') was found in files 'agno/models/meta/llama.py' and 'agno/models/perplexity/perplexity.py'."
             }
         ],
@@ -2699,7 +2699,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Unused Coroutine",
+                "subcategory": "Static Type Error – Unused Coroutine",
                 "evidence": "'mypy .' fails with a 'unused-coroutine' type error at line 6551 in 'agno/agent/agent.py'."
             },
             {
@@ -3002,7 +3002,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name (F821)",
+                "subcategory": "Linting Error – Undefined Name (F821)",
                 "evidence": "'ruff check . --target-version py39' reported three undefined name errors (F821) in 'agno/eval/performance.py'."
             }
         ],
@@ -3171,12 +3171,12 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Argument Type",
+                "subcategory": "Static Type Error – Incompatible Argument Type",
                 "evidence": "mypy error: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"' in agno/workspace/helpers.py."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Name Already Defined",
+                "subcategory": "Static Type Error – Name Already Defined",
                 "evidence": "mypy error: 'Name \"run_response\" already defined on line 1108' in agno/agent/agent.py."
             }
         ],
@@ -3315,7 +3315,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Return Type",
+                "subcategory": "Static Type Error – Incompatible Return Type",
                 "evidence": "Mypy reported: 'Incompatible return value type (got \"Union[str, dict[str, Any]]\", expected \"str\")' in agno/tools/bitbucket.py at line 266."
             },
             {
@@ -3421,7 +3421,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible argument type",
+                "subcategory": "Static Type Error – Incompatible argument type",
                 "evidence": "'mypy .' command fails with error: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"'."
             },
             {
@@ -3672,7 +3672,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Failure \u2013 AssertionError in unit test setup",
+                "subcategory": "Test Failure – AssertionError in unit test setup",
                 "evidence": "'SwitchCoder exception was not raised' during the test class's setUpClass method, as reported in the logs."
             }
         ],
@@ -3778,7 +3778,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError in IO module",
+                "subcategory": "Runtime Error – AttributeError in IO module",
                 "evidence": "AttributeError: 'NoneType' object has no attribute 'default_buffer' in aider/io.py line 79."
             },
             {
@@ -3836,12 +3836,12 @@
         "error_types": [
             {
                 "category": "Runtime Error",
-                "subcategory": "PyTorch Tensor Operation Error \u2013 negative length in narrow()",
+                "subcategory": "PyTorch Tensor Operation Error – negative length in narrow()",
                 "evidence": "RuntimeError: narrow(): length must be non-negative. (from traceback in gpt.py line 230)"
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Integration Test Failure \u2013 multiple test scripts exiting with non-zero status",
+                "subcategory": "Integration Test Failure – multiple test scripts exiting with non-zero status",
                 "evidence": "Error: tests/#511.py exited with a non-zero status. (and similarly for #588.py, #655.py)"
             }
         ],
@@ -4738,7 +4738,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name",
+                "subcategory": "Linting Error – Undefined Name",
                 "evidence": "Ruff reported 13 instances of error 'F821 Undefined name `cmd_opts`' in 'webui.py'."
             }
         ],
@@ -4776,17 +4776,17 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible argument type",
+                "subcategory": "Static Type Error – Incompatible argument type",
                 "evidence": "Argument 1 to \"set_style\" of \"Page\" has incompatible type \"Any | None\"; expected \"dict[str, dict[str, Any]]\" [arg-type]"
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible assignment",
+                "subcategory": "Static Type Error – Incompatible assignment",
                 "evidence": "Incompatible types in assignment (expression has type \"Any | None\", variable has type \"str\") [assignment]"
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Invalid indexing operation",
+                "subcategory": "Static Type Error – Invalid indexing operation",
                 "evidence": "Value of type \"tuple[Any] | list[Any] | set[Any]\" is not indexable [index]"
             }
         ],
@@ -4988,7 +4988,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Unsorted/Unformatted Imports",
+                "subcategory": "Linting Violation – Unsorted/Unformatted Imports",
                 "evidence": "taipy/gui/gui.py:12:1: I001 Import block is un-sorted or un-formatted"
             }
         ],
@@ -5054,7 +5054,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "##[error]tests/gui/config/test_filename.py:14:8: F401 `pytest` imported but unused"
             }
         ],
@@ -5158,7 +5158,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Ruff rule violation",
+                "subcategory": "Linting Error – Ruff rule violation",
                 "evidence": "ruff check fails with 'T201 `print` found' in file 'tools/frontend/bundle_build.py'."
             }
         ],
@@ -5284,7 +5284,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Setup Error \u2013 SyntaxError in pytest skip condition",
+                "subcategory": "Test Setup Error – SyntaxError in pytest skip condition",
                 "evidence": "ERROR at setup of TestAwsCliVenv.test_create ... Error evaluating 'skipif' condition ... SyntaxError: invalid syntax"
             }
         ],
@@ -5453,7 +5453,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in unit test",
+                "subcategory": "Runtime Error – TypeError in unit test",
                 "evidence": "The pytest test 'TestCLISessionDatabaseConnection.test_timeout_does_not_raise_exception' failed with TypeError: 'NoneType' object is not subscriptable, as reported in all three Python version jobs."
             },
             {
@@ -5568,7 +5568,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 BrokenProcessPool and pickling error in HTTP test",
+                "subcategory": "Runtime Error – BrokenProcessPool and pickling error in HTTP test",
                 "evidence": "Test 'test_bag' failed with 'concurrent.futures.process.BrokenProcessPool: A process in the process pool was terminated abruptly...' preceded by 'TypeError: can't pickle multidict._multidict.CIMultiDictProxy objects' in steps like 'test (ubuntu-latest, 3.10, false)' and 'test (macos-14, 3.12, false)'."
             },
             {
@@ -5578,12 +5578,12 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 KeyError in pandas DatetimeIndex lookup",
+                "subcategory": "Runtime Error – KeyError in pandas DatetimeIndex lookup",
                 "evidence": "'KeyError: Timestamp('2000-05-15 00:00:00.000000001')' originating from pandas' DatetimeIndex.get_loc method in the 'test (ubuntu-latest, 3.12, pandas-nightly)' step."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ValueError in Dask resample logic",
+                "subcategory": "Runtime Error – ValueError in Dask resample logic",
                 "evidence": "'ValueError: Index is not contained within new index. This can often be resolved by using larger partitions, or unambiguous frequencies...' from _resample_series function in the 'test (ubuntu-latest, 3.12, pandas-nightly)' step."
             }
         ],
@@ -5853,17 +5853,17 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Unexpected Argument",
+                "subcategory": "Static Type Error – Unexpected Argument",
                 "evidence": "Mypy error: 'Unexpected keyword argument \"stream_model_response\" for \"_handle_model_response_chunk\" of \"Agent\"; did you mean \"model_response\"?'"
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Attribute Access on None",
+                "subcategory": "Static Type Error – Attribute Access on None",
                 "evidence": "Mypy error: 'Item \"None\" of \"Optional[type[BaseModel]]\" has no attribute \"__name__\"'"
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Test Collection Error \u2013 ImportError in module",
+                "subcategory": "Test Collection Error – ImportError in module",
                 "evidence": "pytest test collection failed due to an ImportError in the test module 'libs/agno/tests/unit/tools/test_firecrawl.py'."
             },
             {
@@ -5911,7 +5911,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 union-attr",
+                "subcategory": "Static Type Error – union-attr",
                 "evidence": "100 mypy errors of type '[union-attr]' reported in 'agno/app/agui/utils.py' on lines 148, 149, 167, and 168."
             },
             {
@@ -5974,7 +5974,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Ruff violation (E712)",
+                "subcategory": "Linting Error – Ruff violation (E712)",
                 "evidence": "'ruff check .' failed due to a linting error (E712). The error message states: 'Avoid equality comparisons to `False`; use `not embedder.late_chunking:` for false checks'."
             }
         ],
@@ -6022,7 +6022,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 union-attr",
+                "subcategory": "Static Type Error – union-attr",
                 "evidence": "Mypy reported 3 errors of type '[union-attr]', indicating an attempt to call the 'lower' method on an 'Optional[str]' (potentially None) value."
             },
             {
@@ -6075,7 +6075,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Unused Coroutine",
+                "subcategory": "Static Type Error – Unused Coroutine",
                 "evidence": "mypy reported three 'unused-coroutine' errors with the note 'Are you missing an await?'"
             },
             {
@@ -6128,7 +6128,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "'ruff check' reported an F401 error at line 1 of 'tests/unit/reader/test_url_reader.py', stating 'unittest.mock.AsyncMock' is imported but unused."
             },
             {
@@ -6171,7 +6171,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Unused Import (F401)",
+                "subcategory": "Linting Violation – Unused Import (F401)",
                 "evidence": "`ruff check` reported an F401 error for an unused import: `agno.models.message.Message` imported but unused."
             }
         ],
@@ -6239,7 +6239,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Invalid Python Syntax for Target Version",
+                "subcategory": "Linting Error – Invalid Python Syntax for Target Version",
                 "evidence": "'invalid-syntax: Cannot use named assignment expression (`:=`) on Python 3.7 (syntax was added in Python 3.8)' and 'invalid-syntax: Cannot use parentheses within a `with` statement on Python 3.7 (syntax was added in Python 3.9)'."
             }
         ],
@@ -6395,7 +6395,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Invalid Python Syntax",
+                "subcategory": "Linting Error – Invalid Python Syntax",
                 "evidence": "'ruff check' command failed, reporting 36 'invalid-syntax' errors due to use of syntax (assignment expressions `:=`) not compatible with Python 3.7."
             }
         ],
@@ -6484,12 +6484,12 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Invalid Python Syntax",
+                "subcategory": "Linting Error – Invalid Python Syntax",
                 "evidence": "'invalid-syntax: Cannot use named assignment expression (`:=`) on Python 3.7 (syntax was added in Python 3.8)' and 'Cannot use parentheses within a `with` statement on Python 3.7 (syntax was added in Python 3.9)'."
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "'F401 [*] `pydantic.BaseModel` imported but unused'."
             }
         ],
@@ -6532,7 +6532,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import (F401)",
+                "subcategory": "Linting Error – Unused Import (F401)",
                 "evidence": "`ruff check` reported two F401 linting errors for unused imports: in `agno/tools/mcp.py` and `agno/tools/nebius.py`."
             },
             {
@@ -6628,12 +6628,12 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Argument Type",
+                "subcategory": "Static Type Error – Incompatible Argument Type",
                 "evidence": "mypy error: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"' in agno/workspace/helpers.py."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Return Type",
+                "subcategory": "Static Type Error – Incompatible Return Type",
                 "evidence": "mypy error: 'Incompatible return value type (got \"bytes\", expected \"dict[Any, Any]\")' in agno/utils/whatsapp.py."
             },
             {
@@ -6734,7 +6734,7 @@
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Argument Type Mismatch",
+                "subcategory": "Static Type Error – Argument Type Mismatch",
                 "evidence": "'mypy .' command fails with error: 'Argument 1 to \"get_json_output_prompt\" has incompatible type \"type[BaseModel]\"; expected \"Union[str, list[Any], BaseModel]\"' in the 'style-check' job."
             }
         ],
@@ -6787,7 +6787,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name",
+                "subcategory": "Linting Error – Undefined Name",
                 "evidence": "'ruff check . --target-version py39' command failed due to a linting error (F821) for undefined name `num_history_sessions` at line 299, column 52 in 'agno/storage/singlestore.py'."
             }
         ],
@@ -6820,7 +6820,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name (F821)",
+                "subcategory": "Linting Error – Undefined Name (F821)",
                 "evidence": "'ruff check . --target-version py39' command failed due to three F821 undefined name errors in the file 'agno/eval/utils.py'."
             }
         ],
@@ -7078,7 +7078,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Test Collection Error \u2013 ImportError",
+                "subcategory": "Test Collection Error – ImportError",
                 "evidence": "ERROR collecting tests/unit/tools/test_firecrawl.py due to an ImportError originating from firecrawl.py:9 in the tests job."
             },
             {
@@ -7136,7 +7136,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "The `ruff check` command failed due to a linting error. The exact error is F401: `'json' imported but unused`."
             }
         ],
@@ -7169,7 +7169,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "'ruff check' command failed due to a linting error (F401). The exact error is '`typing.Union` imported but unused' in the file 'agno/tools/toolkit.py' at line 2, column 57."
             }
         ],
@@ -7245,7 +7245,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import (F401)",
+                "subcategory": "Linting Error – Unused Import (F401)",
                 "evidence": "'ruff check . --target-version py39' failed with exit code 1 due to F401: '`unittest.mock.AsyncMock` imported but unused'."
             },
             {
@@ -7298,7 +7298,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible argument type and unsafe operations on Optional",
+                "subcategory": "Static Type Error – Incompatible argument type and unsafe operations on Optional",
                 "evidence": "mypy reported errors: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"' and 'Value of type \"Optional[Any]\" is not indexable'."
             }
         ],
@@ -7346,7 +7346,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Variable",
+                "subcategory": "Linting Error – Unused Variable",
                 "evidence": "'ruff check' failed with exit code 1 due to two F841 errors: 'Local variable `task` is assigned to but never used'."
             }
         ],
@@ -7538,7 +7538,7 @@
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible argument type",
+                "subcategory": "Static Type Error – Incompatible argument type",
                 "evidence": "mypy reports: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"' in 'agno/workspace/helpers.py' at line 42."
             }
         ],
@@ -7591,7 +7591,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "`ruff check .` command failed due to a linting error (F401). The error is an unused import: `typing.TYPE_CHECKING` imported but unused."
             }
         ],
@@ -7644,7 +7644,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "F401: 'typing.List' imported but unused at agno/app/discord/client.py:11:20; F401: 'agno.tools.function.UserInputField' imported but unused at agno/app/discord/client.py:12:33"
             },
             {
@@ -7735,7 +7735,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Unused Import",
+                "subcategory": "Linting Violation – Unused Import",
                 "evidence": "The 'ruff check . --target-version py39' command failed with a linting error (F401) in file 'agno/workflow/workflow.py' at line 8, column 25, stating '`typing.AsyncGenerator` imported but unused'."
             },
             {
@@ -7783,12 +7783,12 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Argument Type",
+                "subcategory": "Static Type Error – Incompatible Argument Type",
                 "evidence": "mypy error: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"'."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Attribute Access on None",
+                "subcategory": "Static Type Error – Attribute Access on None",
                 "evidence": "mypy error: '\"None\" has no attribute \"get_collection\"'."
             }
         ],
@@ -7836,7 +7836,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Variable",
+                "subcategory": "Linting Error – Unused Variable",
                 "evidence": "'ruff check . --target-version py39' command failed due to error F841: 'Local variable `mock_file` is assigned to but never used'."
             }
         ],
@@ -7879,12 +7879,12 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Imports (F401)",
+                "subcategory": "Linting Error – Unused Imports (F401)",
                 "evidence": "The 'ruff check . --target-version py39' command failed with exit code 1 due to two F401 linting errors (unused imports) in 'agno/models/anthropic/claude.py'."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Test Collection Error \u2013 ImportError in module",
+                "subcategory": "Test Collection Error – ImportError in module",
                 "evidence": "ERROR collecting libs/agno/tests/unit/tools/test_firecrawl.py due to ImportError: cannot import name 'ScrapeOptions' from 'firecrawl'."
             }
         ],
@@ -8018,12 +8018,12 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Argument Type",
+                "subcategory": "Static Type Error – Incompatible Argument Type",
                 "evidence": "mypy error: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"' in agno/workspace/helpers.py."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 None has no attribute",
+                "subcategory": "Static Type Error – None has no attribute",
                 "evidence": "mypy error: 'Item \"None\" of \"Optional[list[DocumentCitation]]\" has no attribute \"append\"' in agno/models/anthropic/claude.py."
             }
         ],
@@ -8056,7 +8056,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Ruff F541 (f-string without any placeholders)",
+                "subcategory": "Linting Error – Ruff F541 (f-string without any placeholders)",
                 "evidence": "'ruff check .' command fails with two linting errors (F541) in a test file, causing the job to exit with code 1."
             }
         ],
@@ -8099,12 +8099,12 @@
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Argument Type",
+                "subcategory": "Static Type Error – Incompatible Argument Type",
                 "evidence": "mypy error: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"' in agno/workspace/helpers.py."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Accessing Attribute on None",
+                "subcategory": "Static Type Error – Accessing Attribute on None",
                 "evidence": "mypy error: 'Item \"None\" of \"Optional[AgentKnowledge]\" has no attribute \"valid_metadata_filters\"' in agno/agent/agent.py."
             }
         ],
@@ -8182,12 +8182,12 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Syntax Incompatibility",
+                "subcategory": "Linting Error – Syntax Incompatibility",
                 "evidence": "'invalid-syntax: Cannot use named assignment expression (`:=`) on Python 3.7 (syntax was added in Python 3.8)'"
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "'F401 [*] `typing.Optional` imported but unused'"
             },
             {
@@ -8255,7 +8255,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import (F401)",
+                "subcategory": "Linting Error – Unused Import (F401)",
                 "evidence": "The 'ruff check' command failed with exit code 1, reporting F401 errors ('imported but unused') for imports in two files."
             }
         ],
@@ -8298,7 +8298,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Argument Type",
+                "subcategory": "Static Type Error – Incompatible Argument Type",
                 "evidence": "Mypy reported an error in file 'agno/workspace/helpers.py' at line 42: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\" [arg-type]'."
             },
             {
@@ -8664,7 +8664,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Test Collection Error \u2013 ImportError",
+                "subcategory": "Test Collection Error – ImportError",
                 "evidence": "pytest failed to collect tests due to an ImportError originating from 'libs/agno/agno/tools/firecrawl.py' in the tests job."
             },
             {
@@ -8707,12 +8707,12 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Argument Type",
+                "subcategory": "Static Type Error – Incompatible Argument Type",
                 "evidence": "'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"' in agno/workspace/helpers.py."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Missing Attribute",
+                "subcategory": "Static Type Error – Missing Attribute",
                 "evidence": "'\"AgentKnowledge\" has no attribute \"retriever\"' in agno/agent/agent.py."
             }
         ],
@@ -8755,7 +8755,7 @@
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible argument type",
+                "subcategory": "Static Type Error – Incompatible argument type",
                 "evidence": "mypy command failed with error: 'Argument 1 to \"joinpath\" of \"PurePath\" has incompatible type \"Optional[Any]\"; expected \"Union[str, PathLike[str]]\"'."
             }
         ],
@@ -8788,7 +8788,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Line Length",
+                "subcategory": "Linting Violation – Line Length",
                 "evidence": "Warning from flake8: 'W505 doc line too long (81 > 79 characters)'."
             }
         ],
@@ -8872,7 +8872,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in unit test",
+                "subcategory": "Runtime Error – TypeError in unit test",
                 "evidence": "The test 'test_guard_type_version_removed_invalidation' failed with a TypeError: \"'NoneType' object is not iterable\" at line 1244 in Lib/test/test_capi/test_opt.py."
             }
         ],
@@ -9133,7 +9133,7 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'pre-commit-check' step because the 'pre-commit run --all-files' command exited with code 1. Three pre-commit hooks\u2014black, autoflake, and isort\u2014failed because they automatically modified files to enforce code style and formatting standards. The hooks are configured to fail if they make any changes, indicating the committed code did not comply with the project's required formatting (Black code style), import ordering (isort), and unused import/variable rules (autoflake)."
+            "The CI run failed in the 'pre-commit-check' step because the 'pre-commit run --all-files' command exited with code 1. Three pre-commit hooks—black, autoflake, and isort—failed because they automatically modified files to enforce code style and formatting standards. The hooks are configured to fail if they make any changes, indicating the committed code did not comply with the project's required formatting (Black code style), import ordering (isort), and unused import/variable rules (autoflake)."
         ],
         "relevant_files": [
             {
@@ -9258,7 +9258,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Fuzzing Test Failure \u2013 ASTSafetyError",
+                "subcategory": "Fuzzing Test Failure – ASTSafetyError",
                 "evidence": "'black.parsing.ASTSafetyError: INTERNAL ERROR: Black ... produced code that is not equivalent to the source.'"
             }
         ],
@@ -9342,7 +9342,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "F401 [*] `typing.Callable` imported but unused"
             }
         ],
@@ -9539,7 +9539,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Ruff formatting rule violation (prefer double quotes)",
+                "subcategory": "Linting Violation – Ruff formatting rule violation (prefer double quotes)",
                 "evidence": "Ruff produced a diff showing changes from single quotes to double quotes for dictionary keys 'score' and exited with code 1."
             }
         ],
@@ -9547,7 +9547,7 @@
             {
                 "job": "Check Ruff Fix",
                 "step": "Check Ruff Fix",
-                "command": "ruff check --fix-only --diff --exit-non-zero-on-fix || ( echo \"\" echo \"\u274c Ruff found issues that can be fixed automatically.\" echo \"\ud83d\udca1 To fix them locally, run:\" echo \"\" echo \"    pre-commit run --all-files\" echo \"\" echo \"Then commit and push the changes.\" exit 1 )"
+                "command": "ruff check --fix-only --diff --exit-non-zero-on-fix || ( echo \"\" echo \"❌ Ruff found issues that can be fixed automatically.\" echo \"💡 To fix them locally, run:\" echo \"\" echo \"    pre-commit run --all-files\" echo \"\" echo \"Then commit and push the changes.\" exit 1 )"
             }
         ],
         "sha_fail": "d2a7890921a901795f0e33404b0d7b2f53836483",
@@ -9655,7 +9655,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Import Block Formatting",
+                "subcategory": "Linting Error – Import Block Formatting",
                 "evidence": "ruff reported 'I001 [*] Import block is un-sorted or un-formatted' in 'tests/utils.py'."
             },
             {
@@ -9752,7 +9752,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 flake8 style violations",
+                "subcategory": "Linting Error – flake8 style violations",
                 "evidence": "Pre-commit hook for flake8 failed with exit code 1. Specific errors: 'E302 expected 2 blank lines, found 1', 'E127 continuation line over-indented for visual indent', 'F901 'raise NotImplemented' should be 'raise NotImplementedError''."
             }
         ],
@@ -10140,7 +10140,7 @@
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "Build System Configuration \u2013 Missing Required File",
+                "subcategory": "Build System Configuration – Missing Required File",
                 "evidence": "OSError: Readme file does not exist: README.md"
             }
         ],
@@ -10206,7 +10206,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Ruff W293 (Blank line contains whitespace)",
+                "subcategory": "Linting Violation – Ruff W293 (Blank line contains whitespace)",
                 "evidence": "'redash/query_runner/jql.py:37:1: W293 [*] Blank line contains whitespace' and 'Found 3 errors.'"
             }
         ],
@@ -10526,7 +10526,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in Hugging Face Hub integration",
+                "subcategory": "Runtime Error – TypeError in Hugging Face Hub integration",
                 "evidence": "The test 'test_from_pretrained' failed with a TypeError: 'PyGModelHubMixin._from_pretrained() missing 2 required positional arguments: 'proxies' and 'resume_download''."
             }
         ],
@@ -10554,7 +10554,7 @@
         "error_types": [
             {
                 "category": "Runtime Error",
-                "subcategory": "Syntax Error \u2013 'await' outside async function",
+                "subcategory": "Syntax Error – 'await' outside async function",
                 "evidence": "SyntaxError: 'await' outside async function in file 'g4f/Provider/qwen/sharedTokenManager.py', line 121."
             }
         ],
@@ -10612,7 +10612,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError in unit test",
+                "subcategory": "Runtime Error – AttributeError in unit test",
                 "evidence": "Multiple tests (e.g., 'test_003_cpu', 'test_007_network') failed with \"AttributeError: 'NoneType' object has no attribute 'get_raw'\" because `stats.get_plugin()` returned None."
             }
         ],
@@ -10673,7 +10673,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Failure \u2013 Unused Import and Configuration Warnings",
+                "subcategory": "Linting Failure – Unused Import and Configuration Warnings",
                 "evidence": "Pylint reported an unused import warning in 'deepface/models/face_detection/TinaFace.py:12' and two configuration warnings, causing the process to exit with code 4."
             }
         ],
@@ -10741,7 +10741,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name",
+                "subcategory": "Linting Error – Undefined Name",
                 "evidence": "The 'flake8 .' command failed with error 'F821 undefined name 'num_samples'' in file 'faster_whisper/vad.py' at line 323, column 45."
             }
         ],
@@ -11033,7 +11033,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Line Length Violation (flake8 E501)",
+                "subcategory": "Linting Error – Line Length Violation (flake8 E501)",
                 "evidence": "The flake8 linter reported an E501 error in 'scapy/layers/smb2.py' at line 1513, where a line of 116 characters exceeded the 88-character limit."
             }
         ],
@@ -11061,7 +11061,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Line length violation (flake8 E501)",
+                "subcategory": "Linting Error – Line length violation (flake8 E501)",
                 "evidence": "The flake8 linter reported an E501 error at line 1513 in 'scapy/layers/smb2.py', where a line of 116 characters exceeds the 88-character limit."
             }
         ],
@@ -11109,7 +11109,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ValueError in unit test",
+                "subcategory": "Runtime Error – ValueError in unit test",
                 "evidence": "The unit test 'WiFi_am' failed with a ValueError: \"'to-DS' is not in list\" across all failing steps (e.g., Ubuntu 3.10, macOS 3.13, Windows 3.13)."
             }
         ],
@@ -11240,7 +11240,7 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Failure \u2013 Pylint errors/warnings",
+                "subcategory": "Linting Failure – Pylint errors/warnings",
                 "evidence": "The tox command 'pylint: commands[0]' exited with code 12, causing the 'linters (pylint)' step to fail. Pylint warnings were reported in specific files."
             },
             {
@@ -11303,7 +11303,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "YAML Linting Error \u2013 Indentation and Comment Indentation",
+                "subcategory": "YAML Linting Error – Indentation and Comment Indentation",
                 "evidence": "yamllint reported 9 'error' violations (for wrong indentation) and 2 'warning' violations (for comment indentation) in './.github/workflows/ci.yml'."
             },
             {
@@ -11551,12 +11551,12 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name",
+                "subcategory": "Linting Error – Undefined Name",
                 "evidence": "'sqlglot/dialects/doris.py:26:29: F821 Undefined name `t`'"
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Type Error \u2013 Undefined Name and Unpacking Mismatch",
+                "subcategory": "Type Error – Undefined Name and Unpacking Mismatch",
                 "evidence": "'sqlglot/dialects/doris.py:26: error: Name \"t\" is not defined' and 'sqlglot/dialects/doris.py:36: error: Too many values to unpack (2 expected, 3 provided)'"
             }
         ],
@@ -11617,7 +11617,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError in unit test",
+                "subcategory": "Runtime Error – AttributeError in unit test",
                 "evidence": "The unit test 'test_datetime_parsing' failed with AttributeError: 'str' object has no attribute 'items'."
             }
         ],
@@ -11650,12 +11650,12 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Pre-commit Hook Failure \u2013 Linting Errors",
+                "subcategory": "Pre-commit Hook Failure – Linting Errors",
                 "evidence": "The 'ruff' hook failed with exit code 1, reporting 'Found 6 errors (4 fixed, 2 remaining).' The two remaining errors are F841 (unused variable) and E722 (bare except) in 'tools/document_segmentation_server.py'."
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Pre-commit Hook Failure \u2013 File Modifications",
+                "subcategory": "Pre-commit Hook Failure – File Modifications",
                 "evidence": "Multiple hooks ('trailing-whitespace', 'end-of-file-fixer', 'ruff-format') failed because 'files were modified by this hook', which is the standard behavior when hooks fix issues."
             }
         ],
@@ -11688,7 +11688,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Variable (F841)",
+                "subcategory": "Linting Error – Unused Variable (F841)",
                 "evidence": "ruff hook exited with code 1. Logs show: 'workflows/agents/memory_agent_concise.py:645:9: F841 Local variable `implemented_files_list` is assigned to but never used' and 'Found 3 errors.'"
             }
         ],
@@ -11926,12 +11926,12 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "External API Error \u2013 BinanceAPIException",
+                "subcategory": "External API Error – BinanceAPIException",
                 "evidence": "BinanceAPIException was raised with messages 'APIError(code=-1000): An unknown error occurred while processing the request.' (500 error) and a 400 Bad Request response."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Assertion Error \u2013 Regex Mismatch",
+                "subcategory": "Assertion Error – Regex Mismatch",
                 "evidence": "Test expected error message regex pattern '^[A-Z0-9-_.]{1,20}$', but actual error message matched pattern '^[\\w\\-._&&[^a-z]]{1,50}$', causing an AssertionError."
             },
             {
@@ -12002,7 +12002,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Failure \u2013 PytestUnraisableExceptionWarning due to ResourceWarning",
+                "subcategory": "Test Failure – PytestUnraisableExceptionWarning due to ResourceWarning",
                 "evidence": "The pytest test 'test_add_category' in 'flask_admin/tests/test_base.py' failed due to a 'pytest.PytestUnraisableExceptionWarning' triggered by a ResourceWarning for an unclosed file."
             }
         ],
@@ -12035,12 +12035,12 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Setup Error \u2013 PytestUnraisableExceptionWarning",
+                "subcategory": "Test Setup Error – PytestUnraisableExceptionWarning",
                 "evidence": "The test 'test_add_category' failed during setup with a 'pytest.PytestUnraisableExceptionWarning' triggered by an unclosed file object."
             },
             {
                 "category": "Runtime Error",
-                "subcategory": "Resource Management \u2013 Unclosed File Object",
+                "subcategory": "Resource Management – Unclosed File Object",
                 "evidence": "An unclosed file object for 'bootstrap.min.css' triggered a ResourceWarning, leading to AttributeErrors in pathlib during finalization."
             }
         ],
@@ -12360,12 +12360,12 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Test Collection Error \u2013 Deprecated Pytest Syntax",
+                "subcategory": "Test Collection Error – Deprecated Pytest Syntax",
                 "evidence": "pytest.PytestRemovedIn9Warning: Marks applied to fixtures have no effect. Affected files: test_merge_run.py, test_simple_run.py, test_smartos.py."
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Pylint E1206 (logging-too-few-args)",
+                "subcategory": "Linting Error – Pylint E1206 (logging-too-few-args)",
                 "evidence": "Pylint reported: 'Not enough arguments for logging format string' in cloudinit/distros/raspberry_pi_os.py and cloudinit/config/cc_disk_setup.py."
             }
         ],
@@ -12475,22 +12475,22 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 pyarrow.lib.ArrowInvalid in Parquet reading test",
+                "subcategory": "Runtime Error – pyarrow.lib.ArrowInvalid in Parquet reading test",
                 "evidence": "The test `test_parquet[pyarrow]` failed with a `pyarrow.lib.ArrowInvalid` error: 'Invalid number of indices: 0' in multiple steps."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 KeyError in pandas DatetimeIndex lookup",
+                "subcategory": "Runtime Error – KeyError in pandas DatetimeIndex lookup",
                 "evidence": "'KeyError: Timestamp('2000-05-15 00:00:00.000000001')' originating from pandas' `DatetimeIndex.get_loc` method in the pandas-nightly step."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ValueError in Dask resample index alignment",
+                "subcategory": "Runtime Error – ValueError in Dask resample index alignment",
                 "evidence": "'ValueError: Index is not contained within new index...' from Dask's `_resample_series` function in the pandas-nightly step."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "AssertionError \u2013 Data type mismatch in pivot table test",
+                "subcategory": "AssertionError – Data type mismatch in pivot table test",
                 "evidence": "AssertionError: 'assert dtype('<M8[us]') == dtype('<M8[ns]')' in `test_pivot_table_index_dtype` in the pandas-nightly step."
             }
         ],
@@ -12608,22 +12608,22 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 pyarrow.lib.ArrowInvalid in parquet test",
+                "subcategory": "Runtime Error – pyarrow.lib.ArrowInvalid in parquet test",
                 "evidence": "The test `test_parquet[pyarrow]` in `dask/bytes/tests/test_http.py` failed with a `pyarrow.lib.ArrowInvalid` error: 'Invalid number of indices: 0' in steps like 'test (ubuntu-latest, 3.13, false)' and 'test (macos-14, 3.12, false)'."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 KeyError in pandas DatetimeIndex lookup",
+                "subcategory": "Runtime Error – KeyError in pandas DatetimeIndex lookup",
                 "evidence": "KeyError: Timestamp('2000-05-15 00:00:00.000000001') raised in pandas/core/indexes/datetimes.py during resample test assertions in the 'test (ubuntu-latest, 3.12, pandas-nightly)' step."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "AssertionError \u2013 Dtype mismatch in time series operations",
+                "subcategory": "AssertionError – Dtype mismatch in time series operations",
                 "evidence": "AssertionError in dask/dataframe/utils.py:652 because `eq_dtypes(dtype('<m8[s]'), dtype('<m8[us]'))` returned False in the 'test (ubuntu-latest, 3.12, pandas-nightly)' step."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ValueError in parquet append due to dtype mismatch",
+                "subcategory": "Runtime Error – ValueError in parquet append due to dtype mismatch",
                 "evidence": "ValueError: 'Appended dtypes differ.' raised in dask/dataframe/io/parquet/arrow.py:726 in the 'test (ubuntu-latest, 3.12, pandas-nightly)' step."
             }
         ],
@@ -12733,22 +12733,22 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "AssertionError \u2013 Datetime/Timedelta Precision Mismatch",
+                "subcategory": "AssertionError – Datetime/Timedelta Precision Mismatch",
                 "evidence": "AssertionError in `assert_dask_dtypes` due to dtype mismatch: 'dtype('<m8[s]') vs dtype('<m8[us]')' and similar errors in the 'test (ubuntu-latest, 3.12, pandas-nightly)' step."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 KeyError in Pandas Index Lookup",
+                "subcategory": "Runtime Error – KeyError in Pandas Index Lookup",
                 "evidence": "KeyError: Timestamp('2000-05-15 00:00:00.000000001') raised in pandas' DatetimeIndex.get_loc method in the 'test (ubuntu-latest, 3.12, pandas-nightly)' step."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Configuration Error \u2013 Missing CI Workflow Files",
+                "subcategory": "Configuration Error – Missing CI Workflow Files",
                 "evidence": "FileNotFoundError: [Errno 2] No such file or directory: '.github/workflows/additional.yml' in the `test_development_guidelines_matches_ci` test across multiple steps (e.g., 'test (ubuntu-latest, 3.13, false)', 'test (ubuntu-latest, mindeps-dataframe)')."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ArrowInvalid in Parquet reading test",
+                "subcategory": "Runtime Error – ArrowInvalid in Parquet reading test",
                 "evidence": "The test `test_parquet[pyarrow]` failed with pyarrow.lib.ArrowInvalid: 'Invalid number of indices: 0' in steps like 'test (ubuntu-latest, 3.13, false)' and 'test (macos-14, 3.12, false)'."
             }
         ],
@@ -12920,13 +12920,13 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 httpx.ConnectError in integration test",
+                "subcategory": "Runtime Error – httpx.ConnectError in integration test",
                 "evidence": "The pytest test 'test_run[hostname]' in file 'tests/test_main.py' failed with an httpx.ConnectError: 'All connection attempts failed'."
             },
             {
                 "category": "Configuration Error",
                 "subcategory": "CI Workflow Dependency Failure",
-                "evidence": "The 'check' step reported 'tests \u2192 \u274c failure [required to succeed]' because the dependent 'tests' job failed."
+                "evidence": "The 'check' step reported 'tests → ❌ failure [required to succeed]' because the dependent 'tests' job failed."
             }
         ],
         "failed_job": [
@@ -12989,7 +12989,7 @@
             {
                 "category": "Configuration Error",
                 "subcategory": "CI Workflow Dependency Failure",
-                "evidence": "The 're-actors/alls-green' action reported '# \u274c Some of the required to succeed jobs failed \ud83d\ude16\ud83d\ude16\ud83d\ude16' and exited with code 1 because the dependent 'tests' job failed."
+                "evidence": "The 're-actors/alls-green' action reported '# ❌ Some of the required to succeed jobs failed 😖😖😖' and exited with code 1 because the dependent 'tests' job failed."
             }
         ],
         "failed_job": [
@@ -13205,7 +13205,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 Test server startup failure",
+                "subcategory": "Runtime Error – Test server startup failure",
                 "evidence": "'Exception: Test server failed to start' in test_recipe_browser_qt and test_recipe_browser_webengine."
             },
             {
@@ -13263,7 +13263,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Test Setup Error \u2013 Server Initialization Failure",
+                "subcategory": "Test Setup Error – Server Initialization Failure",
                 "evidence": "The tests 'test_recipe_browser_qt' and 'test_recipe_browser_webengine' failed with an Exception: 'Test server failed to start'."
             }
         ],
@@ -13422,22 +13422,22 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TemplateNotFound in web UI",
+                "subcategory": "Runtime Error – TemplateNotFound in web UI",
                 "evidence": "ERROR logs from locust/web.py state \"'index.html' not found in search path: '/home/runner/work/locust/locust/locust/webui/dist'\"."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ValueError in integer parsing",
+                "subcategory": "Runtime Error – ValueError in integer parsing",
                 "evidence": "Test 'test_worker_indexes' failed with 'ValueError: invalid literal for int() with base 10: 't''."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 JSONDecodeError in output parsing",
+                "subcategory": "Runtime Error – JSONDecodeError in output parsing",
                 "evidence": "Test 'test_json_schema' failed because 'output from a locust run with --json flag could not be parsed as JSON'."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 Subprocess TimeoutExpired",
+                "subcategory": "Runtime Error – Subprocess TimeoutExpired",
                 "evidence": "Multiple tests reported 'subprocess.TimeoutExpired when the TestProcess failed to terminate within 1 second'."
             },
             {
@@ -13515,12 +13515,12 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError during pickling",
+                "subcategory": "Runtime Error – AttributeError during pickling",
                 "evidence": "AttributeError: 'Can't pickle local object 'exit_after.<locals>.handler'' in `glances/globals.py` line 601, occurring during `pickle.dump()` calls in tests `test_000_update` and `test_107_fs_plugin_method`."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "AssertionError \u2013 Missing expected data keys",
+                "subcategory": "AssertionError – Missing expected data keys",
                 "evidence": "AssertionErrors in tests `test_002_system`, `test_005_mem`, and `test_006_memswap` with messages like 'False is not true : Cannot find key: hostname' and 'Cannot find key: available', indicating missing keys in plugin statistics."
             }
         ],
@@ -13750,17 +13750,17 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Integration Test Failure \u2013 External API Constraints",
+                "subcategory": "Integration Test Failure – External API Constraints",
                 "evidence": "Multiple tests failed with '_pytest.outcomes.XFailed' due to 'Flood control exceeded' or 'Timed out' messages from the Telegram API, as seen in all pytest steps."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Unit Test Failure \u2013 AssertionError",
+                "subcategory": "Unit Test Failure – AssertionError",
                 "evidence": "Tests like 'test_send_all_args' in test_sticker.py:322 failed with 'AssertionError: assert 510 == 0', and 'TestBusinessOpeningHoursWithoutRequest.test_slot_behaviour' failed with 'got extra slot '__zone_info''."
             },
             {
                 "category": "Runtime Error",
-                "subcategory": "Runtime Error \u2013 telegram.error.BadRequest",
+                "subcategory": "Runtime Error – telegram.error.BadRequest",
                 "evidence": "Tests like 'test_bot_methods_3_tgs' failed with 'telegram.error.BadRequest: Wrong file type', and 'test_set_game_score_and_high_scores' failed with 'telegram.error.BadRequest: Bot_score_not_modified'."
             },
             {
@@ -13888,7 +13888,7 @@
         "error_types": [
             {
                 "category": "Configuration Error",
-                "subcategory": "CI / Test Runner Configuration \u2013 Invalid Command Argument",
+                "subcategory": "CI / Test Runner Configuration – Invalid Command Argument",
                 "evidence": "The 'llama-dev test' command failed with the error: 'Error: Option '--base-ref' cannot be empty.'"
             }
         ],
@@ -13942,7 +13942,7 @@
     },
     {
         "error_context": [
-            "The CI run failed in the 'Check Ruff Fix' step because the Ruff linter was configured to exit with a non-zero status code when it automatically fixes issues. Ruff identified and fixed 4 import ordering violations across four Python files, and due to the `--exit-non-zero-on-fix` flag, it exited with code 1, causing the step to fail. The log shows the diff of the fixed imports and the final error message: '\u274c Ruff found issues that can be fixed automatically.'"
+            "The CI run failed in the 'Check Ruff Fix' step because the Ruff linter was configured to exit with a non-zero status code when it automatically fixes issues. Ruff identified and fixed 4 import ordering violations across four Python files, and due to the `--exit-non-zero-on-fix` flag, it exited with code 1, causing the step to fail. The log shows the diff of the fixed imports and the final error message: '❌ Ruff found issues that can be fixed automatically.'"
         ],
         "relevant_files": [
             {
@@ -13969,20 +13969,20 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Import Ordering",
+                "subcategory": "Linting Violation – Import Ordering",
                 "evidence": "Log shows diffs reordering imports in multiple files, e.g., 'from dspy.clients.utils_finetune import TrainDataFormat, MultiGPUConfig' changed to '...MultiGPUConfig, TrainDataFormat'."
             },
             {
                 "category": "Configuration Error",
-                "subcategory": "CI/Linter Configuration \u2013 Exit on Fix",
-                "evidence": "The command used `--exit-non-zero-on-fix`, causing Ruff to exit with code 1 after fixing issues. Log states: '\u274c Ruff found issues that can be fixed automatically' and 'Process completed with exit code 1'."
+                "subcategory": "CI/Linter Configuration – Exit on Fix",
+                "evidence": "The command used `--exit-non-zero-on-fix`, causing Ruff to exit with code 1 after fixing issues. Log states: '❌ Ruff found issues that can be fixed automatically' and 'Process completed with exit code 1'."
             }
         ],
         "failed_job": [
             {
                 "job": "Check Ruff Fix",
                 "step": "Check Ruff Fix",
-                "command": "ruff check --fix-only --diff --exit-non-zero-on-fix || (\n            echo \"\"\n            echo \"\u274c Ruff found issues that can be fixed automatically.\"\n            echo \"\ud83d\udca1 To fix them locally, run:\"\n            echo \"\"\n            echo \"    pre-commit run --all-files\"\n            echo \"\"\n            echo \"Then commit and push the changes.\"\n            exit 1\n          )"
+                "command": "ruff check --fix-only --diff --exit-non-zero-on-fix || (\n            echo \"\"\n            echo \"❌ Ruff found issues that can be fixed automatically.\"\n            echo \"💡 To fix them locally, run:\"\n            echo \"\"\n            echo \"    pre-commit run --all-files\"\n            echo \"\"\n            echo \"Then commit and push the changes.\"\n            exit 1\n          )"
             }
         ],
         "sha_fail": "71b7fd4a926acb2c018af855f325502bfe03d417",
@@ -14696,7 +14696,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Dependency Error \u2013 missing package 'zai'",
+                "subcategory": "Dependency Error – missing package 'zai'",
                 "evidence": "Nine tests failed due to ModuleNotFoundError: No module named 'zai'."
             }
         ],
@@ -14966,12 +14966,12 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 Blocking I/O in Async Context",
+                "subcategory": "Runtime Error – Blocking I/O in Async Context",
                 "evidence": "'Blocking call to io.BufferedWriter.write' raised by blockbuster.blockbuster.BlockingError during encoding module import."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 Encoding/Serialization Error",
+                "subcategory": "Runtime Error – Encoding/Serialization Error",
                 "evidence": "TypeError in aiohttp/formdata.py:137: 'Can not serialize value type: <class 'str'>' caused by underlying BlockingError."
             },
             {
@@ -15334,18 +15334,18 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 BlockingError from I/O detection library",
+                "subcategory": "Runtime Error – BlockingError from I/O detection library",
                 "evidence": "'Blocking call to io.BufferedWriter.write' error raised by blockbuster library when Python imports encoding modules and writes .pyc files, causing multiple test failures."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError during form data serialization",
+                "subcategory": "Runtime Error – TypeError during form data serialization",
                 "evidence": "'Can not serialize value type: <class 'str'>' error in aiohttp/formdata.py when processing form data with a charset, stemming from a caught BlockingError."
             },
             {
                 "category": "Configuration Error",
                 "subcategory": "CI Workflow Dependency Failure",
-                "evidence": "The 're-actors/alls-green' action reported '# \u274c Some of the required to succeed jobs failed' because the prerequisite 'lint' and 'test' jobs had failed."
+                "evidence": "The 're-actors/alls-green' action reported '# ❌ Some of the required to succeed jobs failed' because the prerequisite 'lint' and 'test' jobs had failed."
             }
         ],
         "failed_job": [
@@ -15422,7 +15422,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 Blocking I/O detection in test environment",
+                "subcategory": "Runtime Error – Blocking I/O detection in test environment",
                 "evidence": "'blockbuster.blockbuster.BlockingError: Blocking call to io.BufferedWriter.write' raised during encoding module import, causing 15 test failures."
             },
             {
@@ -15606,7 +15606,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in issubclass check",
+                "subcategory": "Runtime Error – TypeError in issubclass check",
                 "evidence": "Two tests failed with a TypeError: 'issubclass() arg 1 must be a class' when checking if the object 'HostSequence' is a subclass of 'web.HTTPException'."
             },
             {
@@ -15679,13 +15679,13 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 ClientConnectorError due to network connection refusal",
+                "subcategory": "Runtime Error – ClientConnectorError due to network connection refusal",
                 "evidence": "Test 'test_middleware_uses_session_avoids_recursion_with_disabled_middleware[pyloop]' failed with: 'ClientConnectorError: Cannot connect to host localhost:62980 ssl:default [The remote computer refused the network connection]'."
             },
             {
                 "category": "Configuration Error",
                 "subcategory": "CI Workflow Dependency Failure",
-                "evidence": "The 'alls-green' action reported: '# \u274c Some of the required to succeed jobs failed \ud83d\ude16\ud83d\ude16\ud83d\ude16' because the required 'lint' and 'test' jobs had failed."
+                "evidence": "The 'alls-green' action reported: '# ❌ Some of the required to succeed jobs failed 😖😖😖' because the required 'lint' and 'test' jobs had failed."
             }
         ],
         "failed_job": [
@@ -15897,12 +15897,12 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Failure \u2013 AttributeError in unit test",
+                "subcategory": "Test Failure – AttributeError in unit test",
                 "evidence": "FAILED tests/test_pipeline.py::TestRotationCorrection::test_process_page_with_rotation_correction - AttributeError: 'MockArgs' object has no attribute 'server'"
             },
             {
                 "category": "Runtime Error",
-                "subcategory": "Runtime Error \u2013 AttributeError in production code",
+                "subcategory": "Runtime Error – AttributeError in production code",
                 "evidence": "E       AttributeError: 'MockArgs' object has no attribute 'server'\n\nolmocr/pipeline.py:216: AttributeError"
             }
         ],
@@ -16069,7 +16069,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in provider initialization",
+                "subcategory": "Runtime Error – TypeError in provider initialization",
                 "evidence": "Test 'TestDeepgramProvider.test_audio_transcriptions_create_with_options' failed with an ASRError caused by a TypeError: 'PrerecordedOptions.__init__() got an unexpected keyword argument 'options''."
             }
         ],
@@ -16224,7 +16224,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Variable",
+                "subcategory": "Linting Error – Unused Variable",
                 "evidence": "Ruff reported error F841: 'Local variable `tools_data` is assigned to but never used'."
             }
         ],
@@ -16252,7 +16252,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import (F401)",
+                "subcategory": "Linting Error – Unused Import (F401)",
                 "evidence": "Ruff reported error F401: 'datetime' imported but unused in 'tests/test_todo_tool.py'."
             }
         ],
@@ -16313,7 +16313,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError in test execution",
+                "subcategory": "Runtime Error – AttributeError in test execution",
                 "evidence": "The test `test_get_guardrail_info_from_config` failed with an AttributeError: 'dict' object has no attribute 'model_dump'."
             }
         ],
@@ -16341,7 +16341,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Assignment",
+                "subcategory": "Static Type Error – Incompatible Assignment",
                 "evidence": "'Incompatible types in assignment (expression has type \"list[str] | None\", variable has type \"list[str]\")'."
             }
         ],
@@ -16384,7 +16384,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 Missing Environment Variable",
+                "subcategory": "Runtime Error – Missing Environment Variable",
                 "evidence": "The test 'test_initialize_presidio_guardrail' failed with Exception: 'Missing `PRESIDIO_ANALYZER_API_BASE` from environment'."
             },
             {
@@ -16432,7 +16432,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError in unit test",
+                "subcategory": "Runtime Error – AttributeError in unit test",
                 "evidence": "The test 'test_completion_github_copilot_mock_response' failed with an AttributeError because the 'LlmProviders' object lacks a 'DIGITALOCEAN' attribute."
             }
         ],
@@ -16592,7 +16592,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError in unit test",
+                "subcategory": "Runtime Error – AttributeError in unit test",
                 "evidence": "The test 'test_anthropic_sse_wrapper_event_types' failed with an AttributeError: 'AnthropicStreamWrapper' object has no attribute 'pending_new_content_block'."
             }
         ],
@@ -16681,7 +16681,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import (F401)",
+                "subcategory": "Linting Error – Unused Import (F401)",
                 "evidence": "'ruff check' found a linting error (F401) on line 2 of 'litellm_core_utils/fallback_utils.py', indicating an unused import."
             }
         ],
@@ -16709,7 +16709,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "llms/ollama/completion/handler.py:7:8: F401 [*] `asyncio` imported but unused"
             }
         ],
@@ -16775,12 +16775,12 @@
         "error_types": [
             {
                 "category": "Runtime Error",
-                "subcategory": "ImportError \u2013 Missing module attribute",
+                "subcategory": "ImportError – Missing module attribute",
                 "evidence": "ImportError: cannot import name 'get_valid_models' from 'litellm.types.utils'"
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Test Initialization Error \u2013 Conftest import failure",
+                "subcategory": "Test Initialization Error – Conftest import failure",
                 "evidence": "ImportError while loading conftest '/home/runner/work/litellm/litellm/tests/test_litellm/conftest.py'."
             }
         ],
@@ -16871,7 +16871,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Ruff T201 violation",
+                "subcategory": "Linting Error – Ruff T201 violation",
                 "evidence": "'llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py:1853:13: T201 `print` found' and 'Found 1 error.'"
             }
         ],
@@ -16990,7 +16990,7 @@
             {
                 "job": "lint",
                 "step": "Check import safety",
-                "command": "poetry run python -c \"from litellm import *\" || (echo '\ud83d\udea8 import failed, this means you introduced unprotected imports! \ud83d\udea8'; exit 1)"
+                "command": "poetry run python -c \"from litellm import *\" || (echo '🚨 import failed, this means you introduced unprotected imports! 🚨'; exit 1)"
             }
         ],
         "sha_fail": "c2b2c04d2b5fdc5462e0db7eb8847aa85c31b5d9",
@@ -17093,7 +17093,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Failure \u2013 AttributeError in unit test",
+                "subcategory": "Test Failure – AttributeError in unit test",
                 "evidence": "The test 'test_max_langfuse_clients_limit' failed with an AttributeError because the module does not have the attribute 'MAX_LANGFUSE_INITIALIZED_CLIENTS'."
             }
         ],
@@ -17685,7 +17685,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Failure \u2013 TypeError in unit test",
+                "subcategory": "Test Failure – TypeError in unit test",
                 "evidence": "TypeError: BaseAnswerResource.complete_stream() got an unexpected keyword argument 'retriever'"
             }
         ],
@@ -17733,7 +17733,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AuthenticationError in API call",
+                "subcategory": "Runtime Error – AuthenticationError in API call",
                 "evidence": "anthropic.AuthenticationError: 'invalid x-api-key' in tests 'test_anthropic_raw_gen_builds_prompt_and_returns_completion' and 'test_anthropic_raw_gen_stream_yields_chunks'."
             }
         ],
@@ -17761,7 +17761,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Ruff F541 (f-string without placeholders)",
+                "subcategory": "Linting Error – Ruff F541 (f-string without placeholders)",
                 "evidence": "The linter output shows 'Found 1 error.' and specifically reports error F541 in the file 'application/api/connector/routes.py' at line 337."
             }
         ],
@@ -17789,7 +17789,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Ruff Style Errors",
+                "subcategory": "Linting Violation – Ruff Style Errors",
                 "evidence": "Ruff linter reported 'E402 Module level import not at top of file' and 'F541 f-string without any placeholders' errors, causing the CI step to fail."
             }
         ],
@@ -17899,7 +17899,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Variable",
+                "subcategory": "Linting Error – Unused Variable",
                 "evidence": "F841 Local variable `messages` is assigned to but never used"
             }
         ],
@@ -17927,7 +17927,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in unit test",
+                "subcategory": "Runtime Error – TypeError in unit test",
                 "evidence": "Five tests failed with 'TypeError: string indices must be integers, not 'str'' in tests/test_todo_tool.py."
             }
         ],
@@ -17983,7 +17983,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import (F401)",
+                "subcategory": "Linting Error – Unused Import (F401)",
                 "evidence": "The Ruff linter reported an F401 error: '`logging` imported but unused' in the file 'application/api/connector/routes.py' at line 3, column 8."
             }
         ],
@@ -18011,7 +18011,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violation \u2013 Unused Import",
+                "subcategory": "Linting Violation – Unused Import",
                 "evidence": "'F401 [*] `typing.Optional` imported but unused' and 'Found 1 error. [*] 1 fixable with the `--fix` option.'"
             }
         ],
@@ -18089,7 +18089,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in agent initialization",
+                "subcategory": "Runtime Error – TypeError in agent initialization",
                 "evidence": "'BaseAgent.__init__() got an unexpected keyword argument 'gpt_model''. This error is repeated across 48 distinct agent-related tests."
             },
             {
@@ -18099,7 +18099,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 TypeError in service method call",
+                "subcategory": "Runtime Error – TypeError in service method call",
                 "evidence": "'ConversationService.save_conversation() got an unexpected keyword argument 'gpt_model''. This error occurs in multiple ConversationService tests."
             }
         ],
@@ -18132,7 +18132,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Ruff W293 (blank line contains whitespace)",
+                "subcategory": "Linting Error – Ruff W293 (blank line contains whitespace)",
                 "evidence": "The captured stdout shows the 'run_ruff' command on a specific file 'returned 9 lint errors of type 'W293 Blank line contains whitespace' at specific lines'."
             },
             {
@@ -18165,7 +18165,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Name",
+                "subcategory": "Linting Error – Undefined Name",
                 "evidence": "ruff command reported multiple 'F821 Undefined name `Gui`' errors."
             }
         ],
@@ -19025,7 +19025,7 @@
             },
             {
                 "category": "Runtime Error",
-                "subcategory": "Environment / Dependency Error \u2013 Unsupported CUDA version",
+                "subcategory": "Environment / Dependency Error – Unsupported CUDA version",
                 "evidence": "The script 'scripts/unsloth_install.py' failed with 'RuntimeError: CUDA = 12.6 not supported!' during setup in the PyTorch 2.7.1 jobs."
             }
         ],
@@ -19078,12 +19078,12 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Variable",
+                "subcategory": "Linting Error – Undefined Variable",
                 "evidence": "flake8 reported 'F821 undefined name 'field_info'' and pylint reported 'E0602: Undefined variable 'field_info'' on multiple lines."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Type Checking Error \u2013 Undefined Name",
+                "subcategory": "Type Checking Error – Undefined Name",
                 "evidence": "mypy reported 'Name \"field_info\" is not defined' on multiple lines."
             }
         ],
@@ -19111,12 +19111,12 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Undefined Variable",
+                "subcategory": "Linting Error – Undefined Variable",
                 "evidence": "flake8 error: 'tests/e2e/multigpu/test_fsdp2.py:17:2: F821 undefined name 'require_torch_2_6_0''; pylint error: 'tests/e2e/multigpu/test_fsdp2.py:17:1: E0602: Undefined variable 'require_torch_2_6_0''."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Check Error \u2013 Undefined Name",
+                "subcategory": "Static Type Check Error – Undefined Name",
                 "evidence": "mypy error: 'tests/e2e/multigpu/test_fsdp2.py:17: error: Name \"require_torch_2_6_0\" is not defined'."
             }
         ],
@@ -19243,7 +19243,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "flake8 reported F401 errors and pylint reported W0611 warnings for unused 'os' imports in src/axolotl/core/datasets/chat.py:5 and src/axolotl/datasets.py:3."
             },
             {
@@ -19276,7 +19276,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Assignment",
+                "subcategory": "Static Type Error – Incompatible Assignment",
                 "evidence": "The mypy pre-commit hook failed with exit code 1. It reported: 'Incompatible types in assignment (expression has type \"str\", variable has type \"list[str]\")' at src/axolotl/loaders/tokenizer.py:212."
             }
         ],
@@ -19390,12 +19390,12 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 flake8 violation",
+                "subcategory": "Linting Error – flake8 violation",
                 "evidence": "flake8 hook failed with exit code 1, reporting 'F401 'torch' imported but unused'."
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 pylint violations",
+                "subcategory": "Linting Error – pylint violations",
                 "evidence": "pylint hook failed with exit code 28, reporting issues like 'Missing module docstring', 'Redefining built-in', 'Unnecessary \"elif\" after \"return\"', and 'Unused argument'."
             }
         ],
@@ -19433,7 +19433,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Failure \u2013 Pylint duplicate-code warning",
+                "subcategory": "Linting Failure – Pylint duplicate-code warning",
                 "evidence": "The pylint hook failed with exit code 8 due to a duplicate-code warning (R0801) in the module 'test_fsdp'."
             }
         ],
@@ -19514,7 +19514,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Pylint duplicate-code",
+                "subcategory": "Linting Error – Pylint duplicate-code",
                 "evidence": "'pylint...................................................................Failed', 'exit code: 8', 'R0801: Similar lines in 2 files'"
             }
         ],
@@ -19651,7 +19651,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Pylint duplicate-code warning (R0801)",
+                "subcategory": "Linting Error – Pylint duplicate-code warning (R0801)",
                 "evidence": "The pre-commit 'pylint' hook failed with exit code 8. The failure is a pylint warning (R0801: duplicate-code) indicating similar lines were found in 'tests/test_validation_dataset.py' (line 1) and two other test files."
             }
         ],
@@ -19788,7 +19788,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Attribute access on potentially None value",
+                "subcategory": "Static Type Error – Attribute access on potentially None value",
                 "evidence": "The mypy hook failed with exit code 1 due to 5 '[union-attr]' errors in 'src/axolotl/kernels/lora.py'."
             }
         ],
@@ -19826,7 +19826,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Duplicate Code (pylint R0801)",
+                "subcategory": "Linting Error – Duplicate Code (pylint R0801)",
                 "evidence": "pylint warning (R0801: duplicate-code) in the module 'test_fsdp' at tests/utils/schemas/validation/test_fsdp.py:1."
             }
         ],
@@ -19859,7 +19859,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Warning \u2013 Pylint unbalanced-tuple-unpacking",
+                "subcategory": "Linting Warning – Pylint unbalanced-tuple-unpacking",
                 "evidence": "pylint failed with exit code 4, reporting warning W0632: unbalanced-tuple-unpacking in a specific test file."
             }
         ],
@@ -20066,7 +20066,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "flake8 reported an F401 error: 're' imported but unused. pylint reported a W0611 warning: Unused import re (unused-import)."
             }
         ],
@@ -20147,7 +20147,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Pylint duplicate-code warning (R0801)",
+                "subcategory": "Linting Error – Pylint duplicate-code warning (R0801)",
                 "evidence": "The pre-commit hook 'pylint' failed with exit code 8. The failure is a pylint warning (R0801: duplicate-code) reported in the module 'tests.test_validation_dataset'."
             }
         ],
@@ -20356,7 +20356,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Integration Test Failure \u2013 Hugging Face Hub Offline Mode",
+                "subcategory": "Integration Test Failure – Hugging Face Hub Offline Mode",
                 "evidence": "The test 'test_loading_local_dataset_folder' failed with a 'huggingface_hub.errors.LocalEntryNotFoundError' because the HF_HUB_OFFLINE environment variable is set, disabling online lookups and downloads."
             },
             {
@@ -20475,7 +20475,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Import Positioning",
+                "subcategory": "Linting Error – Import Positioning",
                 "evidence": "Flake8 reported: 'E402 module level import not at top of file'. Pylint reported: 'C0413: Import \"from .fsdp import TiledMLPFSDP\" should be placed at the top of the module (wrong-import-position)'."
             },
             {
@@ -20769,7 +20769,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Pylint Warning (arguments-differ)",
+                "subcategory": "Linting Error – Pylint Warning (arguments-differ)",
                 "evidence": "pylint hook failed with exit code 4. Log shows: 'src/axolotl/integrations/kd/chat_template.py:192:4: W0221: Number of parameters was 2 in 'StrategyLoader._get_strategy_cls' and is now 1 in overriding 'KDStrategyLoader._get_strategy_cls' method (arguments-differ)'"
             }
         ],
@@ -20791,7 +20791,7 @@
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Environment / Infrastructure Failure \u2013 Disk Space Exhaustion",
+                "subcategory": "Environment / Infrastructure Failure – Disk Space Exhaustion",
                 "evidence": "ERROR: Could not install packages due to an OSError: [Errno 28] No space left on device"
             }
         ],
@@ -20813,7 +20813,7 @@
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Version Conflict \u2013 Incompatible torch requirements",
+                "subcategory": "Version Conflict – Incompatible torch requirements",
                 "evidence": "Multiple steps report a conflict where 'axolotl 0.12.0.dev0' requires 'torch==2.9.0' (or 2.8.0), but 'xformers 0.0.30' requires 'torch==2.7.0', causing pip 'ResolutionImpossible' errors."
             },
             {
@@ -20975,12 +20975,12 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Argument Type Mismatch",
+                "subcategory": "Static Type Error – Argument Type Mismatch",
                 "evidence": "Pyright reports errors concerning mismatched arguments for API client methods (e.g., 'create', 'append')."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Type Assignment",
+                "subcategory": "Static Type Error – Incompatible Type Assignment",
                 "evidence": "Pyright reports errors involving incompatible type assignments (e.g., 'NotGiven', 'str', 'Content', 'ImagingCore')."
             }
         ],
@@ -21240,7 +21240,7 @@
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Argument Mismatch",
+                "subcategory": "Static Type Error – Argument Mismatch",
                 "evidence": "Pyright reports errors such as 'No overloads for \"create\" match the provided arguments' and 'Argument of type ... cannot be assigned to parameter ...' across multiple files."
             }
         ],
@@ -21298,12 +21298,12 @@
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Argument Type Mismatch",
+                "subcategory": "Static Type Error – Argument Type Mismatch",
                 "evidence": "Pyright error: 'Argument of type \"list[TextBlockParam] | NotGiven | str\" cannot be assigned to parameter \"system\" of type \"str | Iterable[TextBlockParam] | Omit\" in function \"create\"'."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 No Matching Overload",
+                "subcategory": "Static Type Error – No Matching Overload",
                 "evidence": "Pyright error: 'No overloads for \"create\" match the provided arguments (reportCallIssue)'."
             }
         ],
@@ -21379,7 +21379,7 @@
         "error_types": [
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Argument Mismatch",
+                "subcategory": "Static Type Error – Argument Mismatch",
                 "evidence": "Pyright reported errors including 'No overloads for \"create\" match the provided arguments' and 'Argument of type \"Content\" cannot be assigned to parameter \"object\"' in both the 'type-checker' and 'code-style' steps."
             },
             {
@@ -21447,12 +21447,12 @@
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Argument Type Mismatch",
+                "subcategory": "Static Type Error – Argument Type Mismatch",
                 "evidence": "No overloads for \"create\" match the provided arguments; Argument of type \"list[TextBlockParam] | NotGiven | str\" cannot be assigned to parameter \"system\" of type \"str | Iterable[TextBlockParam] | Omit\" in function \"create\"."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Error \u2013 Incompatible Object Assignment",
+                "subcategory": "Static Type Error – Incompatible Object Assignment",
                 "evidence": "Argument of type \"Content\" cannot be assigned to parameter \"object\" of type \"str | PIL_Image | File | Part\" in function \"append\"."
             }
         ],
@@ -21485,7 +21485,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Pre-commit Hook Failure \u2013 File Permission Issue",
+                "subcategory": "Pre-commit Hook Failure – File Permission Issue",
                 "evidence": "The pre-commit hook 'check-shebang-scripts-are-executable' failed with exit code 1 because a file has a shebang but is not marked executable."
             }
         ],
@@ -21834,7 +21834,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Ruff rule violation",
+                "subcategory": "Linting Error – Ruff rule violation",
                 "evidence": "'eval/browsers.py:186:4: E722 Do not use bare `except`'"
             },
             {
@@ -22099,7 +22099,7 @@
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 IndexError in Functional Tests",
+                "subcategory": "Runtime Error – IndexError in Functional Tests",
                 "evidence": "IndexError: list index out of range at test/functional/sbom/test_cyclonedx.py:386."
             }
         ],
@@ -22160,7 +22160,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Exception \u2013 ConanException in unit test",
+                "subcategory": "Runtime Exception – ConanException in unit test",
                 "evidence": "The test 'test_compose_conf_numbers' triggered a 'conan.errors.ConanException' with the message: \"[conf] Either 'version:value' does not exist in configuration list or the conf format introduced is not valid.\""
             }
         ],
@@ -22614,7 +22614,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError in integration test",
+                "subcategory": "Runtime Error – AttributeError in integration test",
                 "evidence": "The test 'test_config_list' failed with AttributeError: 'ConfigAPI' object has no attribute 'global_conf_list'."
             },
             {
@@ -23116,7 +23116,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Collection Error \u2013 SyntaxError in test file",
+                "subcategory": "Test Collection Error – SyntaxError in test file",
                 "evidence": "'ERROR collecting' for 'test/integration/remote/test_local_recipes_index.py' with 'SyntaxError: f-string: unmatched '(' on line 284."
             }
         ],
@@ -23149,7 +23149,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Collection Error \u2013 ImportError in unit test module",
+                "subcategory": "Test Collection Error – ImportError in unit test module",
                 "evidence": "cannot import name '_relativize_path' from 'conan.tools.google.bazeldeps'"
             }
         ],
@@ -23654,174 +23654,6 @@
     },
     {
         "error_context": [
-            "In step 'test', the CI run failed because a pytest command attempted to run tests on a directory that does not exist in the repository. Specifically, the command targeted 'tests/test_core/test_datasets/', which was not found, causing a 'file or directory not found' error and a non-zero exit code."
-        ],
-        "relevant_files": [
-            {
-                "file": "tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "The pytest command in the failing step explicitly targeted this directory, which does not exist, as evidenced by the log error: 'ERROR: file or directory not found: tests/test_core/test_datasets/'."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Missing Test Directory",
-                "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "test",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys -o faulthandler_timeout=300 tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
-            }
-        ],
-        "sha_fail": "2c31790d093ee0dfdc27aa49c7f8b5018aa16bdb",
-        "id": "552"
-    },
-    {
-        "error_context": [
-            "The CI run failed in the 'test' step because a pytest command was executed with a target directory that does not exist in the repository. The command 'pytest tests/test_core/test_synthesizer/ tests/test_core/test_datasets/' resulted in the error 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates the specified test directory path is invalid or missing, causing the job to exit with an error."
-        ],
-        "relevant_files": [
-            {
-                "file": "tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "This directory was specified as a target for the failing pytest command, but the log shows an error stating the file or directory was not found, which directly caused the job to exit with an error."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Invalid Test Path in CI Command",
-                "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "test",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys -o faulthandler_timeout=300 tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
-            }
-        ],
-        "sha_fail": "39acebb1e9a1ed40d4707bfa5bb731a94ac2436f",
-        "id": "553"
-    },
-    {
-        "error_context": [
-            "The CI run failed in the 'test' step because a pytest command attempted to run tests in a directory that does not exist. The command 'poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/test_synthesizer/ tests/test_core/test_datasets/ ...' specified the target 'tests/test_core/test_datasets/', which was not found in the repository at the failing commit, causing pytest to exit with error code 4."
-        ],
-        "relevant_files": [
-            {
-                "file": "tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "This directory was specified as a target for the failing pytest command but was not found, causing the test run to exit with error code 4. The log explicitly states 'ERROR: file or directory not found' for this path."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Test Path / Directory Not Found",
-                "evidence": "The log states: 'ERROR: file or directory not found: tests/test_core/test_datasets/'."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "test",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
-            }
-        ],
-        "sha_fail": "405a68ca74619681c6be38a1e4fb8b9fe90e5bff",
-        "id": "554"
-    },
-    {
-        "error_context": [
-            "The CI run failed in the 'test' step because a pytest command attempted to run tests from a directory that does not exist in the repository. The command specified 'tests/test_core/test_datasets/' as a target, but the log shows an error: 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates a mismatch between the test command configuration and the actual repository structure."
-        ],
-        "relevant_files": [
-            {
-                "file": "tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "This directory was specified as a target for the second pytest command, but the log shows an error stating 'file or directory not found: tests/test_core/test_datasets/', which directly caused the test run to fail."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Test Path Configuration \u2013 Missing Directory",
-                "evidence": "ERROR: file or directory not found: tests/test_core/test_datasets/"
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "test",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys -o faulthandler_timeout=300 tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
-            }
-        ],
-        "sha_fail": "ae079d8bb4562600e3625571bda17626c90d2608",
-        "id": "555"
-    },
-    {
-        "error_context": [
-            "In step 'test', the CI run failed because a pytest command attempted to execute tests in a directory that does not exist. The command 'pytest tests/test_core/test_synthesizer/ tests/test_core/test_datasets/' resulted in the error 'file or directory not found: tests/test_core/test_datasets/'. This indicates the specified test directory path is incorrect, preventing the test suite from running."
-        ],
-        "relevant_files": [
-            {
-                "file": "tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "The pytest command failed because this target directory was not found, as evidenced by the error 'file or directory not found: tests/test_core/test_datasets/'."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Test Path / Directory Not Found",
-                "evidence": "The pytest command failed with the error 'file or directory not found: tests/test_core/test_datasets/'."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "test",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys -o faulthandler_timeout=300 tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
-            }
-        ],
-        "sha_fail": "b9b36350bfdf5ff34ba20076fa39096a59fdf0d5",
-        "id": "556"
-    },
-    {
-        "error_context": [
-            "The CI run failed in the 'test' step because a pytest command attempted to execute tests from a directory that does not exist in the repository. The command specified the path 'tests/test_core/test_datasets/', which resulted in the error 'ERROR: file or directory not found: tests/test_core/test_datasets/'. This indicates a mismatch between the test configuration or command and the actual repository structure."
-        ],
-        "relevant_files": [
-            {
-                "file": "tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "This directory path was specified in the failing pytest command. The log shows the error 'ERROR: file or directory not found: tests/test_core/test_datasets/', which is the direct cause of the CI job failure."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Test Configuration \u2013 Missing Directory",
-                "evidence": "The pytest command failed with 'ERROR: file or directory not found: tests/test_core/test_datasets/'."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "test",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys -o faulthandler_timeout=300 tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
-            }
-        ],
-        "sha_fail": "f8e6b16b6037a90fc1e332e009d421c23c4bcada",
-        "id": "557"
-    },
-    {
-        "error_context": [
             "The CI run failed because a single unit test, 'test_user_config_recurse_submodules' in 'tests/test_cli.py', consistently failed across all three test jobs on Windows, macOS, and Ubuntu runners. The test expected a mocked call to the 'cookiecutter' function with a specific set of keyword arguments, but the actual call included an extra argument 'keep_project_on_failure=False'. This mismatch caused an AssertionError, which made the 'just test-all' command exit with code 1, failing the entire CI run."
         ],
         "relevant_files": [
@@ -23840,18 +23672,18 @@
         ],
         "failed_job": [
             {
-                "job": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
-                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
+                "job": "Tests on Python versions 3.9–>3.13 • \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
+                "step": "Tests on Python versions 3.9–>3.13 • \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
                 "command": "just test-all"
             },
             {
-                "job": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"macos-latest\" (via just, uv, pytest, pytest-pretty)",
-                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"macos-latest\" (via just, uv, pytest, pytest-pretty)",
+                "job": "Tests on Python versions 3.9–>3.13 • \"macos-latest\" (via just, uv, pytest, pytest-pretty)",
+                "step": "Tests on Python versions 3.9–>3.13 • \"macos-latest\" (via just, uv, pytest, pytest-pretty)",
                 "command": "just test-all"
             },
             {
-                "job": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"ubuntu-latest\" (via just, uv, pytest, pytest-pretty)",
-                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"ubuntu-latest\" (via just, uv, pytest, pytest-pretty)",
+                "job": "Tests on Python versions 3.9–>3.13 • \"ubuntu-latest\" (via just, uv, pytest, pytest-pretty)",
+                "step": "Tests on Python versions 3.9–>3.13 • \"ubuntu-latest\" (via just, uv, pytest, pytest-pretty)",
                 "command": "just test-all"
             }
         ],
@@ -23902,17 +23734,17 @@
             },
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Error \u2013 Unused Import",
+                "subcategory": "Linting Error – Unused Import",
                 "evidence": "'ruff check' found 1 error: an unused import 'twisted.internet.protocol' at line 9 in file 'src/cowrie/ssh_proxy/client_transport.py'."
             },
             {
                 "category": "Type Checking",
-                "subcategory": "Static Type Analysis \u2013 Missing/Incomplete Type Annotations",
+                "subcategory": "Static Type Analysis – Missing/Incomplete Type Annotations",
                 "evidence": "Pyright reported 6222 errors, primarily 'reportUnknownMemberType' and 'reportMissingParameterType', across the codebase."
             },
             {
                 "category": "Test Failure",
-                "subcategory": "Unit Test \u2013 AssertionError",
+                "subcategory": "Unit Test – AssertionError",
                 "evidence": "Test 'test_ipv6_address_blocked' failed with an AssertionError ('True is not false') due to an unhandled error in a Deferred."
             }
         ],
@@ -23957,289 +23789,6 @@
         ],
         "sha_fail": "033df9f74d897a258ccc62d712bdcf192308be62",
         "id": "560"
-    },
-    {
-        "error_context": [
-            "The CI run failed in the 'lint' step due to multiple code quality violations detected by the Ruff linter. The step executed successfully but exited with a failure code (123) because the linter found numerous issues across the codebase, including unused imports (F401), bare except statements (E722), incorrect comparisons to None (E711), redefinitions (F811), unused variables (F841), and module import order problems (E402). These violations exceed the project's configured tolerance, causing the step and the overall CI run to fail."
-        ],
-        "relevant_files": [
-            {
-                "file": "src/crewai/agents/agent_adapters/langgraph/langgraph_adapter.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/agents/agent_adapters/langgraph/structured_output_converter.py",
-                "line_number": null,
-                "reason": "Contains E722 (bare except) linting error."
-            },
-            {
-                "file": "src/crewai/agents/agent_builder/base_agent.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/agents/agent_builder/utilities/base_output_converter.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/agents/crew_agent_executor.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/cli/cli.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/cli/run_crew.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/flow/flow_visualizer.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/flow/html_template_handler.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/flow/path_utils.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/flow/utils.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/flow/visualization_utils.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/knowledge/source/excel_knowledge_source.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/lite_agent.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/llms/base_llm.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/security/security_config.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/task.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/tasks/llm_guardrail.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/telemetry/telemetry.py",
-                "line_number": null,
-                "reason": "Contains E402 (module import order) linting error."
-            },
-            {
-                "file": "src/crewai/tools/__init__.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/tools/agent_tools/add_image_tool.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/tools/base_tool.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/utilities/events/__init__.py",
-                "line_number": null,
-                "reason": "Contains 41 F401 (unused import) linting errors."
-            },
-            {
-                "file": "src/crewai/utilities/events/base_event_listener.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/utilities/events/third_party/__init__.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "src/crewai/utilities/formatter.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "tests/agents/agent_adapters/test_base_tool_adapter.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "tests/cli/test_constants.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "tests/crew_test.py",
-                "line_number": null,
-                "reason": "Contains multiple linting errors (F401, F811)."
-            },
-            {
-                "file": "tests/custom_llm_test.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "tests/llm_test.py",
-                "line_number": null,
-                "reason": "Contains linting errors (F401, E711)."
-            },
-            {
-                "file": "tests/project_test.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "tests/security/test_deterministic_fingerprints.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "tests/security/test_examples.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "tests/security/test_fingerprint.py",
-                "line_number": null,
-                "reason": "Contains linting errors (F401, F841)."
-            },
-            {
-                "file": "tests/security/test_integration.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "tests/security/test_security_config.py",
-                "line_number": null,
-                "reason": "Contains F841 (unused variable) linting error."
-            },
-            {
-                "file": "tests/storage/test_mem0_storage.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "tests/task_test.py",
-                "line_number": null,
-                "reason": "Contains 13 F841 (unused variable) linting errors."
-            },
-            {
-                "file": "tests/telemetry/test_telemetry.py",
-                "line_number": null,
-                "reason": "Contains E402 (module import order) linting error."
-            },
-            {
-                "file": "tests/test_flow_persistence.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "tests/test_lite_agent.py",
-                "line_number": null,
-                "reason": "Contains linting errors (F401, F841)."
-            },
-            {
-                "file": "tests/test_multimodal_validation.py",
-                "line_number": null,
-                "reason": "Contains F841 (unused variable) linting error."
-            },
-            {
-                "file": "tests/test_task_guardrails.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            },
-            {
-                "file": "tests/tools/test_base_tool.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "tests/tools/test_tool_usage.py",
-                "line_number": null,
-                "reason": "Contains F841 (unused variable) linting errors."
-            },
-            {
-                "file": "tests/utilities/test_chromadb_utils.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "tests/utilities/test_converter.py",
-                "line_number": null,
-                "reason": "Contains multiple linting errors (F401, F841, E402)."
-            },
-            {
-                "file": "tests/utilities/test_events.py",
-                "line_number": null,
-                "reason": "Contains linting errors (F401, F841)."
-            },
-            {
-                "file": "tests/utilities/test_planning_handler.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "tests/utilities/test_pydantic_schema_parser.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting errors."
-            },
-            {
-                "file": "tests/utilities/test_serialization.py",
-                "line_number": null,
-                "reason": "Contains F401 (unused import) linting error."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Code Formatting",
-                "subcategory": "Linting Violations (Ruff)",
-                "evidence": "The Ruff linter found multiple violations including 'F401 unused imports, E722 bare except, E711 comparison to None, F811 redefinition, F841 unused variables, E402 module import order' and the step exited with code 123."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": null,
-                "step": "lint",
-                "command": null
-            }
-        ],
-        "sha_fail": "051820b73ce053cdbb73101445cd203c156813e1",
-        "id": "561"
     },
     {
         "error_context": [
@@ -24509,7 +24058,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Failure \u2013 Pydantic ValidationError in unit test",
+                "subcategory": "Test Failure – Pydantic ValidationError in unit test",
                 "evidence": "FAILED tests/utilities/test_events.py::test_streaming_fallback_to_non_streaming - pydantic_core._pydantic_core.ValidationError: 1 validation error for LLMStreamChunkEvent\nresponse_id\n  Field required [type=missing, input_value={'chunk': 'Test chunk 1'}, input_type=dict]"
             }
         ],
@@ -24537,7 +24086,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Test Collection Error \u2013 TypeError in class definition",
+                "subcategory": "Test Collection Error – TypeError in class definition",
                 "evidence": "ERROR collecting tests/test_pydantic_compatibility.py ... TypeError: Cannot create a consistent method resolution order (MRO) for bases BaseModel, FlowTrackable"
             }
         ],
@@ -24565,7 +24114,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 KeyError in unit test",
+                "subcategory": "Runtime Error – KeyError in unit test",
                 "evidence": "The test 'TestAgentEvaluator::test_failed_evaluation' failed with a KeyError: 'Test Agent'."
             }
         ],
@@ -25046,7 +24595,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Violations \u2013 Ruff style and syntax errors",
+                "subcategory": "Linting Violations – Ruff style and syntax errors",
                 "evidence": "The Ruff linter reported numerous style and syntax violations across many source and test files, including unused imports (F401), bare except (E722), comparison to None (E711), module import order (E402), redefinition (F811), and unused variables (F841)."
             }
         ],
@@ -25094,7 +24643,7 @@
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linting Failure \u2013 Ruff import formatting violations",
+                "subcategory": "Linting Failure – Ruff import formatting violations",
                 "evidence": "Ruff reported multiple I001 (Import block is un-sorted or un-formatted) violations in specific files, and the step failed with exit code 123."
             }
         ],
@@ -25438,7 +24987,7 @@
         "error_types": [
             {
                 "category": "Test Failure",
-                "subcategory": "Runtime Error \u2013 AttributeError in unit test",
+                "subcategory": "Runtime Error – AttributeError in unit test",
                 "evidence": "FAILED tests/test_task_context_type_annotation.py::TestTaskContextTypeAnnotation::test_task_context_validation_rejects_invalid_types - AttributeError: 'str' object has no attribute 'get'"
             }
         ],

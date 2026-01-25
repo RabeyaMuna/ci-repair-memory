@@ -1323,7 +1323,7 @@
     {
         "sha_fail": "d985231d83ec0cb50784548dae26236dd03bd2a6",
         "error_context": [
-            "The codespell check failed due to a spelling error in the test file, specifically indicating that 'instad' should be corrected to 'instead'. This failure occurred during the 'Run codespell/5_\ud83c\udfc3 Run the check (codespell).txt' step."
+            "The codespell check failed due to a spelling error in the test file, specifically indicating that 'instad' should be corrected to 'instead'. This failure occurred during the 'Run codespell/5_🏃 Run the check (codespell).txt' step."
         ],
         "relevant_files": [
             {
@@ -1387,7 +1387,7 @@
         "failed_job": [
             {
                 "job": "Run codespell",
-                "step": "Run codespell/5_\ud83c\udfc3 Run the check (codespell).txt",
+                "step": "Run codespell/5_🏃 Run the check (codespell).txt",
                 "command": "pre-commit run --hook-stage manual codespell --all-files --config .github/pre-commit-config.yaml"
             }
         ]
@@ -1469,12 +1469,12 @@
         "failed_job": [
             {
                 "job": "Run pyupgrade",
-                "step": "Run pyupgrade/5_\ud83c\udfc3 Run the check (pyupgrade).txt",
+                "step": "Run pyupgrade/5_🏃 Run the check (pyupgrade).txt",
                 "command": "pre-commit run --hook-stage manual pyupgrade --all-files --config .github/pre-commit-config.yaml"
             },
             {
                 "job": "Run black",
-                "step": "Run black/5_\ud83c\udfc3 Run the check (black).txt",
+                "step": "Run black/5_🏃 Run the check (black).txt",
                 "command": "pre-commit run --hook-stage manual black --all-files --config .github/pre-commit-config.yaml"
             }
         ]
@@ -1556,12 +1556,12 @@
         "failed_job": [
             {
                 "job": "Run pyupgrade",
-                "step": "Run pyupgrade/5_\ud83c\udfc3 Run the check (pyupgrade).txt",
+                "step": "Run pyupgrade/5_🏃 Run the check (pyupgrade).txt",
                 "command": "pre-commit run --hook-stage manual pyupgrade --all-files --config .github/pre-commit-config.yaml"
             },
             {
                 "job": "Run black",
-                "step": "Run black/5_\ud83c\udfc3 Run the check (black).txt",
+                "step": "Run black/5_🏃 Run the check (black).txt",
                 "command": "pre-commit run --hook-stage manual black --all-files --config .github/pre-commit-config.yaml"
             }
         ]
@@ -33893,459 +33893,6 @@
         "id": "551"
     },
     {
-        "sha_fail": "2c31790d093ee0dfdc27aa49c7f8b5018aa16bdb",
-        "error_context": [
-            "The test step failed due to a missing directory, which caused a process exit code of 4. This was indicated by the error message stating 'Process completed with exit code 4.' Additionally, no tests were executed because of this directory issue, leading to multiple errors related to environment variables and configurations."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating relevance to the missing directory issue."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is relevant due to matching tokens from the error context, suggesting it is involved in the test execution that failed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file's involvement in the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "Relevant due to matching tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/synthesizer/templates/template.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file's involvement."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/test_run/test_run.py",
-                "line_number": null,
-                "reason": "This file is relevant due to matching tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/mcp/template.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file's involvement."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/tracing/tracing.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/role_adherence/template.py",
-                "line_number": null,
-                "reason": "Relevant due to matching tokens from the error context."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Missing Directory",
-                "evidence": "The error context indicates a failure to find the specified directory, leading to a process exit code of 4."
-            },
-            {
-                "category": "Test Failure",
-                "subcategory": "No Tests Executed",
-                "evidence": "A short test summary showed that no tests were executed due to the earlier directory error."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/"
-            }
-        ],
-        "id": "552"
-    },
-    {
-        "sha_fail": "39acebb1e9a1ed40d4707bfa5bb731a94ac2436f",
-        "error_context": [
-            "The test step failed due to multiple errors, primarily related to missing necessary files, which resulted in a process exit code of 4. The log indicates that no tests were executed, highlighting a critical issue with file accessibility and test execution."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating it may be involved in the missing files issue."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is relevant due to its matching tokens with the error context, suggesting it may also be related to the missing files."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file could be involved in the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/mcp/template.py",
-                "line_number": null,
-                "reason": "This file's relevance is supported by its matching tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/synthesizer/templates/template.py",
-                "line_number": null,
-                "reason": "The file matched tokens from the error context, indicating a potential link to the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/test_run/test_run.py",
-                "line_number": null,
-                "reason": "This file is associated with the failure due to matching tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "Relevant because it matched tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "This file's relevance is indicated by its matching tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/role_adherence/template.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context suggest this file may be involved in the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/summarization/template.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure due to matching tokens from the error context."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Test Failure",
-                "subcategory": "Missing Files",
-                "evidence": "The error context indicates a critical failure due to missing files in the specified directory."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/"
-            }
-        ],
-        "id": "553"
-    },
-    {
-        "sha_fail": "405a68ca74619681c6be38a1e4fb8b9fe90e5bff",
-        "error_context": [
-            "The test step failed due to multiple errors, primarily a failure to find necessary files, leading to a process exit code of 4. This indicates a critical failure in the test execution."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating it may be involved in the missing files issue."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is relevant due to its matching tokens with the error context, suggesting it is part of the tests that could not run."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file may be related to the scoring process that failed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "This file is associated with the failure as it matched tokens from the error context, indicating its involvement in the tests."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "Relevant due to matching tokens from the error context, suggesting it is part of the tests that could not execute."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/synthesizer/templates/template.py",
-                "line_number": null,
-                "reason": "This file matched tokens from the error context, indicating it may be related to the synthesizer tests that failed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/test_run/test_run.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context suggest this file is involved in the test execution process that failed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/mcp/template.py",
-                "line_number": null,
-                "reason": "This file is relevant due to matching tokens from the error context, indicating its potential involvement in the metrics calculations."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/tracing/tracing.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context suggest this file may be related to tracing functionalities that failed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/role_adherence/template.py",
-                "line_number": null,
-                "reason": "This file matched tokens from the error context, indicating it may be involved in the role adherence metrics that failed."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Test Failure",
-                "subcategory": "Missing Files",
-                "evidence": "The error context indicates that no tests ran due to missing files, which is a significant issue."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/"
-            }
-        ],
-        "id": "554"
-    },
-    {
-        "sha_fail": "ae079d8bb4562600e3625571bda17626c90d2608",
-        "error_context": [
-            "The test step failed due to multiple issues, including a failure to find necessary files and a process that completed with exit code 4, indicating problems with pytest execution. Specifically, no tests ran because a required directory for test datasets was missing."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating it may be involved in the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is relevant due to matching tokens from the error context, suggesting its involvement in the test failures."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file may contribute to the test execution issues."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/mcp/template.py",
-                "line_number": null,
-                "reason": "This file matched tokens from the error context, indicating its potential role in the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/synthesizer/templates/template.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context suggest this file is related to the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/test_run/test_run.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "This file matched tokens from the error context, indicating its involvement in the test failures."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "This file is relevant due to matching tokens from the error context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/role_adherence/template.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context suggest this file is related to the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/summarization/template.py",
-                "line_number": null,
-                "reason": "This file matched tokens from the error context, indicating its potential role in the failure."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Test Failure",
-                "subcategory": "No tests ran due to missing files",
-                "evidence": "The log indicated that no tests ran because a required directory for test datasets was missing."
-            },
-            {
-                "category": "Runtime Error",
-                "subcategory": "Process completed with exit code 4",
-                "evidence": "The error context noted a failure with the message 'Process completed with exit code 4.' indicating issues with pytest execution."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/"
-            }
-        ],
-        "id": "555"
-    },
-    {
-        "sha_fail": "b9b36350bfdf5ff34ba20076fa39096a59fdf0d5",
-        "error_context": [
-            "The test step failed due to multiple errors, primarily a failure to find necessary files, resulting in a process exit code of 4. This is evidenced by the error message indicating 'Process completed with exit code 4.' and the high bm25_score of 99.24 associated with this error."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating it may be involved in the tests that could not be executed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is relevant due to matching tokens from the error context, suggesting it is part of the test suite that encountered issues."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file may be related to the scoring process that failed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "This file matched tokens from the error context, indicating its involvement in the tests that failed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "Relevant due to matching tokens from the error context, suggesting it is part of the failing test suite."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/synthesizer/templates/template.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file may be related to the synthesizer tests that failed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/test_run/test_run.py",
-                "line_number": null,
-                "reason": "This file matched tokens from the error context, indicating its potential involvement in the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/mcp/template.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context suggest this file is related to the metrics being tested."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/tracing/tracing.py",
-                "line_number": null,
-                "reason": "This file matched tokens from the error context, indicating its relevance to the tracing tests."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/role_adherence/template.py",
-                "line_number": null,
-                "reason": "Matched tokens from the error context indicate this file may be involved in the role adherence metrics tests."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Test Failure",
-                "subcategory": "File Not Found",
-                "evidence": "The error context mentions a failure to find necessary files, leading to a process exit code of 4."
-            },
-            {
-                "category": "Configuration Error",
-                "subcategory": "Environment Variable Issues",
-                "evidence": "Other errors relate to environment variables and setup issues, indicating potential misconfigurations."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/"
-            }
-        ],
-        "id": "556"
-    },
-    {
-        "sha_fail": "f8e6b16b6037a90fc1e332e009d421c23c4bcada",
-        "error_context": [
-            "The test step failed due to a missing required directory 'tests/test_core/test_datasets/', which resulted in an exit code of 4. This was indicated by the error message stating 'Process completed with exit code 4.' and the summary that highlighted no tests were executed."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/mcp/template.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/synthesizer/templates/template.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/test_run/test_run.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/research_agent.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/role_adherence/template.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/metrics/summarization/template.py",
-                "line_number": null,
-                "reason": "This file is tied to the failure as it matched tokens from the error context, indicating its relevance to the test execution."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Test Failure",
-                "subcategory": "Missing Directory",
-                "evidence": "The error context states a failure to find a required directory, which led to no tests being executed."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/"
-            }
-        ],
-        "id": "557"
-    },
-    {
         "sha_fail": "85f0f7ceebed4535aa57f512f7f5e2b132f09142",
         "error_context": [
             "The CI process encountered multiple assertion errors during testing across different environments (Windows, macOS, and Ubuntu). The failures were primarily related to mismatched expected and actual call arguments in various test files, particularly 'test_user_config_recurse_submodules' and 'test_cli.py'. The tests failed with exit code 1, indicating critical failures in the testing process."
@@ -34371,8 +33918,8 @@
         ],
         "failed_job": [
             {
-                "job": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
-                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
+                "job": "Tests on Python versions 3.9–>3.13 • \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
+                "step": "Tests on Python versions 3.9–>3.13 • \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
                 "command": "just test-all"
             }
         ],
@@ -34518,44 +34065,6 @@
             }
         ],
         "id": "560"
-    },
-    {
-        "sha_fail": "051820b73ce053cdbb73101445cd203c156813e1",
-        "error_context": [
-            "The linting step failed due to multiple issues related to unused imports in various files. The errors indicate that several imports are not being used and can be removed, which is supported by the high bm25 scores indicating the relevance of these issues."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
-                "line_number": 1959,
-                "reason": "An unused import of 'langchain_core.messages.ToolMessage' was detected, suggesting it should be removed."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
-                "line_number": 1987,
-                "reason": "Another unused import of 'crewai.utilities.converter.Converter' was noted, indicating it should be eliminated."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
-                "line_number": 2001,
-                "reason": "An unused import of 'typing.Optional' was reported, suggesting it should be removed."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Code Formatting",
-                "subcategory": "Unused Import",
-                "evidence": "The linting step detected multiple issues related to unused imports in various files."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "tests",
-                "step": "lint",
-                "command": "lint"
-            }
-        ],
-        "id": "561"
     },
     {
         "sha_fail": "06e2683fd889129c12e6bd818a3b4a5bd880444a",

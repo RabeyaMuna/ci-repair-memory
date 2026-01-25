@@ -3,6 +3,8 @@
 
 import json
 import ast
+import hashlib
+import colorsys
 from pathlib import Path
 from collections import defaultdict
 from collections.abc import Iterable
@@ -160,7 +162,6 @@ def compute_overall_outcomes(
     id_to_conc = _load_stream_conclusions(Path(stream_results_path) if stream_results_path else None)
     stream_ids = set(id_to_conc.keys())
 
-    # IMPORTANT: success/failure/error also imply an attempt
     attempted_ids = (
         results_ids
         | invalid_ids
@@ -172,7 +173,6 @@ def compute_overall_outcomes(
     ) & dataset_ids
 
     not_pushed_ids = dataset_ids - attempted_ids
-
     passed_ids = success_ids & attempted_ids
 
     stream_error_ids = {rid for rid, c in id_to_conc.items() if c == "error"}
@@ -182,7 +182,6 @@ def compute_overall_outcomes(
     waiting_ids &= attempted_ids
     failure_ids &= attempted_ids
 
-    # Precedence within attempted
     final_status: dict[str, str] = {}
     for rid in attempted_ids:
         if rid in waiting_ids:
@@ -196,7 +195,6 @@ def compute_overall_outcomes(
         elif rid in failure_ids:
             final_status[rid] = "failed"
         else:
-            # attempted but not categorized -> treat as failed
             final_status[rid] = "failed"
 
     attempted = len(attempted_ids)
@@ -224,6 +222,21 @@ def compute_overall_outcomes(
     }
 
 
+def _stable_index(label: str, n: int) -> int:
+    """Deterministic mapping across machines/runs."""
+    h = hashlib.md5(label.encode("utf-8")).hexdigest()
+    return int(h[:8], 16) % n
+
+
+def _darken_rgba(rgba, factor: float = 0.55):
+    """factor < 1 => darker"""
+    r, g, b, a = rgba
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    l = max(0.0, l * factor)
+    r2, g2, b2 = colorsys.hls_to_rgb(h, l, s)
+    return (r2, g2, b2, a)
+
+
 def run_error_type_accuracy_evaluation(
     dataset_path: str | Path | None = None,
     success_path: str | Path | None = None,
@@ -243,7 +256,6 @@ def run_error_type_accuracy_evaluation(
 
     results_dir = repo_root / "results"
 
-    # Auto-load fallbacks if caller didn't pass lists
     if jobs_results is None:
         jobs_results = _load_jsonl_rows(results_dir / "jobs_results_diff.jsonl")
     if jobs_ids_invalid is None:
@@ -251,7 +263,6 @@ def run_error_type_accuracy_evaluation(
     if jobs_ids_await is None:
         jobs_ids_await = _load_jsonl_rows(results_dir / "jobs_awaiting_diff.jsonl")
 
-    # Always load these as evidence of attempt
     jobs_ids_failure = _load_jsonl_rows(results_dir / "jobs_failure_diff.jsonl")
     jobs_ids_error = _load_jsonl_rows(results_dir / "jobs_error_diff.jsonl")
 
@@ -292,12 +303,11 @@ def run_error_type_accuracy_evaluation(
     print(f"Waiting: {overall['waiting']}")
     print(f"Accuracy (passed/attempted*100): {overall['accuracy_percent_attempted']}%")
 
-    # Write overall JSON
     with open(overall_path, "w", encoding="utf-8") as f:
         json.dump(overall, f, indent=2)
     print(f"\nSaved overall JSON → {overall_path}")
 
-    # -------- Per-error-type accuracy (dataset labels + success list) ----------
+    # -------- Per-error-type accuracy ----------
     total_counter = defaultdict(int)
     success_counter = defaultdict(int)
 
@@ -334,7 +344,7 @@ def run_error_type_accuracy_evaluation(
     print("\n=== Per-Error-Type Accuracy ===\n")
     print(acc_df.to_string(index=False))
 
-    # ===================== STYLISH LOLLIPOP PLOT =====================
+    # ===================== FIXED + DISTINCT DARK COLORS LOLLIPOP =====================
     sorted_by = "accuracy"  # or "volume"
 
     plot_df = acc_df.copy()
@@ -343,44 +353,68 @@ def run_error_type_accuracy_evaluation(
     else:
         plot_df = plot_df.sort_values(["accuracy_percent", "total_cases"], ascending=[True, False])
 
-    cmap = plt.get_cmap("tab20")
+    fig_h = max(5.2, 0.55 * len(plot_df))
+    fig, ax = plt.subplots(figsize=(13.5, fig_h))
 
-    def _stable_color(label: str):
-        return cmap(abs(hash(label)) % 20)
-
-    colors = plot_df["error_type"].map(_stable_color).to_list()
-
-    fig_h = max(4.8, 0.48 * len(plot_df))
-    fig, ax = plt.subplots(figsize=(12, fig_h))
+    # Reserve space on the right for the summary box (prevents overlap)
+    fig.subplots_adjust(right=0.78)
 
     y = np.arange(len(plot_df))
-    x = plot_df["accuracy_percent"].to_numpy()
+    x = plot_df["accuracy_percent"].to_numpy(dtype=float)
 
-    ax.hlines(y=y, xmin=0, xmax=x, linewidth=2.2, alpha=0.35, color=colors)
-    ax.scatter(x, y, s=110, c=colors, edgecolors="white", linewidths=1.2, zorder=3)
+    # Distinct per-error-type colors (categorical) + darker tone
+    base_cmap = plt.get_cmap("tab20")  # good for up to ~20 distinct groups
+    labels = plot_df["error_type"].tolist()
+    colors = []
+    for lab in labels:
+        idx = _stable_index(lab, base_cmap.N)
+        colors.append(_darken_rgba(base_cmap(idx), factor=0.55))
 
-    # "Count bubble" at origin to show volume per type
-    for yi, total in zip(y, plot_df["total_cases"].to_numpy()):
-        ax.scatter([0], [yi], s=40 + 2.0 * min(total, 60), c=["#DDDDDD"], edgecolors="white",
-                   linewidths=0.8, zorder=2)
+    # Lollipop stems and heads
+    ax.hlines(y=y, xmin=0, xmax=x, linewidth=2.6, alpha=0.35, color=colors)
+    ax.scatter(x, y, s=125, c=colors, edgecolors="white", linewidths=1.2, zorder=3)
+
+    # Volume bubble at origin (scaled gently)
+    totals = plot_df["total_cases"].to_numpy(dtype=float)
+    bubble_sizes = 35 + 3.0 * np.sqrt(np.clip(totals, 0, 400))
+    ax.scatter(
+        np.zeros_like(y),
+        y,
+        s=bubble_sizes,
+        c="#E6E6E6",
+        edgecolors="white",
+        linewidths=0.9,
+        zorder=2,
+    )
 
     ax.set_yticks(y)
     ax.set_yticklabels(plot_df["error_type"], fontsize=10)
 
-    ax.set_xlim(0, max(100, float(np.nanmax(x)) + 5))
+    ax.set_xlim(0, 100)
     ax.set_xlabel("Repair Accuracy (%)", fontsize=12)
-    ax.set_title("Per-Error-Type Repair Accuracy", fontsize=15, pad=12)
+    ax.set_title("Per-Error-Type Repair Accuracy", fontsize=16, pad=12)
 
     ax.grid(axis="x", linestyle="--", alpha=0.25)
     ax.set_axisbelow(True)
     for spine in ("top", "right", "left"):
         ax.spines[spine].set_visible(False)
 
+    # Median line + label above plot (avoids collisions)
     median_acc = float(np.nanmedian(x)) if len(x) else 0.0
-    ax.axvline(median_acc, linestyle=":", linewidth=1.5, alpha=0.7)
-    ax.text(median_acc, len(y) - 0.2, f"median {median_acc:.1f}%",
-            ha="center", va="bottom", fontsize=9, alpha=0.9)
+    ax.axvline(median_acc, linestyle=":", linewidth=1.7, alpha=0.75)
+    ax.annotate(
+        f"median {median_acc:.1f}%",
+        xy=(median_acc, 1.0),
+        xycoords=("data", "axes fraction"),
+        xytext=(0, 10),
+        textcoords="offset points",
+        ha="center",
+        va="bottom",
+        fontsize=9,
+        alpha=0.95,
+    )
 
+    # Value labels on the right of each dot
     for xi, yi, solved, total, acc in zip(
         plot_df["accuracy_percent"].to_numpy(),
         y,
@@ -389,53 +423,57 @@ def run_error_type_accuracy_evaluation(
         plot_df["accuracy_percent"].to_numpy(),
     ):
         ax.text(
-            xi + 0.8,
+            min(xi + 1.0, 98.5),
             yi,
-            f"{solved}/{total}  ({acc:.1f}%)",
+            f"{solved}/{total} ({acc:.1f}%)",
             va="center",
             ha="left",
             fontsize=9,
             alpha=0.95,
         )
 
-    # Callouts: best/worst 3
+    # Best/worst markers (subtle, inside plot)
     k = min(3, len(plot_df))
     if k > 0:
-        best_idx = plot_df["accuracy_percent"].nlargest(k).index
-        worst_idx = plot_df["accuracy_percent"].nsmallest(k).index
-        idx_to_y = {idx: int(pos) for pos, idx in enumerate(plot_df.index)}
+        best_rows = plot_df.nlargest(k, "accuracy_percent")
+        worst_rows = plot_df.nsmallest(k, "accuracy_percent")
+        idx_to_ypos = {idx: int(pos) for pos, idx in enumerate(plot_df.index)}
+        for idx in best_rows.index:
+            yi = idx_to_ypos[idx]
+            ax.text(99.2, yi, "★", va="center", ha="right", fontsize=12, alpha=0.9)
+        for idx in worst_rows.index:
+            yi = idx_to_ypos[idx]
+            ax.text(0.8, yi, "×", va="center", ha="left", fontsize=12, alpha=0.65)
 
-        for idx in best_idx:
-            yi = idx_to_y[idx]
-            ax.text(ax.get_xlim()[1], yi, "  ★", va="center", ha="right", fontsize=12, alpha=0.9)
-        for idx in worst_idx:
-            yi = idx_to_y[idx]
-            ax.text(-1, yi, "✖  ", va="center", ha="left", fontsize=11, alpha=0.9)
-
+    # Summary box: TOP-RIGHT outside axes (no overlap)
     summary = (
         f"Dataset rows: {overall['total_dataset']}\n"
         f"Attempted: {overall['attempted']} (coverage {overall['coverage_percent']}%)\n"
         f"Passed: {overall['passed']}  Failed: {overall['failed']}  Waiting: {overall['waiting']}\n"
+        f"Invalid: {overall['invalid']}  Error: {overall['error']}  Not pushed: {overall['not_pushed']}\n"
         f"Accuracy (passed/attempted): {overall['accuracy_percent_attempted']}%\n"
-        f"Total error labels: {total_error_labels}  |  Unique error types: {unique_error_types}\n"
-        f"Sorted by: {sorted_by}"
-    )
-    ax.text(
-        0.01,
-        0.02,
-        summary,
-        transform=ax.transAxes,
-        fontsize=9,
-        va="bottom",
-        ha="left",
-        bbox=dict(boxstyle="round,pad=0.5", facecolor="white", alpha=0.85, edgecolor="#CCCCCC"),
+        f"Total error labels: {total_error_labels}\n"
+        f"Unique error types: {unique_error_types}\n"
+        f"Sorted by: {sorted_by}\n"
+        f"Bubble @ 0% ~ √(total_cases)"
     )
 
-    plt.tight_layout()
+    ax.text(
+        1.01,
+        1.0,
+        summary,
+        transform=ax.transAxes,
+        fontsize=9.5,
+        va="top",
+        ha="left",
+        bbox=dict(boxstyle="round,pad=0.55", facecolor="white", alpha=0.92, edgecolor="#D0D0D0"),
+        clip_on=False,
+    )
+
     plt.savefig(accuracy_plot_path, dpi=250, bbox_inches="tight")
     plt.close()
-    print(f"\nSaved stylish accuracy plot → {accuracy_plot_path}")
-    # =================================================================
+    print(f"\nSaved improved accuracy plot → {accuracy_plot_path}")
+    # ============================================================================
 
     # -------- Table image ----------
     fig, ax = plt.subplots(figsize=(10, max(3, len(acc_df) * 0.35)))

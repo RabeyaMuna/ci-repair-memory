@@ -1,80 +1,119 @@
-# 🏟️ Long Code Arena Baselines
-## CI builds repair
+# Long Code Arena CI Builds Repair Benchmark
 
-This directory contains the code for the CI builds repair benchmark. 
+This repository provides a benchmark for evaluating automated CI build repair methods.
+It downloads failing repositories, applies repair strategies, runs GitHub Actions,
+and evaluates whether the CI passes.
 
-# How to
+---
 
-## 💾 Install dependencies
+## Prerequisites
 
-We provide dependencies for two Python dependencies managers: [pip](https://pip.pypa.io/en/stable/) and [Poetry](https://python-poetry.org/docs/). Poetry is preferred, `requirements.txt` is obtained by running ` poetry export --output requirements.txt`.
+- Python 3.9 or later
+- GitHub account
+- Hugging Face account
+- Access to the benchmark GitHub organization
 
-* If you prefer pip, run `pip install -r requirements.txt`
-* If you prefer Poetry, run `poetry install`
+---
 
-## ⚙️ Configure
+## Required Setup Files
 
-To initialize the benchmark, you need to pass a path to a config file with the following fields (see example in [`config_template.yaml`](config_template.yaml)):
+You must provide both of the following:
 
-`repos_folder`: the path to where the cloned repos will be stored;  
-`out_folder`: the path to where the result files will be stored;  
-`data_cache_dir`: the path to where the cached dataset will be stored;  
-`username_gh`: your GitHub username;  
-`test_username`: _Optional_. Username that would be displayed in the benchmark, if omitted, `username_gh` will be used;  
-`language`: dataset language (for now, only Python is available).  
+1. `.env`  
+   Stores secrets (tokens, API keys)
 
-## 🚀 Run
+2. `config.yaml`  
+   Stores benchmark runtime configuration (paths, usernames, language)
 
-**Important**: Before usage, please request to be added to the benchmark [organization]([https://huggingface.co/datasets/JetBrains-Research/ICML-25-BenchName-builds-repair](https://github.com/orgs/LCA-CI-fix-benchmark) on Github to be able to push the repos for the test.
+A template config is available at:
 
-For the example of the benchmark usage code, see the [`run_benchmark.py`](run_benchmark.py) script.
+```text
+/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/config.example.yaml
+```
 
-The method `CIFixBenchmark.eval_dataset(fix_repo_function)` evaluates the baseline function. Specifically, it:
 
-1. Downloads the [dataset](https://huggingface.co/datasets/JetBrains-Research/lca-ci-builds-repair);
-2. Repairs repo by `fix_repo_function` function that utilizes repo state and logs of fails
-3. Sends the datapoints to GitHub to run workflows;
-4. Requests results from GitHub;
-5. Analyzes results and prints them.
+## 1. Create `.env` for secrets
 
-For debugging, please limit yourself to a small number of datapoints (argument `num_dp=num_dp`).
+Create a file named `.env` in the repository root and add the following values:
 
-### ⚒️ fix_repo_function
+```text
+# GitHub
+GITHUB_USERNAME=your_github_username
+GITHUB_TOKEN=your_github_personal_access_token
 
-To use the benchmark, you need to pass a function `fix_repo_function` that repairs the build according to 
-the repository state on a local machine, logs, and the metadata of the failed workflows.
-The function should have the following (all optional) arguments:
-(`datapoint`, `repo_path`, `repo`, `out_folder`)
+# Hugging Face
+HF_TOKEN=your_huggingface_token
 
-`datapoint`:  datapoint from the dataset (its structure is given below);  
-`repo_path`:  path to the repo on the user's machine;  
-`repo`:       git.Repo object from GitPython library;  
-`out_folder`: directory for outputting the benchmark results.  
+# OpenAI (required for deepeval)
+OPENAI_API_KEY=your_openai_api_key
+```
 
-For now, only two functions have been implemented:
+## 2. Create `config.yaml` for benchmark configuration
 
-`fix_none` —       does nothing;  
-`fix_apply_diff` — applies the diff that repairs the issue in the original repository;  
+Copy the example configuration file:
 
-You can download the dataset using the `CIFixBenchmark.get_dataset()` method.
+```bash
+cp config.example.yaml config.yaml
+```
 
-## 📈 Outputs
+### Notes:
 
-The evaluation method outputs the following results:
+- username_gh should match GITHUB_USERNAME
+- Environment Setup
+  Use separate virtual environments for:
+  1. Benchmark execution
+  2. Baseline experiments
 
-1. `jobs_ids.jsonl` — identifiers of the jobs that were sent to GitHub. They are used for further evaluation.
-2. `jobs_results.jsonl` — results of each job.
-3. `jobs_awaiting.jsonl` — list of awaiting jobs (normally should be empty).
-3. `jobs_invalid.jsonl` — list of invalid jobs (normally should be empty).
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-Examples of these files can be found in the (`/examples`)[examples/] directory.
+## One Time Setup: Forking Repositories
+To run the benchmark using repositories own GitHub account, fork everything first:
 
-You can also evaluate your results using the method `CIFixBenchmark.eval_jobs(result_filename=result_filename)`,
-passing the `jobs_ids.jsonl` file.
+```bash
+python setup_github/bulk_fork_repositories.py
 
-## 📩 Contact info
-If you have any questions or requests concerning this dataset, please contact lca@jetbrains.com
+Running the Benchmark
 
-Screts to add:
+python run_benchmark.py
 
-deepeval: OPENAI_API_KEY
+```
+
+Results are written to out_folder:
+
+```text
+jobs_ids.jsonl
+Job identifiers sent to GitHub
+
+jobs_results.jsonl
+Results for each job
+
+jobs_awaiting.jsonl
+Jobs still running (normally empty)
+
+jobs_invalid.jsonl
+Invalid jobs (normally empty)
+```
+
+
+## To the baseline(CI Repair System):
+
+- Baselines are located in:
+```bash
+cd baselines
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
+
+- Re-check Waiting CI outcome and Re-evaluate:
+
+Sometimes GitHub Actions runs slowly and not all jobs finish in the initial time window. For this reason, outcome can be rechecked for the pushed commits and update results without pushing again.
+
+```bash
+recheck_waiting_jobs.py
+```
