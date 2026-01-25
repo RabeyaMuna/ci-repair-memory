@@ -74,10 +74,12 @@ pip install -r requirements.txt
 To run the benchmark using repositories own GitHub account, fork everything first:
 
 ```bash
-python repo_setup/bulk_fork_repositories.py
+python setup/bulk_fork_repositories.py
+```
 
-Running the Benchmark
+- Run the Benchmark
 
+```bash
 python run_benchmark.py
 
 ```
