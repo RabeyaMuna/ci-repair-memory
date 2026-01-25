@@ -1,0 +1,43 @@
+# =====================================
+# Long Code Arena CI Builds Repair
+# Example Configuration File
+# =====================================
+
+# -------------------------
+# Core benchmark directories
+# -------------------------
+repos_folder: "<PATH_TO_CLONED_REPOS>"
+out_folder: "<PATH_TO_BENCHMARK_RESULTS>"
+data_cache_dir: "<PATH_TO_DATASET_CACHE>"
+
+# -------------------------
+# Baseline directories
+# -------------------------
+baseline_repo_folder: "<PATH_TO_BASELINE_CLONED_REPOS>"
+baseline_output_folder: "<PATH_TO_BASELINE_RESULTS>"
+exception_dir: "<PATH_TO_BASELINE_EXCEPTION_LOGS>"
+changed_files_folder: "<PATH_TO_BASELINE_CHANGED_FILES>"
+
+# -------------------------
+# Benchmark identity
+# -------------------------
+username_gh: "<GITHUB_USERNAME>"
+# test_username: "<OPTIONAL_DISPLAY_NAME>"
+language: "Python"   # Currently only Python is supported
+
+# -------------------------
+# Project paths (optional)
+# -------------------------
+base_dir: "<BASE_PROJECT_DIRECTORY>"
+project_result_dir: "<PROJECT_RESULTS_DIRECTORY>"
+
+# -------------------------
+# Authentication
+# NOTE:
+# It is strongly recommended to store secrets in a .env file
+# and load them via environment variables.
+# These fields may be left empty if not required by your setup.
+# -------------------------
+benchmark_owner: "<GITHUB_OWNER_USERNAME>"
+token: "<GITHUB_TOKEN_OR_ENV_REFERENCE>"
+HUGGINGFACE_TOKEN: "<HUGGINGFACE_TOKEN_OR_ENV_REFERENCE>"

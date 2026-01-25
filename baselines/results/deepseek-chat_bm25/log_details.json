@@ -904,7 +904,7 @@
         "failed_job": [
             {
                 "job": "matrix",
-                "step": "Run codespell/5_\ud83c\udfc3 Run the check (codespell).txt",
+                "step": "Run codespell/5_🏃 Run the check (codespell).txt",
                 "command": "pre-commit run --hook-stage manual codespell --all-files --config .github/pre-commit-config.yaml"
             }
         ]
@@ -947,12 +947,12 @@
         "failed_job": [
             {
                 "job": "matrix",
-                "step": "\ud83c\udfc3 Run the check (pyupgrade)",
+                "step": "🏃 Run the check (pyupgrade)",
                 "command": "pre-commit run --hook-stage manual pyupgrade --all-files --config .github/pre-commit-config.yaml"
             },
             {
                 "job": "matrix",
-                "step": "\ud83c\udfc3 Run the check (black)",
+                "step": "🏃 Run the check (black)",
                 "command": "pre-commit run --hook-stage manual black --all-files --config .github/pre-commit-config.yaml"
             }
         ]
@@ -995,12 +995,12 @@
         "failed_job": [
             {
                 "job": "matrix",
-                "step": "Run pyupgrade/5_\ud83c\udfc3 Run the check (pyupgrade).txt",
+                "step": "Run pyupgrade/5_🏃 Run the check (pyupgrade).txt",
                 "command": "pre-commit run --hook-stage manual pyupgrade --all-files --config .github/pre-commit-config.yaml"
             },
             {
                 "job": "matrix",
-                "step": "Run black/5_\ud83c\udfc3 Run the check (black).txt",
+                "step": "Run black/5_🏃 Run the check (black).txt",
                 "command": "pre-commit run --hook-stage manual black --all-files --config .github/pre-commit-config.yaml"
             }
         ]
@@ -15013,7 +15013,7 @@
     {
         "sha_fail": "b1bd65dbd191b318325c4b87d626bb5d7967cda7",
         "error_context": [
-            "The CI failure is caused by test failures in the 'Test (ubuntu, 3.14t, false)' job. Two primary error types are present. First, multiple tests fail with 'blockbuster.blockbuster.BlockingError: Blocking call to io.BufferedWriter.write', indicating the blockbuster library is detecting synchronous file writes during test execution, often triggered when Python's import system writes .pyc cache files for encodings like koi8_r and cp1251. Second, a TypeError occurs in aiohttp/formdata.py:138 when serializing a string value ('\u0442\u0435\u043a\u0441\u0442') with a 'text/plain; charset=koi8-r' Content-Type header, indicating an incompatibility between the payload serializer and the provided charset. The 'check' job subsequently fails because the required 'test' job did not succeed."
+            "The CI failure is caused by test failures in the 'Test (ubuntu, 3.14t, false)' job. Two primary error types are present. First, multiple tests fail with 'blockbuster.blockbuster.BlockingError: Blocking call to io.BufferedWriter.write', indicating the blockbuster library is detecting synchronous file writes during test execution, often triggered when Python's import system writes .pyc cache files for encodings like koi8_r and cp1251. Second, a TypeError occurs in aiohttp/formdata.py:138 when serializing a string value ('текст') with a 'text/plain; charset=koi8-r' Content-Type header, indicating an incompatibility between the payload serializer and the provided charset. The 'check' job subsequently fails because the required 'test' job did not succeed."
         ],
         "relevant_files": [
             {
@@ -15041,7 +15041,7 @@
             {
                 "category": "Test Failure",
                 "subcategory": "TypeError during data serialization",
-                "evidence": "TypeError in aiohttp/formdata.py:138 when serializing a string value ('\u0442\u0435\u043a\u0441\u0442') with a 'text/plain; charset=koi8-r' Content-Type header."
+                "evidence": "TypeError in aiohttp/formdata.py:138 when serializing a string value ('текст') with a 'text/plain; charset=koi8-r' Content-Type header."
             }
         ],
         "failed_job": [
@@ -22753,198 +22753,6 @@
         ]
     },
     {
-        "sha_fail": "2c31790d093ee0dfdc27aa49c7f8b5018aa16bdb",
-        "error_context": [
-            "The 'test' job failed because pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4. The failure occurred in the 'Run tests' step, which attempted to run pytest on the 'tests/test_core/' directory while ignoring certain subdirectories, but the specified ignore path was not found."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "The error context explicitly states pytest could not find the test directory 'tests/test_core/test_datasets/'. This is the missing directory that caused the failure."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Missing or incorrect file/directory path",
-                "evidence": "Pytest error that the directory 'tests/test_core/test_datasets/' was not found, resulting in exit code 4."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
-            }
-        ]
-    },
-    {
-        "sha_fail": "39acebb1e9a1ed40d4707bfa5bb731a94ac2436f",
-        "error_context": [
-            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/'. The error context indicates a 'process completed with exit code 4' and states the file or directory was not found, leading to no tests running. This occurred during the 'Run dev tests' step, which runs tests for the synthesizer and datasets directories."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "File matched tokens from the error context with a high score (181.37), indicating it is mentioned or related to the test failure context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "File matched tokens from the error context with a high score (181.37), indicating it is mentioned or related to the test failure context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "File matched tokens from the error context with a high score (165.88), indicating it is mentioned or related to the test failure context."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Test Failure",
-                "subcategory": "Missing Test Directory",
-                "evidence": "Pytest reported exit code 4 and an error that the file or directory 'tests/test_core/test_datasets/' was not found, leading to no tests running."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run dev tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys -o faulthandler_timeout=300 tests/test_core/test_synthesizer/ tests/test_core/test_datasets/"
-            }
-        ]
-    },
-    {
-        "sha_fail": "405a68ca74619681c6be38a1e4fb8b9fe90e5bff",
-        "error_context": [
-            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/', leading to an exit code 4. The error context indicates the test process failed with exit code 4, preceded by an error that the directory was not found."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "The log summary explicitly states the failure was due to the directory 'tests/test_core/test_datasets/' not being found, causing pytest to exit with code 4."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Test Failure",
-                "subcategory": "Test Directory/File Not Found",
-                "evidence": "Error context states 'pytest could not find the test directory tests/test_core/test_datasets/, leading to an exit code 4'."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
-            }
-        ]
-    },
-    {
-        "sha_fail": "ae079d8bb4562600e3625571bda17626c90d2608",
-        "error_context": [
-            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4. This indicates a missing test path or configuration issue, as the error context states the file or directory was not found, leading to no tests running."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "File matched tokens from the error context with a high score (183.22), suggesting it is relevant to the test failure context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "File matched tokens from the error context with a high score (183.22), suggesting it is relevant to the test failure context."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "File matched tokens from the error context with a high score (166.14), suggesting it is relevant to the test failure context."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Missing test path or directory",
-                "evidence": "Error context states pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
-            }
-        ]
-    },
-    {
-        "sha_fail": "b9b36350bfdf5ff34ba20076fa39096a59fdf0d5",
-        "error_context": [
-            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/'. This caused a non-zero exit code 4, indicating a missing test path or configuration issue. The error occurred during the pytest teardown, and no tests were run from that directory."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_integrations/test_openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "File matched tokens from error context with high score (188.54), suggesting it is part of the test suite structure that may be related to the path resolution issue."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/integrations/openai_agents/git_mcp_agent.py",
-                "line_number": null,
-                "reason": "File matched tokens from error context with high score (188.54), indicating it is part of the test integrations that may be affected by the missing directory."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/deepeval/scorer/scorer.py",
-                "line_number": null,
-                "reason": "File matched tokens from error context with score 163.17, suggesting it is a core module potentially invoked during test setup or teardown."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Configuration Error",
-                "subcategory": "Missing test path or directory",
-                "evidence": "Pytest could not find the test directory 'tests/test_core/test_datasets/', leading to exit code 4 and no tests run."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
-            }
-        ]
-    },
-    {
-        "sha_fail": "f8e6b16b6037a90fc1e332e009d421c23c4bcada",
-        "error_context": [
-            "The test step failed because pytest could not find the test directory 'tests/test_core/test_datasets/', resulting in exit code 4. The error context indicates pytest reported 'file or directory not found' for that path."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/deepeval/tests/test_core/test_datasets/",
-                "line_number": null,
-                "reason": "The error context explicitly states pytest reported 'file or directory not found' for the path 'tests/test_core/test_datasets/'."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Test Failure",
-                "subcategory": "Test directory or file not found",
-                "evidence": "Pytest reported 'file or directory not found' for the path 'tests/test_core/test_datasets/' and exited with code 4."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "test",
-                "step": "Run tests",
-                "command": "poetry run pytest -vv -rA --maxfail=1 --capture=tee-sys tests/test_core/ --ignore=tests/test_core/test_synthesizer/ --ignore=tests/test_core/test_datasets/"
-            }
-        ]
-    },
-    {
         "sha_fail": "85f0f7ceebed4535aa57f512f7f5e2b132f09142",
         "error_context": [
             "The CI test suite failed on Windows, macOS, and Ubuntu due to a single failing unit test. The test 'test_user_config_recurse_submodules' in test_cli.py raised an AssertionError because a mocked function call received an unexpected keyword argument 'keep_project_on_failure=False'. The test expected a call to the 'cookiecutter' function without this argument, but the actual call included it, causing a mock mismatch. This indicates a recent change likely added a new parameter to the 'cookiecutter' function, but the corresponding test mock was not updated."
@@ -22971,17 +22779,17 @@
         "failed_job": [
             {
                 "job": "test-all",
-                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"ubuntu-latest\" (via just, uv, pytest, pytest-pretty)",
+                "step": "Tests on Python versions 3.9–>3.13 • \"ubuntu-latest\" (via just, uv, pytest, pytest-pretty)",
                 "command": "just test-all"
             },
             {
                 "job": "test-all",
-                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
+                "step": "Tests on Python versions 3.9–>3.13 • \"windows-latest\" (via just, uv, pytest, pytest-pretty)",
                 "command": "just test-all"
             },
             {
                 "job": "test-all",
-                "step": "Tests on Python versions 3.9\u2013>3.13 \u2022 \"macos-latest\" (via just, uv, pytest, pytest-pretty)",
+                "step": "Tests on Python versions 3.9–>3.13 • \"macos-latest\" (via just, uv, pytest, pytest-pretty)",
                 "command": "just test-all"
             }
         ]
@@ -23087,63 +22895,6 @@
                 "job": "tests (3.10)",
                 "step": "Run tests (group ${{ matrix.group }} of 8)",
                 "command": "cd lib/crewai && uv run pytest -vv --splits 8 --group ${{ matrix.group }} $DURATIONS_ARG --durations=10 --maxfail=3"
-            }
-        ]
-    },
-    {
-        "sha_fail": "051820b73ce053cdbb73101445cd203c156813e1",
-        "error_context": [
-            "The lint step failed with exit code 123 due to numerous code style violations detected by the linter. The primary failures are unused imports (F401) across multiple source and test files, along with a bare except clause (E722) and an equality comparison to None (E711). Many of these errors are fixable with the --fix flag."
-        ],
-        "relevant_files": [
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/task.py",
-                "line_number": null,
-                "reason": "Matched tokens from error context; contains an unused import of `re` (F401) fixable with --fix."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/serialization.py",
-                "line_number": null,
-                "reason": "Matched tokens from error context; likely contains lint violations contributing to the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/utilities/llm_utils.py",
-                "line_number": null,
-                "reason": "Matched tokens from error context; likely contains lint violations contributing to the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/tools/tool_usage.py",
-                "line_number": null,
-                "reason": "Matched tokens from error context; likely contains lint violations contributing to the failure."
-            },
-            {
-                "file": "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/repo_cloned/crewai/src/crewai/cli/utils.py",
-                "line_number": null,
-                "reason": "Matched tokens from error context; likely contains lint violations contributing to the failure."
-            }
-        ],
-        "error_types": [
-            {
-                "category": "Code Formatting",
-                "subcategory": "Unused Import",
-                "evidence": "Error context states 'unused imports (F401) across multiple source and test files'; specific examples include unused import of `langchain_core.messages.ToolMessage` and `crewai.utilities.converter.Converter`."
-            },
-            {
-                "category": "Code Formatting",
-                "subcategory": "Bare Except Clause",
-                "evidence": "Error context mentions 'a bare except clause (E722)' as one of the violations."
-            },
-            {
-                "category": "Code Formatting",
-                "subcategory": "Equality Comparison to None",
-                "evidence": "Error context mentions 'an equality comparison to None (E711)' as one of the violations."
-            }
-        ],
-        "failed_job": [
-            {
-                "job": "tests",
-                "step": "lint",
-                "command": "ruff check"
             }
         ]
     },
