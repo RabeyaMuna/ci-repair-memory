@@ -33,10 +33,11 @@ CIBenchPython = CIFixBenchmark(model_name, config_path)
 # Can load dataset from online from huggingface hub
 dataset_info = hf_hub_download(
     repo_id="ci-benchmark-user/ci-repair-bench",
-    filename="ci_reoair_dataset.parquet",
+    filename="ci_repair_dataset.parquet",
     repo_type="dataset",
-    token=config.get("HUGGINGFACE_TOKEN"),  # optional if you've done `huggingface-cli login`
+    token=config.get("HUGGINGFACE_TOKEN"),
 )
+
 
 
 # Load dataset once
