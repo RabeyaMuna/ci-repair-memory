@@ -7,9 +7,8 @@ import json
 import subprocess
 from omegaconf import OmegaConf
 from dotenv import load_dotenv
+from huggingface_hub import hf_hub_download
 from datasets import load_dataset  # (unused right now but kept)
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
 
 from utilities.fetch_failed_commit_changed_files import (
     collect_changed_files_for_fail_and_parent,
@@ -182,16 +181,26 @@ if __name__ == "__main__":
     config = OmegaConf.load(config_path)
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
+    # dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    model_key = "gpt-5-mini"   # or "gpt4o", "deepseek-chat", etc.
+    model_key = "gpt-5-mini"  # or "gpt4o", "deepseek-chat", etc.
     llm = get_llm(model_key)
 
-    # Load dataset
+    hf_token = os.getenv("HF_TOKEN") or config.get("HUGGINGFACE_TOKEN")
+
+    dataset_path = hf_hub_download(
+        repo_id="ci-benchmark-user/ci-repair-bench",
+        filename="ci_repair_dataset.parquet",
+        repo_type="dataset",
+        token=hf_token,
+    )
+
     dataset_df = pd.read_parquet(dataset_path)
     dataset = dataset_df.to_dict(orient="records")
 
-    results = process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm")
+    results = process_entire_dataset(
+        dataset, config, llm, model_key, log_analyzer_type="llm"
+    )
 
     output_file = os.path.join(config.project_result_dir, "generated_patches.json")
     with open(output_file, "w") as f:
