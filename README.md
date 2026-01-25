@@ -63,23 +63,22 @@ cp config.example.yaml config.yaml
   Use separate virtual environments for:
   1. Benchmark execution
   2. Baseline experiments
+ 
+
+## Benchmark execution:
+### One-Time Setup: Forking Repositories
+To run the benchmark using repositories own GitHub account, fork everything first:
+
+```bash
+python setup_github/bulk_fork_repositories.py
+```
+Commands to set up and run benchmark:
 
 ```bash
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
-
-## One Time Setup: Forking Repositories
-To run the benchmark using repositories own GitHub account, fork everything first:
-
-```bash
-python setup_github/bulk_fork_repositories.py
-
-Running the Benchmark
-
 python run_benchmark.py
-
 ```
 
 Results are written to out_folder:
@@ -98,22 +97,23 @@ jobs_invalid.jsonl
 Invalid jobs (normally empty)
 ```
 
+ ### Re-check CI outcome and Re-evaluate:
 
-## To the baseline(CI Repair System):
-
-- Baselines are located in:
-```bash
-cd baselines
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python main.py
-```
-
-- Re-check Waiting CI outcome and Re-evaluate:
-
-Sometimes GitHub Actions runs slowly and not all jobs finish in the initial time window. For this reason, outcome can be rechecked for the pushed commits and update results without pushing again.
+Sometimes GitHub Actions runs slowly, and not all jobs finish in the initial time window. For this reason, the outcome can be rechecked for the pushed commits and update results without pushing again.
 
 ```bash
 recheck_waiting_jobs.py
 ```
+
+## To execute baseline(CI Repair System):
+
+- To run the baseline project:
+```bash
+cd baselines
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements-dev.txt
+python main.py
+```
+
+
