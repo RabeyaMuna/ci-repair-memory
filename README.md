@@ -28,7 +28,7 @@ You must provide both of the following:
 A template config is available at:
 
 ```text
-/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/config.example.yaml
+config.example.yaml
 ```
 
 
@@ -127,5 +127,4 @@ source venv/bin/activate
 pip install -r requirements-dev.txt
 python main.py
 ```
-
 
