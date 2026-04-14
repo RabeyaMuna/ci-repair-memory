@@ -13,7 +13,8 @@ from datasets import load_dataset  # (unused right now but kept)
 from utilities.fetch_failed_commit_changed_files import (
     collect_changed_files_for_fail_and_parent,
 )
-from utilities.llm_provider import get_llm
+from utilities.llm_provider import get_llm, get_tracked_llm
+from utilities.token_tracker import TokenTracker
 from ci_repair.ci_log_analyzer_bm25 import CILogAnalyzerBM25
 from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
 from ci_repair.fault_localization import FaultLocalization
@@ -23,7 +24,14 @@ from utilities.ensure_repo import ensure_repo_at_commit
 load_dotenv()
 
 
-def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm"):
+def process_entire_dataset(
+    dataset,
+    config,
+    llm,
+    model_key,
+    log_analyzer_type="llm",
+    tracker: TokenTracker = None,
+):
     error_details = []
     fault_localization = []
     generated_patches = []
@@ -67,23 +75,25 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         # ------------------------------------------------------------------
         try:
             if log_analyzer_type == "llm":
+                _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerLLM") if tracker else llm
                 log_analysis_result = CILogAnalyzerLLM(
                     repo_path,
                     logs,
                     sha_fail,
                     workflow,
                     workflow_path,
-                    llm=llm,
+                    llm=_llm_log,
                     model_name=model_key,
                 ).run()
             else:
+                _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerBM25") if tracker else llm
                 log_analysis_result = CILogAnalyzerBM25(
                     repo_path,
                     logs,
                     sha_fail,
                     workflow,
                     workflow_path,
-                    llm=llm,
+                    llm=_llm_log,
                     model_name=model_key,
                 ).run()
 
@@ -121,14 +131,15 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         # 3) FAULT LOCALIZATION (later we can inject changed_files_info)
         # ------------------------------------------------------------------
         try:
+            _llm_fl = get_tracked_llm(model_key, tracker, "FaultLocalization") if tracker else llm
             fault_localizer = FaultLocalization(
                 sha_fail=sha_fail,
                 repo_path=repo_path,
                 error_logs=log_analysis_result,
                 workflow=workflow,
-                llm=llm,
+                llm=_llm_fl,
                 model_name=model_key,
-                changed_files_info=changed_files_info,  # add to __init__ later if you want
+                changed_files_info=changed_files_info,
             ).run()
 
             fault_localization.append(fault_localizer)
@@ -148,6 +159,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         # # 4) PATCH GENERATION
         # # ------------------------------------------------------------------
         try:
+            _llm_pg = get_tracked_llm(model_key, tracker, "PatchGeneration") if tracker else llm
             patch_generator = PatchGeneration(
                 bug_report=fault_localizer,
                 repo_path=repo_path,
@@ -155,7 +167,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                 error_details=log_analysis_result,
                 workflow_path=workflow_path,
                 workflow=workflow,
-                llm=llm,
+                llm=_llm_pg,
                 model_name=model_key,
             ).run()
 
@@ -181,10 +193,14 @@ if __name__ == "__main__":
     config = OmegaConf.load(config_path)
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
     model_key = "gpt-5-mini"  # or "gpt4o", "deepseek-chat", etc.
     llm = get_llm(model_key)
+
+    # ------------------------------------------------------------------
+    # Token / cost tracker — shared across the entire run
+    # ------------------------------------------------------------------
+    tracker = TokenTracker(model_name=model_key)
 
     hf_token = os.getenv("HF_TOKEN") or config.get("HUGGINGFACE_TOKEN")
 
@@ -199,7 +215,7 @@ if __name__ == "__main__":
     dataset = dataset_df.to_dict(orient="records")
 
     results = process_entire_dataset(
-        dataset, config, llm, model_key, log_analyzer_type="llm"
+        dataset, config, llm, model_key, log_analyzer_type="llm", tracker=tracker
     )
 
     output_file = os.path.join(config.project_result_dir, "generated_patches.json")
@@ -207,3 +223,16 @@ if __name__ == "__main__":
         json.dump(results, f, indent=4)
 
     print(f"[MAIN] Results saved in {output_file}")
+
+    # ------------------------------------------------------------------
+    # Token / cost report
+    # ------------------------------------------------------------------
+    tracker.print_summary()
+
+    log_analyzer_type = "llm"   # mirrors the value passed above
+    result_dir = os.path.join(
+        config.project_result_dir, f"{model_key}_{log_analyzer_type}"
+    )
+    os.makedirs(result_dir, exist_ok=True)
+    token_report_path = os.path.join(result_dir, "token_report.json")
+    tracker.save_json(token_report_path)
