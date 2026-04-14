@@ -42,7 +42,7 @@ def process_entire_dataset(
     # If your helper needs a token:
 
     # TEMP: only one datapoint
-    subset = dataset[0:120]
+    subset = dataset[0:]
     # target_ids = {241, 243, 281, 323}
     # subset = [dp for dp in dataset if dp.get("id") in target_ids]
 
@@ -84,6 +84,7 @@ def process_entire_dataset(
                     workflow_path,
                     llm=_llm_log,
                     model_name=model_key,
+                    task_id=task_id,
                 ).run()
             else:
                 _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerBM25") if tracker else llm
@@ -95,6 +96,7 @@ def process_entire_dataset(
                     workflow_path,
                     llm=_llm_log,
                     model_name=model_key,
+                    task_id=task_id,
                 ).run()
 
             error_details.append(log_analysis_result)
@@ -169,6 +171,7 @@ def process_entire_dataset(
                 workflow=workflow,
                 llm=_llm_pg,
                 model_name=model_key,
+                tracker=tracker,
             ).run()
 
             if not patch_generator.get("diff"):
@@ -195,12 +198,13 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     model_key = "gpt-5-mini"  # or "gpt4o", "deepseek-chat", etc.
+    log_analyzer_type = "llm"  # "llm" or "bm25"
     llm = get_llm(model_key)
 
     # ------------------------------------------------------------------
     # Token / cost tracker — shared across the entire run
     # ------------------------------------------------------------------
-    tracker = TokenTracker(model_name=model_key)
+    tracker = TokenTracker(model_name=model_key, log_analyzer_type=log_analyzer_type)
 
     hf_token = os.getenv("HF_TOKEN") or config.get("HUGGINGFACE_TOKEN")
 
@@ -215,7 +219,7 @@ if __name__ == "__main__":
     dataset = dataset_df.to_dict(orient="records")
 
     results = process_entire_dataset(
-        dataset, config, llm, model_key, log_analyzer_type="llm", tracker=tracker
+        dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type, tracker=tracker
     )
 
     output_file = os.path.join(config.project_result_dir, "generated_patches.json")
@@ -225,11 +229,10 @@ if __name__ == "__main__":
     print(f"[MAIN] Results saved in {output_file}")
 
     # ------------------------------------------------------------------
-    # Token / cost report
+    # Token / cost + tool-call report
     # ------------------------------------------------------------------
     tracker.print_summary()
 
-    log_analyzer_type = "llm"   # mirrors the value passed above
     result_dir = os.path.join(
         config.project_result_dir, f"{model_key}_{log_analyzer_type}"
     )

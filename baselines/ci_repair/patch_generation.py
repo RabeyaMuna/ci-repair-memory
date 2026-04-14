@@ -161,7 +161,8 @@ class PatchGeneration:
         workflow_path: str = "",
         workflow: str = "",
         llm: ChatOpenAI = None,
-        model_name: str = None
+        model_name: str = None,
+        tracker=None,           # utilities.token_tracker.TokenTracker | None
     ):
         self.config = load_config()
         self.bug_report = bug_report
@@ -176,10 +177,31 @@ class PatchGeneration:
         self.patch_results: List[Dict[str, Any]] = []
         self.original_content = None
         self.model_name = model_name
+        self._tracker = tracker
 
     # =========================================================
     # --------------------- CORE METHODS ----------------------
     # =========================================================
+
+    def _record_tool_call(
+        self,
+        cmd,            # list[str] or str
+        call_type: str,
+        proc,           # subprocess.CompletedProcess
+        elapsed: float,
+    ) -> None:
+        """Push one subprocess result into the shared tracker (no-op if no tracker)."""
+        if self._tracker is None:
+            return
+        cmd_str = cmd if isinstance(cmd, str) else " ".join(cmd)
+        self._tracker.record_tool_call(
+            agent="PatchGeneration",
+            command=cmd_str,
+            call_type=call_type,
+            success=(proc.returncode == 0),
+            return_code=proc.returncode,
+            elapsed_sec=elapsed,
+        )
 
     def _call_llm_directly(self, prompt: str) -> Any:
         try:
@@ -491,6 +513,7 @@ Rules:
                 # 1) Try original command as returned (e.g., "pip install docformatter")
                 try:
                      # --- IGNORE ---
+                    _t0 = time.time()
                     proc = subprocess.run(
                         tokens,
                         cwd=self.repo_path,
@@ -498,12 +521,14 @@ Rules:
                         text=True,
                         timeout=120,
                     )
+                    self._record_tool_call(tokens, "install", proc, time.time() - _t0)
                 except FileNotFoundError:
                     # e.g., 'pip' not found -> try python -m pip install ...
                     if len(tokens) >= 3 and tokens[0] == "pip" and tokens[1] == "install":
                         pkgs = tokens[2:]
                         fallback = ["python", "-m", "pip", "install"] + pkgs
                         logger.info(f"'pip' not found; retrying via: {' '.join(fallback)}")
+                        _t0 = time.time()
                         proc = subprocess.run(
                             fallback,
                             cwd=self.repo_path,
@@ -511,6 +536,7 @@ Rules:
                             text=True,
                             timeout=120,
                         )
+                        self._record_tool_call(fallback, "install", proc, time.time() - _t0)
                     else:
                         raise
 
@@ -536,6 +562,7 @@ Rules:
                     )
                     logger.info(f"Retrying with trusted-host: {' '.join(retry_cmd)}")
 
+                    _t0 = time.time()
                     proc2 = subprocess.run(
                         retry_cmd,
                         cwd=self.repo_path,
@@ -543,6 +570,7 @@ Rules:
                         text=True,
                         timeout=120,
                     )
+                    self._record_tool_call(retry_cmd, "install", proc2, time.time() - _t0)
                     if proc2.returncode == 0:
                         logger.info(f"Tool installation succeeded (trusted-host): {cmd}")
                     else:
@@ -565,6 +593,7 @@ Rules:
         for cmd in results["fix_commands"]:
             try:
                 logger.info(f"Running automated fix command: {cmd}")
+                _t0 = time.time()
                 fix_proc = subprocess.run(
                     shlex.split(cmd),
                     cwd=self.repo_path,
@@ -572,6 +601,7 @@ Rules:
                     text=True,
                     timeout=120,
                 )
+                self._record_tool_call(cmd, "lint_fix", fix_proc, time.time() - _t0)
 
                 if fix_proc.returncode == 0:
                     logger.info(f"Automated fix succeeded: {cmd}")
@@ -991,7 +1021,9 @@ Rules:
         # --------------------
         try:
             if _pip_install_repo_local(["ruff"], timeout=300):
+                _t0 = time.time()
                 check = _run_py_module("ruff", ["check", full_path], timeout=300)
+                self._record_tool_call(["python", "-m", "ruff", "check", full_path], "lint_check", check, time.time() - _t0)
                 combined = (check.stdout or "") + "\n" + (check.stderr or "")
 
                 # Your helper catches parse/config errors (like TC001 / TOML issues)
@@ -1009,9 +1041,11 @@ Rules:
                         return
 
                     # 1) OPTIONAL: attempt safe autofixes (won't rename vars; may still return 1)
+                    _t0 = time.time()
                     fix = _run_py_module(
                         "ruff", ["check", "--force-exclude", "--fix", full_path], timeout=300
                     )
+                    self._record_tool_call(["python", "-m", "ruff", "check", "--fix", full_path], "lint_fix", fix, time.time() - _t0)
                     if fix.returncode != 0 and (fix.stdout or fix.stderr):
                         # Not fatal for formatting; Ruff puts diagnostics in STDOUT.
                         logger.info(
@@ -1020,9 +1054,11 @@ Rules:
                         )
 
                     # 2) Format (this is what fixes indentation/line breaks)
+                    _t0 = time.time()
                     fmt = _run_py_module(
                         "ruff", ["format", "--force-exclude", full_path], timeout=300
                     )
+                    self._record_tool_call(["python", "-m", "ruff", "format", full_path], "format", fmt, time.time() - _t0)
                     if fmt.returncode != 0:
                         logger.warning(
                             f"Ruff format failed for {full_path}:\nSTDOUT:\n{fmt.stdout}\nSTDERR:\n{fmt.stderr}"
@@ -1030,9 +1066,11 @@ Rules:
                         return
 
                     # 3) Imports-only fix (keeps imports grouped at top; doesn't touch variables)
+                    _t0 = time.time()
                     imp = _run_py_module(
                         "ruff", ["check", "--select", "I", "--fix", "--force-exclude", full_path], timeout=300
                     )
+                    self._record_tool_call(["python", "-m", "ruff", "check", "--select", "I", "--fix", full_path], "import_sort", imp, time.time() - _t0)
                     if imp.returncode != 0 and (imp.stdout or imp.stderr):
                         logger.info(
                             f"Ruff import pass reported issues for {full_path} (rc={imp.returncode}):\n"
@@ -1040,9 +1078,11 @@ Rules:
                         )
 
                     # 4) Format again after import edits (keeps spacing consistent)
+                    _t0 = time.time()
                     fmt2 = _run_py_module(
                         "ruff", ["format", "--force-exclude", full_path], timeout=300
                     )
+                    self._record_tool_call(["python", "-m", "ruff", "format", full_path], "format", fmt2, time.time() - _t0)
                     if fmt2.returncode != 0:
                         logger.warning(
                             f"Ruff format (second pass) failed for {full_path}:\nSTDOUT:\n{fmt2.stdout}\nSTDERR:\n{fmt2.stderr}"
