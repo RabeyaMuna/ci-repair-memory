@@ -1,20 +1,20 @@
 [
     {
         "error_context": [
-            "The CI run failed because the code-quality check step reported a linting/formatting error. In step 'check_code_quality/5_Check quality.txt' (job 'check_code_quality'), Ruff detected an unsorted/unformatted import block in examples/community/ip_adapter_face_id.py at line 15. The linter was executed in check mode (ruff check ... and ruff format ... --check) and returned a non-zero exit (\"Found 1 error.\" and \"Process completed with exit code 1.\"), causing the job to fail. The issue is marked fixable (\"[*] 1 fixable with the `--fix` option.\"), so running Ruff with --fix or reformatting the import block would resolve the failure."
+            "The run failed in the check_code_quality job because the 'Check quality' step reported a ruff formatting/lint error and returned a non-zero exit code. The step (logged as 'check_code_quality/5_Check quality.txt') ran ruff checks and ruff format in check mode; ruff reported I001 \"Import block is un-sorted or un-formatted\" in examples/community/ip_adapter_face_id.py at line 15 and printed \"Found 1 error.\" and \"[*] 1 fixable with the `--fix` option.\" Because the format check was executed with --check (no auto-fix), the single fixable issue caused ruff to exit with code 1 and the CI step to fail."
         ],
         "relevant_files": [
             {
                 "file": "examples/community/ip_adapter_face_id.py",
                 "line_number": 15,
-                "reason": "Ruff reported 'I001 [*] Import block is un-sorted or un-formatted' at this file and line; the linting failure originates from this file's import block formatting and caused the check to exit non-zero."
+                "reason": "Ruff reported I001 \"Import block is un-sorted or un-formatted\" at examples/community/ip_adapter_face_id.py:15:1; this single, fixable formatting issue caused ruff to return a failing exit code when run in check mode."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Linter error \u2013 import block unsorted/un-formatted (fixable)",
-                "evidence": "'I001 [*] Import block is un-sorted or un-formatted' at examples/community/ip_adapter_face_id.py:15; 'Found 1 error.'; '[*] 1 fixable with the `--fix` option.'; 'Process completed with exit code 1.'"
+                "subcategory": "Import sorting/formatting lint (ruff I001)",
+                "evidence": "Log: I001 \"Import block is un-sorted or un-formatted\" for examples/community/ip_adapter_face_id.py at line 15 and 'Found 1 error.' with '[*] 1 fixable with the `--fix` option.'"
             }
         ],
         "failed_job": [
@@ -29,20 +29,20 @@
     },
     {
         "error_context": [
-            "The CI run failed because a code-quality (ruff) lint check reported an unused-import error and exited with a non-zero status. In step 'check_code_quality/5_Check quality.txt' ruff reported 'F401 `typing.Optional` imported but unused' in src/diffusers/loaders/ip_adapter.py (line 15), causing the 'Check quality' step of the check_code_quality job to fail. The workflow's 'Check quality' step runs the commands 'ruff check ...' and 'ruff format ... --check', and the ruff invocation produced 'Found 1 error.' The log also notes this is fixable automatically ('1 fixable with the `--fix` option'), so the root cause is a linting rule violation (unused import) that makes the linter exit with code 1."
+            "In job 'check_code_quality', the 'Check quality' step (logged as 'check_code_quality/5_Check quality.txt') ran ruff in check mode across examples, tests, src, utils, and scripts. Ruff reported a single lint error: an unused import (F401) in src/diffusers/loaders/ip_adapter.py (\"typing.Optional imported but unused\" at line 15), reported \"Found 1 error.\", and exited with code 1. Because ruff was run in check mode, the non\u2011zero exit code caused the CI step to fail. Ruff also noted the issue is fixable with --fix, indicating this is a linting/formatting violation rather than a runtime or dependency problem."
         ],
         "relevant_files": [
             {
                 "file": "src/diffusers/loaders/ip_adapter.py",
                 "line_number": 15,
-                "reason": "Ruff reported an unused import at src/diffusers/loaders/ip_adapter.py:15:26 ('typing.Optional imported but unused'), which is the direct cause of the linting failure."
+                "reason": "Ruff explicitly reported: \"src/diffusers/loaders/ip_adapter.py:15:26: F401 `typing.Optional` imported but unused\" \u2014 this unused import is the direct cause of the ruff failure and the CI step exit code 1."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
                 "subcategory": "Linting Error \u2013 unused import (F401) reported by ruff",
-                "evidence": "'src/diffusers/loaders/ip_adapter.py:15:26: F401 [*] `typing.Optional` imported but unused' and 'Found 1 error.'; log also states '[*] 1 fixable with the `--fix` option'."
+                "evidence": "\"src/diffusers/loaders/ip_adapter.py:15:26: F401 `typing.Optional` imported but unused\"; \"Found 1 error.\"; \"fixable with --fix\""
             }
         ],
         "failed_job": [
@@ -57,30 +57,30 @@
     },
     {
         "error_context": [
-            "The CI failed in the check_requirements job during the step 'check_requirements/4_Check main requirements.txt' (workflow step 'Check main requirements'). The step first installed development dependencies, then ran tests/scripts/check_requirements.py which reported a DEP002: the package 'type_infer' is declared in requirements/requirements.txt but is not used in the codebase. The requirements checker returned a non-zero exit code ('Process completed with exit code 1'), so the DEP002 finding caused the step (and therefore the job) to fail."
+            "The CI run failed because the requirements validation step found an unused dependency and the checker exited with a non-zero status. In step 'check_requirements/4_Check main requirements.txt' (mapped to workflow job 'check_requirements' step 'Check main requirements'), tests/scripts/check_requirements.py reported DEP002: \"'type_infer' defined as a dependency but not used in the codebase\" for requirements/requirements.txt. Package installation succeeded, so the failure is due to the requirements-content validation (the checker returning a non-zero exit caused the job to fail, as shown by \"Process completed with exit code 1.\")."
         ],
         "relevant_files": [
             {
                 "file": "tests/scripts/check_requirements.py",
                 "line_number": null,
-                "reason": "This validation script was executed by the 'Check main requirements' step and is the tool that detected the DEP002 unused-dependency finding and exited with an error, causing the step to fail."
+                "reason": "Invoked to validate requirements; it produced the DEP002 unused-dependency finding and returned a non-zero exit code, causing the CI step to fail."
             },
             {
                 "file": "requirements/requirements.txt",
                 "line_number": null,
-                "reason": "Contains the declared dependency 'type_infer' which the requirements checker flagged as unused (DEP002), making this file the source of the requirements validation failure."
+                "reason": "Contains the dependency entry 'type_infer' which the checker flagged as unused (DEP002), the specific validation error that triggered the failure."
             }
         ],
         "error_types": [
             {
                 "category": "Dependency Error",
-                "subcategory": "Dependency declared but unused (requirements validation failure)",
-                "evidence": "Checker reported DEP002: \"'type_infer' defined as a dependency but not used in the codebase\" for requirements/requirements.txt."
+                "subcategory": "Unused dependency reported by requirements checker (DEP002)",
+                "evidence": "DEP002 'type_infer' defined as a dependency but not used in the codebase"
             },
             {
-                "category": "Runtime/CI Failure",
-                "subcategory": "Non-zero exit from validation script causing step failure",
-                "evidence": "The job exited with error code 1 (Process completed with exit code 1) after the requirements checker reported DEP002."
+                "category": "Quality Check / CI Failure",
+                "subcategory": "Requirements validation script exited with non-zero status causing step failure",
+                "evidence": "Process completed with exit code 1."
             }
         ],
         "failed_job": [
@@ -92,5 +92,263 @@
         ],
         "sha_fail": "102f918deb2532bb7b825f00258f2c1414cf94da",
         "id": "3"
+    },
+    {
+        "error_context": [
+            "In step 'Linux  Python 3.12  tox -e py312/2_Run tests.txt' (the matrix job 'Linux / Python 3.12 / tox -e py312' running the workflow step 'Run tests' via sanic-org/simple-tox-action@v1), three parameterized unit tests in tests/test_websockets.py::test_ws_frame_put_message_into_queue failed with an AttributeError raised from the standard library's unittest.mock indicating misuse of the mock API: the log reports \"'has_calls' is not a valid assertion. Use a spec for the mock if 'has_calls' is meant to be an attribute.\" The traceback points to line 220 in tests/test_websockets.py for all three cases, indicating the test implementation (incorrect assertion/mock usage) is the root cause. The test run was retried three times (matrix max-attempts = 3) and all attempts failed, and the job terminated with a child process exit code 1. Numerous deprecation/runtime warnings were present but are not the direct cause of the failure."
+        ],
+        "relevant_files": [
+            {
+                "file": "tests/test_websockets.py",
+                "line_number": 220,
+                "reason": "Traceback points to line 220 where test_ws_frame_put_message_into_queue raises an AttributeError for all three parameterized cases; this test code is directly causing the failures (incorrect mock/assertion usage)."
+            },
+            {
+                "file": "/opt/hostedtoolcache/Python/3.12.1/x64/lib/python3.12/unittest/mock.py",
+                "line_number": null,
+                "reason": "The AttributeError originates from the standard library unittest.mock implementation (error message about 'has_calls' not being a valid assertion), showing the failure is due to incorrect use of unittest.mock in the test."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Test Failure",
+                "subcategory": "Assertion / Mock usage error in unit test (AttributeError from unittest.mock)",
+                "evidence": "'has_calls' is not a valid assertion. Use a spec for the mock if 'has_calls' is meant to be an attribute.' (traceback from unittest.mock, pointing to tests/test_websockets.py:220)"
+            },
+            {
+                "category": "CI Job Failure",
+                "subcategory": "Test run failed after retries (child process exit)",
+                "evidence": "The test invocation was retried multiple times (three attempts recorded) and all attempts failed; job ended with child process exit code 1."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "Linux / Python 3.12 / tox -e py312",
+                "step": "Linux  Python 3.12  tox -e py312/2_Run tests.txt",
+                "command": "sanic-org/simple-tox-action@v1"
+            }
+        ],
+        "sha_fail": "2e41e783672597e2e0c7b2842b5934d879374028",
+        "id": "4"
+    },
+    {
+        "error_context": [
+            "No step-level log details were provided (log_details is an empty list), so the CI failure root cause cannot be determined from the inputs. The parsed workflow shows three jobs that typically run and are the likely locations to investigate: 'test_quick' (steps include 'Install Python' via actions/setup-python@v4, 'Install tox' running \"python -m pip install tox -c requirements.txt\", and 'Run test suite' running \"python -m tox -e py311,lint\"), 'test_tox' (includes 'Install apt packages' running \"sudo apt-get update && sudo apt-get install libcurl4-openssl-dev\", 'Install tox' running \"python -m pip install tox -c requirements.txt\", and 'Run test suite' running \"python -m tox -e ${{ matrix.tox_env }}\"), and 'test_win' (runs 'Install Python' and 'Run test suite' with \"py -m tornado.test --fail-if-logs=false\"). Without logs or step-level error_context/error_types, we cannot state which step failed or why; these commands are the parts of the workflow to inspect first for errors (dependency installation, tox invocation, or test failures)."
+        ],
+        "relevant_files": [],
+        "error_types": [],
+        "failed_job": [],
+        "sha_fail": "d1b0280fb92d0d8590cf403ca46af3550507d4d2",
+        "id": "5"
+    },
+    {
+        "error_context": [
+            "In the Check ruff matrix job, the workflow step that runs tests (step 'Test' invoked as part of the 'Check ruff' job, shown in logs as 'Check ruff/6_Test.txt') executed tox with TOXENV=ruff. Tox invoked ruff, which reported a single lint violation (F401: unused import) in tests/unittests/sources/test_wsl.py at line 10 (typing.Optional imported but unused). Ruff exited with a non-zero status which caused tox to raise an InvocationError and the CI step to terminate with exit code 1. The linter also noted the issue is potentially auto-fixable with --fix, but no fix was applied in the CI run."
+        ],
+        "relevant_files": [
+            {
+                "file": "tests/unittests/sources/test_wsl.py",
+                "line_number": 10,
+                "reason": "Ruff reported 'tests/unittests/sources/test_wsl.py:10:20: F401 `typing.Optional` imported but unused' \u2014 this unused import triggered the linter failure, causing ruff to exit non-zero and tox to fail the CI step."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting Error - unused import (F401)",
+                "evidence": "tests/unittests/sources/test_wsl.py:10:20: F401 `typing.Optional` imported but unused; 'Found 1 error.'"
+            },
+            {
+                "category": "Configuration/CI Step Failure",
+                "subcategory": "Tool Invocation Failure - tox reported command failure due to ruff exit status",
+                "evidence": "InvocationError for command .../.tox/ruff/bin/python -m ruff ...; 'ruff: commands failed' and process completed with exit code 1"
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "Check ruff",
+                "step": "Check ruff/6_Test.txt",
+                "command": "tox"
+            }
+        ],
+        "sha_fail": "f18f82de3e0270f6dfddf22f1f487104b2428e35",
+        "id": "6"
+    },
+    {
+        "error_context": [
+            "The CI run failed because the pylint linting environment returned errors which caused tox to fail. In the step 'Check pylint/6_Test.txt' pylint reported two issues in tests/unittests/test_net_activators.py (E0213: 'Method should have \"self\" as first argument' at line 329; E1101: 'Instance ... has no \"endswith\" member' at line 330). Pylint exited with code 2, leading to an InvocationError from tox ('ERROR: InvocationError ... -m pylint ... (exited with code 2)') and tox reported the pylint environment as failed, which made the workflow step fail. This failing step maps to the 'check_format' job's 'Test' step in the workflow, which runs 'tox' with TOXENV set to the matrix value (pylint)."
+        ],
+        "relevant_files": [
+            {
+                "file": "tests/unittests/test_net_activators.py",
+                "line_number": 329,
+                "reason": "Pylint emitted two lint errors originating in this test file (E0213 at line 329 and E1101 at line 330), which directly caused the pylint run to fail."
+            },
+            {
+                "file": ".tox/pylint/bin/python",
+                "line_number": null,
+                "reason": "This interpreter appears in the failing InvocationError path used to run pylint (/home/.../.tox/pylint/bin/python -m pylint ...); it is part of the command that exited with code 2 and triggered tox failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting / Linting",
+                "subcategory": "Linting Error \u2013 pylint reported code issues (E0213 no-self-argument and E1101 no-member)",
+                "evidence": "Pylint reported E0213 at line 329 and E1101 at line 330 in tests/unittests/test_net_activators.py; pylint process exited with code 2."
+            },
+            {
+                "category": "Tool Invocation / CI Task Failure",
+                "subcategory": "InvocationError \u2013 pylint command exited nonzero causing tox job failure",
+                "evidence": "ERROR: InvocationError for command .../.tox/pylint/bin/python -m pylint ... (exited with code 2) and tox: 'ERROR:   pylint: commands failed'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "check_format",
+                "step": "Check pylint/6_Test.txt",
+                "command": "tox"
+            }
+        ],
+        "sha_fail": "55d2e8d4abb024997be878797d5625effad65d43",
+        "id": "7"
+    },
+    {
+        "error_context": [
+            "The CI run failed due to formatting/linting checks that caused tox environments to exit non-zero. In step 'Check pylint/6_Test.txt', a tox run for the 'pylint' environment ran pylint and reported two W0612 (unused-variable) warnings for variables 'out' and 'err' in cloudinit/net/dhcp.py at line 575; pylint's non-zero exit produced an InvocationError (exited with code 4) and caused the pylint tox environment to fail. In step 'Check black/6_Test.txt', the tox 'black' environment ran 'black --check' which reported that tests/unittests/net/test_dhcp.py \"would be reformatted\" (\"1 file would be reformatted\") and exited with code 1, producing an InvocationError and causing the black tox environment to fail. Both failing environments are part of the check_format matrix that runs 'tox' with TOXENV set to the matrix value, so these linter/formatter failures made the job fail."
+        ],
+        "relevant_files": [
+            {
+                "file": "cloudinit/net/dhcp.py",
+                "line_number": 575,
+                "reason": "Pylint output explicitly references this file and line with two W0612 warnings: 'Unused variable \"out\"' and 'Unused variable \"err\"', which caused the pylint tox environment to exit non-zero."
+            },
+            {
+                "file": "tests/unittests/net/test_dhcp.py",
+                "line_number": null,
+                "reason": "Black reported this file \"would be reformatted\" (\"1 file would be reformatted\"), causing the black --check command to exit with code 1 and the black tox environment to fail."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting Error \u2013 pylint warnings (W0612 unused-variable)",
+                "evidence": "Pylint reported two W0612 (unused-variable) warnings for 'out' and 'err' in cloudinit/net/dhcp.py at line 575."
+            },
+            {
+                "category": "Configuration Error",
+                "subcategory": "CI Tooling \u2013 tox InvocationError due to non-zero pylint exit",
+                "evidence": "ERROR: InvocationError for command .../.tox/pylint/bin/python -m pylint ... (exited with code 4); 'ERROR:   pylint: commands failed'."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Code Formatting \u2013 black reported reformat needed for a source file",
+                "evidence": "\"would reformat tests/unittests/net/test_dhcp.py\" and \"1 file would be reformatted,\" causing black --check to exit non-zero."
+            },
+            {
+                "category": "CI Step Failure",
+                "subcategory": "Command Failure \u2013 black exited with non-zero status causing tox environment to fail",
+                "evidence": "ERROR: InvocationError for command .../.tox/black/bin/python -m black . --check (exited with code 1); 'ERROR:   black: commands failed.'"
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "check_format",
+                "step": "Check pylint/6_Test.txt",
+                "command": "tox"
+            },
+            {
+                "job": "check_format",
+                "step": "Check black/6_Test.txt",
+                "command": "tox"
+            }
+        ],
+        "sha_fail": "385c14d0ae500918cff5565ea836884bfaa2bfa5",
+        "id": "8"
+    },
+    {
+        "error_context": [
+            "The CI run failed because the linting tox environment for pylint exited with a nonzero code, causing the 'pylint' matrix job to fail. In the log step 'Check pylint/6_Test.txt' (mapped to the workflow job 'Check pylint' / job id 'check_format' and the workflow step 'Test'), tox invoked pylint via the environment Python (/home/runner/.../.tox/pylint/bin/python -m pylint ...) which returned exit code 4: 'ERROR: InvocationError for command /home/runner/.../.tox/pylint/bin/python -m pylint ... (exited with code 4)'. Pylint output also included a specific warning in cloudinit/net/dhcp.py at line 538: 'Useless super delegation in method \"__init__\"' (W0235). The combination of the pylint warning and the failing pylint invocation caused the tox 'pylint' environment to report failure and the CI job to finish with a nonzero status."
+        ],
+        "relevant_files": [
+            {
+                "file": "cloudinit/net/dhcp.py",
+                "line_number": 538,
+                "reason": "Pylint explicitly flagged this file/line with W0235: 'Useless super delegation in method \"__init__\"', which appears in the pylint output tied to the failing pylint run."
+            },
+            {
+                "file": ".tox/pylint/bin/python",
+                "line_number": null,
+                "reason": "The failing InvocationError shows pylint was executed via this interpreter in the tox pylint environment ('/home/runner/.../.tox/pylint/bin/python -m pylint ...'), and that invocation exited with code 4, causing the tox step to fail."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting Warning (pylint)",
+                "evidence": "Pylint emitted: 'cloudinit/net/dhcp.py:538: [W0235(...)] Useless super delegation in method \"__init__\"'."
+            },
+            {
+                "category": "CI Step Failure",
+                "subcategory": "Invocation Error for lint command",
+                "evidence": "ERROR: InvocationError for command /home/runner/.../.tox/pylint/bin/python -m pylint ... (exited with code 4) \u2014 The tox 'pylint' step failed when invoking the pylint command."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "Check pylint",
+                "step": "Check pylint/6_Test.txt",
+                "command": "tox"
+            }
+        ],
+        "sha_fail": "4d5898b8a73c93e1ed4434744c2fa7c3f7fbd501",
+        "id": "9"
+    },
+    {
+        "error_context": [
+            "The CI run failed because the code in cloudinit/distros/__init__.py uses Python 3.10 union syntax (the 'X | Y' form) which was flagged by both the mypy and pylint tox environments. In step 'Check mypy/6_Test.txt' mypy reported: \"X | Y syntax for unions requires Python 3.10\" at lines 154 and 158 and the mypy invocation exited with code 1, causing the tox mypy environment to fail ('ERROR: InvocationError ... -m mypy ... (exited with code 1)'). In step 'Check pylint/6_Test.txt' pylint reported E1131 \"unsupported operand type(s) for |\" for the same file/lines (154 and 158); the pylint process exited non-zero (code 2), producing an InvocationError from tox and causing that tox environment and the overall check to fail. Both failures are caused by the same source usage of the '|' union operator in cloudinit/distros/__init__.py which is incompatible with the Python/mode under which the linters/type-checker ran."
+        ],
+        "relevant_files": [
+            {
+                "file": "cloudinit/distros/__init__.py",
+                "line_number": 154,
+                "reason": "Both mypy and pylint reported errors in this file at lines 154 and 158: mypy: 'X | Y syntax for unions requires Python 3.10' and pylint: 'E1131: unsupported operand type(s) for |' \u2014 these errors are the direct cause of the mypy and pylint tox environments failing."
+            },
+            {
+                "file": ".tox/pylint/bin/python",
+                "line_number": null,
+                "reason": "Referenced in the pylint InvocationError for the failing command ('... .tox/pylint/bin/python -m pylint cloudinit/ tests/ tools/ conftest.py setup.py'), linking this interpreter/venv executable to the failing pylint invocation that caused the tox environment to be marked failed."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Type Checking",
+                "subcategory": "Type Checking \u2013 mypy syntax/version error (use of Python 3.10 union syntax)",
+                "evidence": "'cloudinit/distros/__init__.py:154: error: X | Y syntax for unions requires Python 3.10' and '...:158: error: X | Y syntax for unions requires Python 3.10'; 'Found 2 errors in 1 file (checked 543 source files)'."
+            },
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting Error \u2013 pylint E1131 (unsupported operand type(s) for |)",
+                "evidence": "Pylint reported E1131 'unsupported operand type(s) for |' at cloudinit/distros/__init__.py:154 and :158."
+            },
+            {
+                "category": "CI Task Failure",
+                "subcategory": "Environment/step failure \u2013 tox environment exited due to tool errors (InvocationError)",
+                "evidence": "'ERROR: InvocationError for command ... .tox/mypy/bin/python -m mypy ... (exited with code 1)' and for pylint the pylint command exited with code 2 producing an InvocationError; logs show 'ERROR:   mypy: commands failed' and overall 'Process completed with exit code 1'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "check_format",
+                "step": "Check mypy/6_Test.txt",
+                "command": ".tox/mypy/bin/python -m mypy cloudinit/ tests/ tools/"
+            },
+            {
+                "job": "check_format",
+                "step": "Check pylint/6_Test.txt",
+                "command": ".tox/pylint/bin/python -m pylint cloudinit/ tests/ tools/ conftest.py setup.py"
+            }
+        ],
+        "sha_fail": "ecb486addc70aecc9b28f2b30a77eaf2fd587091",
+        "id": "10"
     }
 ]

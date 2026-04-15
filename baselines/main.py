@@ -15,6 +15,7 @@ from utilities.fetch_failed_commit_changed_files import (
 )
 from utilities.llm_provider import get_llm, get_tracked_llm
 from utilities.token_tracker import TokenTracker
+from utilities.fl_evaluator import evaluate_fl
 from ci_repair.ci_log_analyzer_bm25 import CILogAnalyzerBM25
 from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
 from ci_repair.fault_localization import FaultLocalization
@@ -46,6 +47,12 @@ def process_entire_dataset(
     # target_ids = {241, 243, 281, 323}
     # subset = [dp for dp in dataset if dp.get("id") in target_ids]
 
+    result_dir = os.path.join(
+        config.project_result_dir, f"{model_key}_{log_analyzer_type}"
+    )
+    os.makedirs(result_dir, exist_ok=True)
+    token_report_path = os.path.join(result_dir, "token_report.json")
+
     for datapoint in subset:
         task_id = datapoint["id"]
         repo_name = datapoint["repo_name"]
@@ -60,132 +67,141 @@ def process_entire_dataset(
         workflow_path = datapoint["workflow_path"]
         sha_success = datapoint["sha_success"]
 
-        result_dir = os.path.join(
-            config.project_result_dir, f"{model_key}_{log_analyzer_type}"
-        )
-        os.makedirs(result_dir, exist_ok=True)
-
         print(f"\n[MAIN] Proceeding with failed commit: {sha_fail}")
 
-        # Make sure repo is cloned and at sha_fail
-        ensure_repo_at_commit(repo_url, repo_path, sha_fail)
-
-        # ------------------------------------------------------------------
-        # 1) CI LOG ANALYSIS
-        # ------------------------------------------------------------------
-        try:
-            if log_analyzer_type == "llm":
-                _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerLLM") if tracker else llm
-                log_analysis_result = CILogAnalyzerLLM(
-                    repo_path,
-                    logs,
-                    sha_fail,
-                    workflow,
-                    workflow_path,
-                    llm=_llm_log,
-                    model_name=model_key,
-                    task_id=task_id,
-                ).run()
-            else:
-                _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerBM25") if tracker else llm
-                log_analysis_result = CILogAnalyzerBM25(
-                    repo_path,
-                    logs,
-                    sha_fail,
-                    workflow,
-                    workflow_path,
-                    llm=_llm_log,
-                    model_name=model_key,
-                    task_id=task_id,
-                ).run()
-
-            error_details.append(log_analysis_result)
-
-            with open(os.path.join(result_dir, "log_details.json"), "w") as f:
-                json.dump(error_details, f, indent=4)
-
-        except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
-            continue
+        if tracker:
+            tracker.start_task(task_id)
 
         try:
-            changed_files_info = collect_changed_files_for_fail_and_parent(
-                owner=benchmark_owner,
-                repo=repo_name,
-                repo_path=repo_path,
-                sha_fail=sha_fail,
-                workflow_rel_path=workflow_path,
-                workflow_yaml_from_dataset=workflow
-            )
+            # Make sure repo is cloned and at sha_fail
+            ensure_repo_at_commit(repo_url, repo_path, sha_fail)
 
-            # Save to per-commit JSON file in baselines/changed_files/{sha_fail}.json
-            changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
-            with open(changed_files_path, "w", encoding="utf-8") as f:
-                json.dump(changed_files_info, f, indent=4)
+            # ------------------------------------------------------------------
+            # 1) CI LOG ANALYSIS
+            # ------------------------------------------------------------------
+            try:
+                if log_analyzer_type == "llm":
+                    _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerLLM") if tracker else llm
+                    log_analysis_result = CILogAnalyzerLLM(
+                        repo_path,
+                        logs,
+                        sha_fail,
+                        workflow,
+                        workflow_path,
+                        llm=_llm_log,
+                        model_name=model_key,
+                        task_id=task_id,
+                    ).run()
+                else:
+                    _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerBM25") if tracker else llm
+                    log_analysis_result = CILogAnalyzerBM25(
+                        repo_path,
+                        logs,
+                        sha_fail,
+                        workflow,
+                        workflow_path,
+                        llm=_llm_log,
+                        model_name=model_key,
+                        task_id=task_id,
+                    ).run()
 
-            print(f"[MAIN] Saved changed files info to {changed_files_path}")
+                error_details.append(log_analysis_result)
 
-        except Exception as e:
-            print(f"[ERROR] Failed to collect/save changed files for {sha_fail}: {e}")
-            continue
+                with open(os.path.join(result_dir, "log_details.json"), "w") as f:
+                    json.dump(error_details, f, indent=4)
 
-        # ------------------------------------------------------------------
-        # 3) FAULT LOCALIZATION (later we can inject changed_files_info)
-        # ------------------------------------------------------------------
-        try:
-            _llm_fl = get_tracked_llm(model_key, tracker, "FaultLocalization") if tracker else llm
-            fault_localizer = FaultLocalization(
-                sha_fail=sha_fail,
-                repo_path=repo_path,
-                error_logs=log_analysis_result,
-                workflow=workflow,
-                llm=_llm_fl,
-                model_name=model_key,
-                changed_files_info=changed_files_info,
-            ).run()
-
-            fault_localization.append(fault_localizer)
-
-            with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
-                json.dump(fault_localization, f, indent=4)
-
-            if not fault_localizer.get("fault_localization_data"):
-                print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
+            except Exception as e:
+                print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
                 continue
 
-        except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during fault localization: {e}")
-            continue
+            try:
+                changed_files_info = collect_changed_files_for_fail_and_parent(
+                    owner=benchmark_owner,
+                    repo=repo_name,
+                    repo_path=repo_path,
+                    sha_fail=sha_fail,
+                    workflow_rel_path=workflow_path,
+                    workflow_yaml_from_dataset=workflow
+                )
 
-        # # ------------------------------------------------------------------
-        # # 4) PATCH GENERATION
-        # # ------------------------------------------------------------------
-        try:
-            _llm_pg = get_tracked_llm(model_key, tracker, "PatchGeneration") if tracker else llm
-            patch_generator = PatchGeneration(
-                bug_report=fault_localizer,
-                repo_path=repo_path,
-                task_id=task_id,
-                error_details=log_analysis_result,
-                workflow_path=workflow_path,
-                workflow=workflow,
-                llm=_llm_pg,
-                model_name=model_key,
-                tracker=tracker,
-            ).run()
+                # Save to per-commit JSON file in baselines/changed_files/{sha_fail}.json
+                changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
+                with open(changed_files_path, "w", encoding="utf-8") as f:
+                    json.dump(changed_files_info, f, indent=4)
 
-            if not patch_generator.get("diff"):
-                print(f"[MAIN] No patch generated for {sha_fail}")
+                print(f"[MAIN] Saved changed files info to {changed_files_path}")
+
+            except Exception as e:
+                print(f"[ERROR] Failed to collect/save changed files for {sha_fail}: {e}")
                 continue
 
-            generated_patches.append(patch_generator)
+            # ------------------------------------------------------------------
+            # 3) FAULT LOCALIZATION (later we can inject changed_files_info)
+            # ------------------------------------------------------------------
+            try:
+                _llm_fl = get_tracked_llm(model_key, tracker, "FaultLocalization") if tracker else llm
+                fault_localizer = FaultLocalization(
+                    sha_fail=sha_fail,
+                    repo_path=repo_path,
+                    error_logs=log_analysis_result,
+                    workflow=workflow,
+                    llm=_llm_fl,
+                    model_name=model_key,
+                    changed_files_info=changed_files_info,
+                ).run()
 
-            with open(os.path.join(result_dir, "generated_patches.json"), "w") as f:
-                json.dump(generated_patches, f, indent=4)
+                fault_localization.append(fault_localizer)
 
-        except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during patch generation: {e}")
-            continue
+                with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
+                    json.dump(fault_localization, f, indent=4)
+
+                if not fault_localizer.get("fault_localization_data"):
+                    print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
+                    continue
+
+            except Exception as e:
+                print(f"[ERROR] Failed processing {sha_fail} during fault localization: {e}")
+                continue
+
+            # ------------------------------------------------------------------
+            # 4) PATCH GENERATION
+            # ------------------------------------------------------------------
+            try:
+                _llm_pg = get_tracked_llm(model_key, tracker, "PatchGeneration") if tracker else llm
+                patch_generator = PatchGeneration(
+                    bug_report=fault_localizer,
+                    repo_path=repo_path,
+                    task_id=task_id,
+                    error_details=log_analysis_result,
+                    workflow_path=workflow_path,
+                    workflow=workflow,
+                    llm=_llm_pg,
+                    model_name=model_key,
+                    tracker=tracker,
+                ).run()
+
+                if not patch_generator.get("diff"):
+                    print(f"[MAIN] No patch generated for {sha_fail}")
+                    continue
+
+                generated_patches.append(patch_generator)
+
+                with open(os.path.join(result_dir, "generated_patches.json"), "w") as f:
+                    json.dump(generated_patches, f, indent=4)
+
+            except Exception as e:
+                print(f"[ERROR] Failed processing {sha_fail} during patch generation: {e}")
+                continue
+
+        finally:
+            # Always close the task window and flush reports so no data is
+            # lost if the run crashes or is interrupted mid-dataset.
+            if tracker:
+                tracker.end_task(task_id)
+                tracker.save_json(token_report_path)
+                tracker.save_step_trace(
+                    os.path.join(result_dir, "step_trace.json")
+                )
 
     return generated_patches
 
@@ -218,24 +234,41 @@ if __name__ == "__main__":
     dataset_df = pd.read_parquet(dataset_path)
     dataset = dataset_df.to_dict(orient="records")
 
-    results = process_entire_dataset(
-        dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type, tracker=tracker
-    )
+    try:
+        results = process_entire_dataset(
+            dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type, tracker=tracker
+        )
+    finally:
+        # ------------------------------------------------------------------
+        # Always persist tracking reports even on crash / keyboard interrupt.
+        # ------------------------------------------------------------------
+        tracker.print_summary()
+        result_dir = os.path.join(
+            config.project_result_dir, f"{model_key}_{log_analyzer_type}"
+        )
+        os.makedirs(result_dir, exist_ok=True)
+
+        # token costs + tool-call stats (compact — no prompt/response bodies)
+        tracker.save_json(os.path.join(result_dir, "token_report.json"))
+
+        # full step trace with every prompt sent and response received
+        tracker.save_step_trace(os.path.join(result_dir, "step_trace.json"))
+
+        # FL evaluation: predicted files vs files actually patched (from diff headers)
+        fl_path     = os.path.join(result_dir, "fault_localization.json")
+        patch_path  = os.path.join(result_dir, "generated_patches.json")
+        if os.path.exists(fl_path) and os.path.exists(patch_path):
+            try:
+                evaluate_fl(
+                    fault_localization_path=fl_path,
+                    generated_patches_path=patch_path,
+                    output_path=os.path.join(result_dir, "fl_evaluation.json"),
+                )
+            except Exception as fl_err:
+                print(f"[MAIN] FL evaluation failed: {fl_err}")
 
     output_file = os.path.join(config.project_result_dir, "generated_patches.json")
     with open(output_file, "w") as f:
         json.dump(results, f, indent=4)
 
     print(f"[MAIN] Results saved in {output_file}")
-
-    # ------------------------------------------------------------------
-    # Token / cost + tool-call report
-    # ------------------------------------------------------------------
-    tracker.print_summary()
-
-    result_dir = os.path.join(
-        config.project_result_dir, f"{model_key}_{log_analyzer_type}"
-    )
-    os.makedirs(result_dir, exist_ok=True)
-    token_report_path = os.path.join(result_dir, "token_report.json")
-    tracker.save_json(token_report_path)

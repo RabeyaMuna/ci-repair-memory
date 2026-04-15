@@ -64,11 +64,14 @@ class LLMCallRecord:
     seq: int
     agent: str           # e.g. "CILogAnalyzerLLM"
     call_site: str       # auto-detected method, e.g. "CILogAnalyzerLLM.ci_log_analysis"
+    task_id: str         # dataset item id, e.g. "5"
     model: str
     input_tokens: int
     output_tokens: int
     total_tokens: int
     cost_usd: float
+    prompt: str = ""      # full prompt text sent to the LLM
+    response: str = ""    # full response text from the LLM
     timestamp: float = field(default_factory=time.time)
 
 
@@ -90,6 +93,16 @@ class ToolCallRecord:
 # Tracker
 # ---------------------------------------------------------------------------
 
+@dataclass
+class TaskRecord:
+    """Per-task (per sha_fail) tracking window."""
+    task_id: str
+    started_at: float
+    ended_at: float = 0.0
+    llm_call_start: int = 0   # index into _llm_calls at task start
+    tool_call_start: int = 0  # index into _tool_calls at task start
+
+
 class TokenTracker:
     """
     Central accumulator for all LLM API calls and subprocess tool calls
@@ -103,6 +116,8 @@ class TokenTracker:
 
         self._llm_calls: List[LLMCallRecord] = []
         self._tool_calls: List[ToolCallRecord] = []
+        self._tasks: List[TaskRecord] = []
+        self._active_task: Optional[TaskRecord] = None
 
     # -----------------------------------------------------------------------
     # Internal helpers
@@ -139,20 +154,26 @@ class TokenTracker:
         model: str,
         input_tokens: int,
         output_tokens: int,
+        prompt: str = "",
+        response: str = "",
     ) -> None:
         """Record one LLM API call (called by TrackedLLM.invoke)."""
         total = input_tokens + output_tokens
         cost = self._compute_cost(model, input_tokens, output_tokens)
+        task_id = self._active_task.task_id if self._active_task else ""
         self._llm_calls.append(
             LLMCallRecord(
                 seq=len(self._llm_calls) + 1,
                 agent=agent,
                 call_site=call_site,
+                task_id=task_id,
                 model=model,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 total_tokens=total,
                 cost_usd=cost,
+                prompt=prompt,
+                response=response,
             )
         )
 
@@ -199,22 +220,46 @@ class TokenTracker:
         )
 
     # -----------------------------------------------------------------------
+    # Per-task tracking
+    # -----------------------------------------------------------------------
+
+    def start_task(self, task_id: str) -> None:
+        """Mark the beginning of one dataset item (sha_fail)."""
+        self._active_task = TaskRecord(
+            task_id=str(task_id),
+            started_at=time.time(),
+            llm_call_start=len(self._llm_calls),
+            tool_call_start=len(self._tool_calls),
+        )
+        self._tasks.append(self._active_task)
+
+    def end_task(self, task_id: str) -> None:
+        """Mark the end of one dataset item."""
+        if self._active_task and self._active_task.task_id == str(task_id):
+            self._active_task.ended_at = time.time()
+            self._active_task = None
+
+    # -----------------------------------------------------------------------
     # Summary generation
     # -----------------------------------------------------------------------
 
     def get_summary(self) -> dict:
         """Return a fully structured summary dict (JSON-serializable)."""
+        now = time.time()
         return {
             "run_metadata": {
                 "model": self.model_name,
                 "log_analyzer_type": self.log_analyzer_type,
                 "started_at": datetime.datetime.fromtimestamp(self.started_at).isoformat(),
+                "elapsed_sec": round(now - self.started_at, 3),
             },
             "llm": self._llm_summary(),
             "tool_calls": self._tool_summary(),
+            "per_task": self._per_task_summary(),
             "all_llm_calls": [
                 {
                     "seq": c.seq,
+                    "task_id": c.task_id,
                     "agent": c.agent,
                     "call_site": c.call_site,
                     "model": c.model,
@@ -339,16 +384,64 @@ class TokenTracker:
 
         total = len(self._tool_calls)
         succeeded = sum(1 for c in self._tool_calls if c.success)
+        total_elapsed = sum(c.elapsed_sec for c in self._tool_calls)
 
         return {
             "overall": {
                 "total_calls": total,
                 "successful": succeeded,
                 "failed": total - succeeded,
+                "success_rate": round(succeeded / total, 4) if total else 0.0,
+                "total_elapsed_sec": round(total_elapsed, 3),
             },
             "per_tool": per_tool,
             "per_agent": per_agent,
         }
+
+    # ------------------------------------------------------------------
+    def _per_task_summary(self) -> list:
+        """Per-task (per sha_fail) breakdown — used for RQ analysis."""
+        summaries = []
+        for task in self._tasks:
+            end = task.ended_at if task.ended_at else time.time()
+            elapsed = round(end - task.started_at, 3)
+
+            llm_slice = self._llm_calls[task.llm_call_start:]
+            tool_slice = self._tool_calls[task.tool_call_start:]
+
+            # Slice only up to the next task boundary
+            task_idx = self._tasks.index(task)
+            if task_idx + 1 < len(self._tasks):
+                next_task = self._tasks[task_idx + 1]
+                llm_slice = self._llm_calls[task.llm_call_start: next_task.llm_call_start]
+                tool_slice = self._tool_calls[task.tool_call_start: next_task.tool_call_start]
+
+            in_tok = sum(c.input_tokens for c in llm_slice)
+            out_tok = sum(c.output_tokens for c in llm_slice)
+            cost = sum(c.cost_usd for c in llm_slice)
+            tool_total = len(tool_slice)
+            tool_ok = sum(1 for c in tool_slice if c.success)
+            tool_elapsed = sum(c.elapsed_sec for c in tool_slice)
+
+            summaries.append({
+                "task_id": task.task_id,
+                "elapsed_sec": elapsed,
+                "llm": {
+                    "api_calls": len(llm_slice),
+                    "input_tokens": in_tok,
+                    "output_tokens": out_tok,
+                    "total_tokens": in_tok + out_tok,
+                    "cost_usd": round(cost, 8),
+                },
+                "tool_calls": {
+                    "total_calls": tool_total,
+                    "successful": tool_ok,
+                    "failed": tool_total - tool_ok,
+                    "success_rate": round(tool_ok / tool_total, 4) if tool_total else 0.0,
+                    "total_elapsed_sec": round(tool_elapsed, 3),
+                },
+            })
+        return summaries
 
     # -----------------------------------------------------------------------
     # Human-readable output
@@ -426,3 +519,29 @@ class TokenTracker:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
         print(f"[TokenTracker] Saved report → {path}")
+
+    def save_step_trace(self, path: str) -> None:
+        """
+        Save a full step-by-step trace of every LLM call (with complete prompt
+        and response text) to a separate JSON file.  Kept separate from
+        token_report.json because prompt/response bodies can be very large.
+        """
+        trace = []
+        for c in self._llm_calls:
+            trace.append({
+                "seq": c.seq,
+                "task_id": c.task_id,
+                "agent": c.agent,
+                "call_site": c.call_site,
+                "model": c.model,
+                "input_tokens": c.input_tokens,
+                "output_tokens": c.output_tokens,
+                "total_tokens": c.total_tokens,
+                "cost_usd": round(c.cost_usd, 8),
+                "timestamp": c.timestamp,
+                "prompt": c.prompt,
+                "response": c.response,
+            })
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(trace, f, indent=2)
+        print(f"[TokenTracker] Saved step trace → {path}")

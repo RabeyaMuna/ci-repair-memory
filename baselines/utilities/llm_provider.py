@@ -129,6 +129,33 @@ class TrackedLLM:
             input_tokens = tu.get("prompt_tokens", 0)
             output_tokens = tu.get("completion_tokens", 0)
 
+        # --- extract full prompt text ----------------------------------
+        prompt_text = ""
+        try:
+            if isinstance(input, str):
+                prompt_text = input
+            elif isinstance(input, list):
+                # LangChain message list: concat content of each message
+                parts = []
+                for msg in input:
+                    if hasattr(msg, "content"):
+                        parts.append(str(msg.content))
+                    elif isinstance(msg, dict):
+                        parts.append(str(msg.get("content", "")))
+                prompt_text = "\n".join(parts)
+        except Exception:
+            pass
+
+        # --- extract full response text --------------------------------
+        response_text = ""
+        try:
+            if hasattr(response, "content"):
+                response_text = str(response.content)
+            elif isinstance(response, str):
+                response_text = response
+        except Exception:
+            pass
+
         # --- auto-detect the agent method that called invoke() ---------
         call_site = self._agent_name  # fallback
         try:
@@ -146,6 +173,8 @@ class TrackedLLM:
             model=self._model_name,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            prompt=prompt_text,
+            response=response_text,
         )
         return response
 

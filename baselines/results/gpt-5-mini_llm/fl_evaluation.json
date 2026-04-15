@@ -1,0 +1,116 @@
+{
+  "aggregate": {
+    "tasks_evaluated": 5,
+    "tasks_skipped_no_patch": 0,
+    "exact_match_rate": 0.8,
+    "hit_at_1_rate": 0.8,
+    "hit_at_3_rate": 1.0,
+    "hit_at_5_rate": 1.0,
+    "mean_precision": 0.9,
+    "mean_recall": 1.0,
+    "mean_f1": 0.9333
+  },
+  "per_task": [
+    {
+      "task_id": "1",
+      "sha_fail": "2c06ffa4c9d2c37846c60ad75899b4d72f214ff9",
+      "predicted_files": [
+        "examples/community/ip_adapter_face_id.py"
+      ],
+      "ground_truth_files": [
+        "examples/community/ip_adapter_face_id.py"
+      ],
+      "exact_match": true,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "num_predicted": 1,
+      "num_ground_truth": 1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "task_id": "2",
+      "sha_fail": "db6550a228941b538f340fb5b65ed16c43a21b88",
+      "predicted_files": [
+        "src/diffusers/loaders/ip_adapter.py"
+      ],
+      "ground_truth_files": [
+        "src/diffusers/loaders/ip_adapter.py"
+      ],
+      "exact_match": true,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "num_predicted": 1,
+      "num_ground_truth": 1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "task_id": "3",
+      "sha_fail": "102f918deb2532bb7b825f00258f2c1414cf94da",
+      "predicted_files": [
+        "tests/scripts/check_requirements.py",
+        "requirements/requirements.txt"
+      ],
+      "ground_truth_files": [
+        "requirements/requirements.txt"
+      ],
+      "exact_match": false,
+      "hit_at_1": false,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "num_predicted": 2,
+      "num_ground_truth": 1,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667
+    },
+    {
+      "task_id": "4",
+      "sha_fail": "2e41e783672597e2e0c7b2842b5934d879374028",
+      "predicted_files": [
+        "tests/test_websockets.py"
+      ],
+      "ground_truth_files": [
+        "tests/test_websockets.py"
+      ],
+      "exact_match": true,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "num_predicted": 1,
+      "num_ground_truth": 1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    {
+      "task_id": "5",
+      "sha_fail": "d1b0280fb92d0d8590cf403ca46af3550507d4d2",
+      "predicted_files": [
+        "tornado/test/iostream_test.py",
+        "tornado/testing.py",
+        "tornado/platform/asyncio.py"
+      ],
+      "ground_truth_files": [
+        "tornado/platform/asyncio.py",
+        "tornado/test/iostream_test.py",
+        "tornado/testing.py"
+      ],
+      "exact_match": true,
+      "hit_at_1": true,
+      "hit_at_3": true,
+      "hit_at_5": true,
+      "num_predicted": 3,
+      "num_ground_truth": 3,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  ],
+  "skipped_sha_fails": []
+}

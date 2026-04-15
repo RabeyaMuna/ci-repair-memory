@@ -1,0 +1,74 @@
+[
+  {
+    "run_name": "deepseek-chat_bm25",
+    "model": "deepseek-chat",
+    "strategy": "bm25",
+    "generated_patches": 762,
+    "ci_repair_successes": null,
+    "patch_to_success_rate": null,
+    "patch_to_success_rate_str": "NA"
+  },
+  {
+    "run_name": "deepseek-chat_llm",
+    "model": "deepseek-chat",
+    "strategy": "llm",
+    "generated_patches": 832,
+    "ci_repair_successes": null,
+    "patch_to_success_rate": null,
+    "patch_to_success_rate_str": "NA"
+  },
+  {
+    "run_name": "deepseek-coder_bm25",
+    "model": "deepseek-coder",
+    "strategy": "bm25",
+    "generated_patches": 670,
+    "ci_repair_successes": null,
+    "patch_to_success_rate": null,
+    "patch_to_success_rate_str": "NA"
+  },
+  {
+    "run_name": "deepseek-coder_llm",
+    "model": "deepseek-coder",
+    "strategy": "llm",
+    "generated_patches": 876,
+    "ci_repair_successes": null,
+    "patch_to_success_rate": null,
+    "patch_to_success_rate_str": "NA"
+  },
+  {
+    "run_name": "gpt-4o-mini_bm25",
+    "model": "gpt-4o-mini",
+    "strategy": "bm25",
+    "generated_patches": 882,
+    "ci_repair_successes": null,
+    "patch_to_success_rate": null,
+    "patch_to_success_rate_str": "NA"
+  },
+  {
+    "run_name": "gpt-4o-mini_llm",
+    "model": "gpt-4o-mini",
+    "strategy": "llm",
+    "generated_patches": 840,
+    "ci_repair_successes": null,
+    "patch_to_success_rate": null,
+    "patch_to_success_rate_str": "NA"
+  },
+  {
+    "run_name": "gpt-5-mini_bm25",
+    "model": "gpt-5-mini",
+    "strategy": "bm25",
+    "generated_patches": 948,
+    "ci_repair_successes": null,
+    "patch_to_success_rate": null,
+    "patch_to_success_rate_str": "NA"
+  },
+  {
+    "run_name": "gpt-5-mini_llm",
+    "model": "gpt-5-mini",
+    "strategy": "llm",
+    "generated_patches": 8,
+    "ci_repair_successes": null,
+    "patch_to_success_rate": null,
+    "patch_to_success_rate_str": "NA"
+  }
+]
