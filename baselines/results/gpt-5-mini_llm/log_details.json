@@ -1,20 +1,20 @@
 [
     {
         "error_context": [
-            "The CI run failed because the 'Check quality' step in the check_code_quality job ran ruff (both 'ruff check' and 'ruff format --check') and ruff exited non-zero due to a single formatting/lint error. The log shows: \"examples/community/ip_adapter_face_id.py:15:1: I001 Import block is un-sorted or un-formatted\" and the summary \"Found 1 error.\" / \"[*] 1 fixable with the `--fix` option.\" Because the workflow invokes ruff with --check, the fixable import-sorting/formatting violation caused the step to fail (Process completed with exit code 1)."
+            "The CI run failed because the code-quality check step reported a linting/formatting error. In step 'check_code_quality/5_Check quality.txt' (job 'check_code_quality'), Ruff detected an unsorted/unformatted import block in examples/community/ip_adapter_face_id.py at line 15. The linter was executed in check mode (ruff check ... and ruff format ... --check) and returned a non-zero exit (\"Found 1 error.\" and \"Process completed with exit code 1.\"), causing the job to fail. The issue is marked fixable (\"[*] 1 fixable with the `--fix` option.\"), so running Ruff with --fix or reformatting the import block would resolve the failure."
         ],
         "relevant_files": [
             {
                 "file": "examples/community/ip_adapter_face_id.py",
                 "line_number": 15,
-                "reason": "Ruff reported the failure at this file and line: 'examples/community/ip_adapter_face_id.py:15:1: I001 Import block is un-sorted or un-formatted'. This import-sorting/formatting error is the direct cause of the lint step failing and is reported as fixable with --fix."
+                "reason": "Ruff reported 'I001 [*] Import block is un-sorted or un-formatted' at this file and line; the linting failure originates from this file's import block formatting and caused the check to exit non-zero."
             }
         ],
         "error_types": [
             {
                 "category": "Code Formatting",
-                "subcategory": "Import sorting/formatting (ruff I001)",
-                "evidence": "Ruff output: 'examples/community/ip_adapter_face_id.py:15:1: I001 Import block is un-sorted or un-formatted' and summary 'Found 1 error.' and '[*] 1 fixable with the `--fix` option.'"
+                "subcategory": "Linter error \u2013 import block unsorted/un-formatted (fixable)",
+                "evidence": "'I001 [*] Import block is un-sorted or un-formatted' at examples/community/ip_adapter_face_id.py:15; 'Found 1 error.'; '[*] 1 fixable with the `--fix` option.'; 'Process completed with exit code 1.'"
             }
         ],
         "failed_job": [
@@ -26,5 +26,71 @@
         ],
         "sha_fail": "2c06ffa4c9d2c37846c60ad75899b4d72f214ff9",
         "id": "1"
+    },
+    {
+        "error_context": [
+            "The CI run failed because a code-quality (ruff) lint check reported an unused-import error and exited with a non-zero status. In step 'check_code_quality/5_Check quality.txt' ruff reported 'F401 `typing.Optional` imported but unused' in src/diffusers/loaders/ip_adapter.py (line 15), causing the 'Check quality' step of the check_code_quality job to fail. The workflow's 'Check quality' step runs the commands 'ruff check ...' and 'ruff format ... --check', and the ruff invocation produced 'Found 1 error.' The log also notes this is fixable automatically ('1 fixable with the `--fix` option'), so the root cause is a linting rule violation (unused import) that makes the linter exit with code 1."
+        ],
+        "relevant_files": [
+            {
+                "file": "src/diffusers/loaders/ip_adapter.py",
+                "line_number": 15,
+                "reason": "Ruff reported an unused import at src/diffusers/loaders/ip_adapter.py:15:26 ('typing.Optional imported but unused'), which is the direct cause of the linting failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Code Formatting",
+                "subcategory": "Linting Error \u2013 unused import (F401) reported by ruff",
+                "evidence": "'src/diffusers/loaders/ip_adapter.py:15:26: F401 [*] `typing.Optional` imported but unused' and 'Found 1 error.'; log also states '[*] 1 fixable with the `--fix` option'."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "check_code_quality",
+                "step": "check_code_quality/5_Check quality.txt",
+                "command": "ruff check examples tests src utils scripts\nruff format examples tests src utils scripts --check"
+            }
+        ],
+        "sha_fail": "db6550a228941b538f340fb5b65ed16c43a21b88",
+        "id": "2"
+    },
+    {
+        "error_context": [
+            "The CI failed in the check_requirements job during the step 'check_requirements/4_Check main requirements.txt' (workflow step 'Check main requirements'). The step first installed development dependencies, then ran tests/scripts/check_requirements.py which reported a DEP002: the package 'type_infer' is declared in requirements/requirements.txt but is not used in the codebase. The requirements checker returned a non-zero exit code ('Process completed with exit code 1'), so the DEP002 finding caused the step (and therefore the job) to fail."
+        ],
+        "relevant_files": [
+            {
+                "file": "tests/scripts/check_requirements.py",
+                "line_number": null,
+                "reason": "This validation script was executed by the 'Check main requirements' step and is the tool that detected the DEP002 unused-dependency finding and exited with an error, causing the step to fail."
+            },
+            {
+                "file": "requirements/requirements.txt",
+                "line_number": null,
+                "reason": "Contains the declared dependency 'type_infer' which the requirements checker flagged as unused (DEP002), making this file the source of the requirements validation failure."
+            }
+        ],
+        "error_types": [
+            {
+                "category": "Dependency Error",
+                "subcategory": "Dependency declared but unused (requirements validation failure)",
+                "evidence": "Checker reported DEP002: \"'type_infer' defined as a dependency but not used in the codebase\" for requirements/requirements.txt."
+            },
+            {
+                "category": "Runtime/CI Failure",
+                "subcategory": "Non-zero exit from validation script causing step failure",
+                "evidence": "The job exited with error code 1 (Process completed with exit code 1) after the requirements checker reported DEP002."
+            }
+        ],
+        "failed_job": [
+            {
+                "job": "check_requirements",
+                "step": "check_requirements/4_Check main requirements.txt",
+                "command": "pip install -r requirements/requirements-dev.txt\n\npython tests/scripts/check_requirements.py"
+            }
+        ],
+        "sha_fail": "102f918deb2532bb7b825f00258f2c1414cf94da",
+        "id": "3"
     }
 ]

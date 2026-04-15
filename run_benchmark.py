@@ -44,8 +44,8 @@ dataset_info = os.path.join(config.get("base_dir"), "dataset", "lca_dataset.parq
 all_ids = [row["id"] for row in CIBenchPython.get_dataset(dataset_info=dataset_info)]
 
 # Select datapoints from 327 to end
-selected_ids = all_ids[68:]
-# selected_ids = ['102', '103', '104', '105', '106', '107', '108', '109', '110', '111', '112', '113', '114', '115', '116', '117', '118', '119', '120']
+# selected_ids = all_ids[68:]
+selected_ids = ['100']
 
 # ---------- OPTION 2: Online Dataset ----------
 # Uncomment this block if you want to fetch dataset from an online source (e.g., Hugging Face)
