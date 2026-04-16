@@ -25,6 +25,24 @@ from utilities.ensure_repo import ensure_repo_at_commit
 load_dotenv()
 
 
+def _load_json_list(path):
+    """Load a JSON list from disk, returning [] if the file does not exist."""
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+
+def _merge_by_key(existing: list, new_item: dict, key: str) -> list:
+    """
+    Return a new list where any entry whose ``key`` matches ``new_item[key]``
+    is replaced by ``new_item``; if no match exists, ``new_item`` is appended.
+    """
+    result = [e for e in existing if e.get(key) != new_item.get(key)]
+    result.append(new_item)
+    return result
+
+
 def process_entire_dataset(
     dataset,
     config,
@@ -33,25 +51,36 @@ def process_entire_dataset(
     log_analyzer_type="llm",
     tracker: TokenTracker = None,
 ):
-    error_details = []
-    fault_localization = []
-    generated_patches = []
-
-    # Folder to store one JSON per sha_fail with changed file info
-    changed_files_dir = config.changed_files_folder
-
-    # If your helper needs a token:
-
-    # TEMP: only one datapoint
-    subset = dataset[0:]
-    # target_ids = {241, 243, 281, 323}
-    # subset = [dp for dp in dataset if dp.get("id") in target_ids]
-
     result_dir = os.path.join(
         config.project_result_dir, f"{model_key}_{log_analyzer_type}"
     )
     os.makedirs(result_dir, exist_ok=True)
     token_report_path = os.path.join(result_dir, "token_report.json")
+
+    # ------------------------------------------------------------------
+    # Always load whatever already exists on disk so every run accumulates
+    # on top of prior work.  New issues are appended; re-processed issues
+    # replace the old entry (keyed by sha_fail / task_id).
+    # Token counts, API calls, cost, and tool-call stats are accumulated
+    # from the saved token_report.json so the final report covers ALL runs.
+    # ------------------------------------------------------------------
+    error_details      = _load_json_list(os.path.join(result_dir, "log_details.json"))
+    fault_localization = _load_json_list(os.path.join(result_dir, "fault_localization.json"))
+    generated_patches  = _load_json_list(os.path.join(result_dir, "generated_patches.json"))
+
+    if tracker:
+        tracker.load_prior_report(token_report_path)
+
+    print(
+        f"loaded {len(error_details)} log entries, "
+        f"{len(fault_localization)} FL entries, "
+        f"{len(generated_patches)} patches from prior run."
+    )
+
+    # Folder to store one JSON per sha_fail with changed file info
+    changed_files_dir = config.changed_files_folder
+
+    subset = dataset[227:]
 
     for datapoint in subset:
         task_id = datapoint["id"]
@@ -105,7 +134,7 @@ def process_entire_dataset(
                         task_id=task_id,
                     ).run()
 
-                error_details.append(log_analysis_result)
+                error_details = _merge_by_key(error_details, log_analysis_result, "sha_fail")
 
                 with open(os.path.join(result_dir, "log_details.json"), "w") as f:
                     json.dump(error_details, f, indent=4)
@@ -150,7 +179,7 @@ def process_entire_dataset(
                     changed_files_info=changed_files_info,
                 ).run()
 
-                fault_localization.append(fault_localizer)
+                fault_localization = _merge_by_key(fault_localization, fault_localizer, "sha_fail")
 
                 with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
                     json.dump(fault_localization, f, indent=4)
@@ -184,7 +213,7 @@ def process_entire_dataset(
                     print(f"[MAIN] No patch generated for {sha_fail}")
                     continue
 
-                generated_patches.append(patch_generator)
+                generated_patches = _merge_by_key(generated_patches, patch_generator, "sha_fail")
 
                 with open(os.path.join(result_dir, "generated_patches.json"), "w") as f:
                     json.dump(generated_patches, f, indent=4)
@@ -234,9 +263,13 @@ if __name__ == "__main__":
     dataset_df = pd.read_parquet(dataset_path)
     dataset = dataset_df.to_dict(orient="records")
 
+    # Set resume_from to the number of items already processed (0 = fresh run).
+
     try:
         results = process_entire_dataset(
-            dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type, tracker=tracker
+            dataset, config, llm, model_key,
+            log_analyzer_type=log_analyzer_type,
+            tracker=tracker
         )
     finally:
         # ------------------------------------------------------------------

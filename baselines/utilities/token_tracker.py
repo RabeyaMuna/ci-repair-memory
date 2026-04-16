@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
@@ -519,6 +520,87 @@ class TokenTracker:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
         print(f"[TokenTracker] Saved report → {path}")
+
+    def load_prior_report(self, path: str) -> None:
+        """
+        Load a previously saved token_report.json and inject its LLM/tool call
+        records into this tracker so that get_summary() / save_json() produce
+        fully accumulated totals (prior run + current run).
+
+        Call this BEFORE starting the new run (i.e. before any process_entire_dataset
+        loop begins).  Per-task breakdown in the final report will cover all tasks
+        from both runs.
+        """
+        if not os.path.exists(path):
+            print(f"[TokenTracker] No prior report found at {path} — starting fresh.")
+            return
+
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        prior_llm = data.get("all_llm_calls", [])
+        prior_tools = data.get("all_tool_calls", [])
+        prior_tasks = data.get("per_task", [])
+
+        # Reconstruct LLM call records (prompt/response not stored in token_report)
+        for c in prior_llm:
+            self._llm_calls.append(
+                LLMCallRecord(
+                    seq=len(self._llm_calls) + 1,
+                    agent=c["agent"],
+                    call_site=c["call_site"],
+                    task_id=c["task_id"],
+                    model=c["model"],
+                    input_tokens=c["input_tokens"],
+                    output_tokens=c["output_tokens"],
+                    total_tokens=c["total_tokens"],
+                    cost_usd=c["cost_usd"],
+                    timestamp=c.get("timestamp", 0.0),
+                )
+            )
+
+        # Reconstruct tool call records
+        for c in prior_tools:
+            self._tool_calls.append(
+                ToolCallRecord(
+                    seq=len(self._tool_calls) + 1,
+                    agent=c["agent"],
+                    tool_name=c["tool_name"],
+                    command=c["command"],
+                    call_type=c["call_type"],
+                    success=c["success"],
+                    return_code=c["return_code"],
+                    elapsed_sec=c["elapsed_sec"],
+                    timestamp=c.get("timestamp", 0.0),
+                )
+            )
+
+        # Reconstruct per-task windows so per_task breakdown covers prior tasks too
+        for t in prior_tasks:
+            tr = TaskRecord(
+                task_id=t["task_id"],
+                started_at=0.0,
+                ended_at=t.get("elapsed_sec", 0.0),
+                llm_call_start=0,   # will be fixed up below
+                tool_call_start=0,
+            )
+            self._tasks.append(tr)
+
+        # Fix up llm_call_start / tool_call_start for reconstructed tasks using
+        # the per-task LLM counts so slicing in _per_task_summary() stays correct.
+        llm_cursor = 0
+        tool_cursor = 0
+        for i, t in enumerate(prior_tasks):
+            self._tasks[i].llm_call_start = llm_cursor
+            self._tasks[i].tool_call_start = tool_cursor
+            llm_cursor += t["llm"]["api_calls"]
+            tool_cursor += t["tool_calls"]["total_calls"]
+
+        print(
+            f"[TokenTracker] Loaded prior report from {path}: "
+            f"{len(prior_llm)} LLM calls, {len(prior_tools)} tool calls, "
+            f"{len(prior_tasks)} tasks."
+        )
 
     def save_step_trace(self, path: str) -> None:
         """
