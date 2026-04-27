@@ -13,3 +13,4 @@ baselines/changed_files
 baselines/results/
 results/chunk_tracking/
 .DS_Store
+evaluation_plot/
