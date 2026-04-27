@@ -3,19 +3,17 @@
 Filter generated_patches.json to only those whose IDs correspond to successful jobs.
 
 It will OVERWRITE:
-  /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/results/generated_patches.json
+  results/generated_patches.json
 """
 
 import json
+import argparse
 from pathlib import Path
 from typing import List, Dict, Any
 
-JOBS_PATH = Path(
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/results/jobs_success_diff.jsonl"
-)
-PATCHES_PATH = Path(
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/results/generated_patches.json"
-)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_JOBS_PATH = REPO_ROOT / "results" / "jobs_success_diff.jsonl"
+DEFAULT_PATCHES_PATH = REPO_ROOT / "results" / "generated_patches.json"
 
 def load_json_or_jsonl(path: Path) -> List[Dict[str, Any]]:
     """
@@ -50,16 +48,37 @@ def load_json_or_jsonl(path: Path) -> List[Dict[str, Any]]:
     return records
 
 
-def main() -> None:
-    if not JOBS_PATH.exists():
-        raise FileNotFoundError(f"Jobs file not found: {JOBS_PATH}")
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--jobs-path",
+        type=Path,
+        default=DEFAULT_JOBS_PATH,
+        help=f"Path to jobs JSONL/JSON file (default: {DEFAULT_JOBS_PATH})",
+    )
+    parser.add_argument(
+        "--patches-path",
+        type=Path,
+        default=DEFAULT_PATCHES_PATH,
+        help=f"Path to generated patches JSON file (default: {DEFAULT_PATCHES_PATH})",
+    )
+    return parser.parse_args()
 
-    if not PATCHES_PATH.exists():
-        raise FileNotFoundError(f"Patches file not found: {PATCHES_PATH}")
+
+def main() -> None:
+    args = parse_args()
+    jobs_path = args.jobs_path
+    patches_path = args.patches_path
+
+    if not jobs_path.exists():
+        raise FileNotFoundError(f"Jobs file not found: {jobs_path}")
+
+    if not patches_path.exists():
+        raise FileNotFoundError(f"Patches file not found: {patches_path}")
 
     # 1. Load job metadata
-    jobs = load_json_or_jsonl(JOBS_PATH)
-    print(f"Loaded {len(jobs)} job records from {JOBS_PATH}")
+    jobs = load_json_or_jsonl(jobs_path)
+    print(f"Loaded {len(jobs)} job records from {jobs_path}")
 
     # 2. Collect IDs with conclusion == "success"
     success_ids = {
@@ -74,8 +93,8 @@ def main() -> None:
         return
 
     # 3. Load all generated patches
-    patches = load_json_or_jsonl(PATCHES_PATH)
-    print(f"Loaded {len(patches)} patch records from {PATCHES_PATH}")
+    patches = load_json_or_jsonl(patches_path)
+    print(f"Loaded {len(patches)} patch records from {patches_path}")
 
     # 4. Filter patches to only those whose id is in success_ids
     filtered_patches = [
@@ -84,11 +103,11 @@ def main() -> None:
     print(f"Keeping {len(filtered_patches)} patch records with successful IDs.")
 
     # 5. OVERWRITE generated_patches.json with filtered patches (JSON array)
-    PATCHES_PATH.write_text(
+    patches_path.write_text(
         json.dumps(filtered_patches, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
-    print(f"Overwrote {PATCHES_PATH} with filtered patches.")
+    print(f"Overwrote {patches_path} with filtered patches.")
 
 
 if __name__ == "__main__":

@@ -8,21 +8,20 @@ Goal:
 - For each, find the *actual successful* commit for that (repo_owner, repo_name, sha_fail)
   from within the same dataset and print it.
 
-Dataset path (hardcoded):
-    /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/lca_dataset.parquet
+Default dataset path:
+    dataset/lca_dataset.parquet
 """
 
 import logging
+import argparse
 from pathlib import Path
 from typing import Optional, Any
 from datetime import datetime, date
 
 import pandas as pd
 
-# ========= HARD-CODED DATASET PATH =========
-DATASET_PATH = Path(
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/lca_dataset.parquet"
-)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DATASET_PATH = REPO_ROOT / "dataset" / "lca_dataset.parquet"
 
 # ========= CONFIG / HEURISTICS =========
 
@@ -164,14 +163,26 @@ def find_next_success_for_fail(
 
 # ========= MAIN =========
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dataset-path",
+        type=Path,
+        default=DEFAULT_DATASET_PATH,
+        help=f"Path to lca_dataset.parquet (default: {DEFAULT_DATASET_PATH})",
+    )
+    return parser.parse_args()
+
 def main() -> None:
+    args = parse_args()
+    dataset_path = args.dataset_path
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-    if not DATASET_PATH.exists():
-        raise SystemExit(f"Dataset not found: {DATASET_PATH}")
+    if not dataset_path.exists():
+        raise SystemExit(f"Dataset not found: {dataset_path}")
 
-    logging.info("Loading dataset from %s", DATASET_PATH)
-    df = pd.read_parquet(DATASET_PATH)
+    logging.info("Loading dataset from %s", dataset_path)
+    df = pd.read_parquet(dataset_path)
 
     required_cols = {"id", "repo_owner", "repo_name", "sha_fail", "sha_success"}
     missing = required_cols - set(df.columns)

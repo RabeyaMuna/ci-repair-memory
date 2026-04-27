@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -9,9 +9,10 @@ retrieval = np.array([10.6, 9.9, 9.5, 1.9])
 diff = agent - retrieval
 
 # Output path
-output_dir = '/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/evaluation_plot'
-os.makedirs(output_dir, exist_ok=True)
-output_file = os.path.join(output_dir, 'rq2_strategy_bar.pdf')
+repo_root = Path(__file__).resolve().parents[1]
+output_dir = repo_root / "evaluation_plot"
+output_dir.mkdir(parents=True, exist_ok=True)
+output_file = output_dir / "rq2_strategy_bar.pdf"
 
 # Positions
 x = np.arange(len(models))

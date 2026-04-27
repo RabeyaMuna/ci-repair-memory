@@ -1,3 +1,13 @@
+---
+pretty_name: CI-REPAIR-BENCH
+tags:
+  - benchmark
+  - ci
+  - github-actions
+  - program-repair
+  - software-engineering
+---
+
 # CI-REPAIR-BENCH
 
 CI-REPAIR-BENCH is a benchmark for evaluating automated repair of failing CI builds under real GitHub Actions workflows.
@@ -127,4 +137,3 @@ source venv/bin/activate
 pip install -r requirements-dev.txt
 python main.py
 ```
-

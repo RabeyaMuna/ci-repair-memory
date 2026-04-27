@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -11,13 +12,9 @@ from dotenv import load_dotenv
 
 # ========== PATHS & CONSTANTS ==========
 
-DATASET_PATH = (
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/lca_dataset.parquet"
-)
-OUT_DIR = "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset"
-
-PATCHES_OUT_PATH = os.path.join(OUT_DIR, "generated_patches.json")
-MISSING_DIFFS_OUT_PATH = os.path.join(OUT_DIR, "missing_success_diffs.json")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DATASET_PATH = REPO_ROOT / "dataset" / "lca_dataset.parquet"
+DEFAULT_OUT_DIR = REPO_ROOT / "dataset"
 
 REQUIRED_COLS = ["id", "repo_owner", "repo_name", "sha_fail", "sha_success"]
 
@@ -168,16 +165,16 @@ def fetch_commit_diff(owner: str, repo: str, sha_success: str) -> Optional[str]:
 
 # ========== DATASET LOADING ==========
 
-def load_dataset() -> pd.DataFrame:
+def load_dataset(dataset_path: Path) -> pd.DataFrame:
     """
     Load the dataset from the fixed parquet path.
     Expects columns: id, repo_owner, repo_name, sha_fail, sha_success.
     """
-    p = Path(DATASET_PATH)
+    p = Path(dataset_path)
     if not p.exists():
-        raise FileNotFoundError(DATASET_PATH)
+        raise FileNotFoundError(dataset_path)
 
-    logging.info("Loading dataset from %s", DATASET_PATH)
+    logging.info("Loading dataset from %s", dataset_path)
     df = pd.read_parquet(p)
 
     # Normalize column names (case-insensitive)
@@ -345,28 +342,48 @@ def build_records(df: pd.DataFrame, missing: MissingDiffCollector) -> Iterator[D
             "diff": filtered_diff,
         }
 
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dataset-path",
+        type=Path,
+        default=DEFAULT_DATASET_PATH,
+        help=f"Path to lca_dataset.parquet (default: {DEFAULT_DATASET_PATH})",
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=DEFAULT_OUT_DIR,
+        help=f"Directory for generated outputs (default: {DEFAULT_OUT_DIR})",
+    )
+    return parser.parse_args()
+
 def main() -> None:
+    args = parse_args()
     setup_logging()
-    df = load_dataset()
+    df = load_dataset(args.dataset_path)
+    patches_out_path = args.out_dir / "generated_patches.json"
+    missing_diffs_out_path = args.out_dir / "missing_success_diffs.json"
 
     missing = MissingDiffCollector()
 
     logging.info(
         "Fetching success-commit diffs from GitHub and writing patches to %s",
-        PATCHES_OUT_PATH,
+        patches_out_path,
     )
     written_patches = write_json_array_stream(
         build_records(df, missing),
-        PATCHES_OUT_PATH,
+        str(patches_out_path),
     )
 
-    logging.info("Wrote %d patch objects → %s", written_patches, PATCHES_OUT_PATH)
+    logging.info("Wrote %d patch objects → %s", written_patches, patches_out_path)
 
-    missing_count = missing.write_json(MISSING_DIFFS_OUT_PATH)
+    missing_count = missing.write_json(str(missing_diffs_out_path))
     logging.info(
         "Wrote %d missing-diff entries → %s (by_reason=%s)",
         missing_count,
-        MISSING_DIFFS_OUT_PATH,
+        missing_diffs_out_path,
         dict(missing.count_by_reason),
     )
 

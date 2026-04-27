@@ -5,29 +5,26 @@ after sha_fail up to sha_success (or default branch head), using the GitHub
 compare API.
 
 Input:
-  /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/missing_success_diffs.json
+  dataset/missing_success_diffs.json
 
 Output:
-  /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/commits_between_fail_and_head.json
+  dataset/commits_between_fail_and_head.json
 """
 
 import json
 import logging
 import os
 import time
+import argparse
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
 from dotenv import load_dotenv
 
-# ========= PATHS =========
-DATASET_PATH = Path(
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/missing_success_diffs.json"
-)
-OUT_PATH = Path(
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/commits_between_fail_and_head.json"
-)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DATASET_PATH = REPO_ROOT / "dataset" / "missing_success_diffs.json"
+DEFAULT_OUT_PATH = REPO_ROOT / "dataset" / "commits_between_fail_and_head.json"
 
 # ========= LOGGING =========
 logging.basicConfig(
@@ -177,9 +174,33 @@ def get_commits_between_fail_and_head(
     return cleaned
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--input-path",
+        type=Path,
+        default=DEFAULT_DATASET_PATH,
+        help=f"Path to missing_success_diffs.json (default: {DEFAULT_DATASET_PATH})",
+    )
+    parser.add_argument(
+        "--output-path",
+        type=Path,
+        default=DEFAULT_OUT_PATH,
+        help=(
+            "Path to write commits_between_fail_and_head.json "
+            f"(default: {DEFAULT_OUT_PATH})"
+        ),
+    )
+    return parser.parse_args()
+
+
 def main():
-    logging.info("Loading %s", DATASET_PATH)
-    with DATASET_PATH.open("r", encoding="utf-8") as f:
+    args = parse_args()
+    input_path = args.input_path
+    output_path = args.output_path
+
+    logging.info("Loading %s", input_path)
+    with input_path.open("r", encoding="utf-8") as f:
         entries = json.load(f)
 
     results: List[Dict[str, Any]] = []
@@ -224,9 +245,9 @@ def main():
             }
         )
 
-    logging.info("Saving results to %s", OUT_PATH)
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with OUT_PATH.open("w", encoding="utf-8") as f:
+    logging.info("Saving results to %s", output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
     logging.info("Done. Processed %d entries.", len(results))

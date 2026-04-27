@@ -1,3 +1,4 @@
+import argparse
 import os
 import json
 from pathlib import Path
@@ -9,27 +10,14 @@ from openai import OpenAI
 # CONFIG
 # ============================================================
 
-DATASET_PATH = Path(
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/lca_dataset.parquet"
-)
-
-LOG_PATHS = [
-    Path("/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/results/deepseek-coder_bm25/log_details.json"),
-    Path("/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/results/deepseek-coder_llm/log_details.json"),
-    Path("/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/results/gpt-5-mini_bm25/log_details.json"),
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DATASET_PATH = REPO_ROOT / "dataset" / "lca_dataset.parquet"
+DEFAULT_LOG_PATHS = [
+    REPO_ROOT / "baselines" / "results" / "deepseek-coder_bm25" / "log_details.json",
+    REPO_ROOT / "baselines" / "results" / "deepseek-coder_llm" / "log_details.json",
+    REPO_ROOT / "baselines" / "results" / "gpt-5-mini_bm25" / "log_details.json",
 ]
-
-OUTPUT_JSONL = Path("ci_failure_error_types_deepseek.jsonl")
-
-# DeepSeek config: set DEEPSEEK_API_KEY in your environment
-deepseek_key = "sk-cbf76e0c8a3249e1b8741f11d28be391"
-if not deepseek_key:
-    raise RuntimeError("DEEPSEEK_API_KEY environment variable is not set.")
-
-client = OpenAI(
-    api_key=deepseek_key,
-    base_url="https://api.deepseek.com",
-)
+DEFAULT_OUTPUT_JSONL = REPO_ROOT / "ci_failure_error_types_deepseek.jsonl"
 
 # Use whatever DeepSeek chat model you want
 MODEL_NAME = "deepseek-chat"   # change if you use another DeepSeek model
@@ -389,14 +377,18 @@ def merge_error_entries(entries):
 # CALL DEEPSEEK
 # ============================================================
 
-def classify_failure_with_llm(error_entry: dict) -> dict:
+def classify_failure_with_llm(
+    error_entry: dict,
+    client: OpenAI,
+    model_name: str,
+) -> dict:
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": json.dumps(error_entry, ensure_ascii=False)},
     ]
 
     resp = client.chat.completions.create(
-        model=MODEL_NAME,
+        model=model_name,
         messages=messages,
         temperature=0.0,
     )
@@ -434,12 +426,64 @@ def classify_failure_with_llm(error_entry: dict) -> dict:
     }
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dataset-path",
+        type=Path,
+        default=DEFAULT_DATASET_PATH,
+        help=f"Path to lca_dataset.parquet (default: {DEFAULT_DATASET_PATH})",
+    )
+    parser.add_argument(
+        "--log-path",
+        dest="log_paths",
+        action="append",
+        type=Path,
+        help=(
+            "Path to a log_details.json file. Repeat for multiple files. "
+            "Defaults to the standard baseline result logs."
+        ),
+    )
+    parser.add_argument(
+        "--output-jsonl",
+        type=Path,
+        default=DEFAULT_OUTPUT_JSONL,
+        help=f"Output JSONL path (default: {DEFAULT_OUTPUT_JSONL})",
+    )
+    parser.add_argument(
+        "--api-key-env",
+        default="DEEPSEEK_API_KEY",
+        help="Environment variable name holding the DeepSeek API key",
+    )
+    parser.add_argument(
+        "--base-url",
+        default="https://api.deepseek.com",
+        help="Base URL for the OpenAI-compatible API",
+    )
+    parser.add_argument(
+        "--model",
+        default=MODEL_NAME,
+        help=f"Model name to call (default: {MODEL_NAME})",
+    )
+    return parser.parse_args()
+
+
 # ============================================================
 # MAIN
 # ============================================================
 
 def main():
-    df = pd.read_parquet(DATASET_PATH)
+    args = parse_args()
+    dataset_path = args.dataset_path
+    log_paths = args.log_paths or DEFAULT_LOG_PATHS
+    output_jsonl = args.output_jsonl
+    api_key = os.getenv(args.api_key_env)
+    if not api_key:
+        raise RuntimeError(f"{args.api_key_env} environment variable is not set.")
+
+    client = OpenAI(api_key=api_key, base_url=args.base_url)
+
+    df = pd.read_parquet(dataset_path)
 
     if "id" not in df.columns:
         raise ValueError("Dataset must have an 'id' column.")
@@ -447,12 +491,13 @@ def main():
         raise ValueError("Dataset must have a 'sha_fail' column.")
 
     combined_index = {}
-    for log_path in LOG_PATHS:
+    for log_path in log_paths:
         idx = load_error_entries_index(log_path)
         for sha_fail, entries in idx.items():
             combined_index.setdefault(sha_fail, []).extend(entries)
 
-    with OUTPUT_JSONL.open("w", encoding="utf-8") as out_f:
+    output_jsonl.parent.mkdir(parents=True, exist_ok=True)
+    with output_jsonl.open("w", encoding="utf-8") as out_f:
         for _, row in df.iterrows():
             row_id = str(row["id"])
             sha_fail = str(row["sha_fail"])
@@ -465,7 +510,11 @@ def main():
                 if merged_entry is None:
                     result = {"error_category": [], "error_subcategory": []}
                 else:
-                    result = classify_failure_with_llm(merged_entry)
+                    result = classify_failure_with_llm(
+                        merged_entry,
+                        client=client,
+                        model_name=args.model,
+                    )
 
             record = {
                 "id": row_id,
@@ -476,7 +525,7 @@ def main():
 
             out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-    print(f"[INFO] Done. Wrote results to {OUTPUT_JSONL}")
+    print(f"[INFO] Done. Wrote results to {output_jsonl}")
 
 
 if __name__ == "__main__":

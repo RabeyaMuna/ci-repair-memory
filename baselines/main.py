@@ -80,7 +80,7 @@ def process_entire_dataset(
     # Folder to store one JSON per sha_fail with changed file info
     changed_files_dir = config.changed_files_folder
 
-    subset = dataset[227:]
+    subset = dataset[0:]
 
     for datapoint in subset:
         task_id = datapoint["id"]

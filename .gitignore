@@ -10,3 +10,6 @@ generated_patches_list/
 baselines/replaced_script/
 stored_results/
 baselines/changed_files
+baselines/results/
+results/chunk_tracking/
+.DS_Store
