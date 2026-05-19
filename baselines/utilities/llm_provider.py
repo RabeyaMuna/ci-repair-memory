@@ -2,6 +2,7 @@
 
 import inspect
 import os
+from pathlib import Path
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional
 from langchain_openai import ChatOpenAI
@@ -10,11 +11,15 @@ from dotenv import load_dotenv
 if TYPE_CHECKING:
     from utilities.token_tracker import TokenTracker
 
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(PROJECT_ROOT / ".env")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")  # you must set this in .env
 LOCAL_LLM_API_KEY = os.getenv("LOCAL_LLM_API_KEY", "dummy-local-key")  # fallback
+MINIMAX_API_KEY = os.getenv("MINIMAX_API_KEY")
+MINIMAX_BASE_URL = os.getenv("MINIMAX_BASE_URL", "https://openrouter.ai/api/v1")
+MEMCI_LLM_MODEL = os.getenv("MEMCI_LLM_MODEL", "").strip()
 
 @dataclass
 class LLMInfo:
@@ -81,8 +86,54 @@ LLM_REGISTRY: Dict[str, LLMInfo] = {
         api_key=DEEPSEEK_API_KEY,
     ),
 
+    # MiniMax via OpenRouter
+    "minimax/minimax-m2.5": LLMInfo(
+        provider="openrouter",
+        model_name="minimax/minimax-m2.5",
+        temperature=0.0,
+        base_url=MINIMAX_BASE_URL,
+        api_key=MINIMAX_API_KEY,
+    ),
+    "MiniMax-M2.5": LLMInfo(
+        provider="openrouter",
+        model_name="minimax/minimax-m2.5",
+        temperature=0.0,
+        base_url=MINIMAX_BASE_URL,
+        api_key=MINIMAX_API_KEY,
+    ),
+    "minimax-m2.5": LLMInfo(
+        provider="openrouter",
+        model_name="minimax/minimax-m2.5",
+        temperature=0.0,
+        base_url=MINIMAX_BASE_URL,
+        api_key=MINIMAX_API_KEY,
+    ),
+
 
 }
+
+
+MODEL_ALIASES: Dict[str, str] = {
+    "minimax-m2.5": "minimax/minimax-m2.5",
+    "MiniMax-M2.5": "minimax/minimax-m2.5",
+    "MiniMax M2.5": "minimax/minimax-m2.5",
+}
+
+
+def resolve_model_key(model_key: str | None) -> str:
+    raw = str(model_key or "").strip()
+    if not raw and MEMCI_LLM_MODEL:
+        raw = MEMCI_LLM_MODEL
+    return MODEL_ALIASES.get(raw, raw)
+
+
+def get_default_model_key(default: str = "gpt-5-mini") -> str:
+    configured = str(MEMCI_LLM_MODEL or "").strip()
+    return configured or default
+
+
+def filesystem_safe_model_key(model_key: str | None) -> str:
+    return str(model_key or "").strip().replace("/", "__")
 
 
 class TrackedLLM:
@@ -189,6 +240,9 @@ def get_llm(model_key: str) -> ChatOpenAI:
     Return a ChatOpenAI-like instance for the given logical model_key.
     Same function is used everywhere in the system.
     """
+    load_dotenv(PROJECT_ROOT / ".env", override=False)
+    model_key = resolve_model_key(model_key)
+
     if model_key not in LLM_REGISTRY:
         raise ValueError(f"Unknown model_key: {model_key}")
 
@@ -201,18 +255,33 @@ def get_llm(model_key: str) -> ChatOpenAI:
     elif info.api_key:
         api_key = info.api_key
     elif info.provider == "openai":
-        api_key = OPENAI_API_KEY
+        api_key = os.getenv("OPENAI_API_KEY") or OPENAI_API_KEY
+    elif info.provider == "deepseek":
+        api_key = os.getenv("DEEPSEEK_API_KEY") or DEEPSEEK_API_KEY
+    elif info.provider == "openrouter":
+        api_key = os.getenv("MINIMAX_API_KEY") or MINIMAX_API_KEY
 
     kwargs = {
         "model": info.model_name,
         "temperature": info.temperature,
+        "request_timeout": 120,
+        "max_retries": 1,
     }
 
     if api_key:
         kwargs["api_key"] = api_key
 
-    if info.base_url:
-        kwargs["base_url"] = info.base_url
+    base_url = info.base_url
+    if info.provider == "openrouter":
+        base_url = os.getenv("MINIMAX_BASE_URL") or base_url or "https://openrouter.ai/api/v1"
+    if base_url:
+        kwargs["base_url"] = base_url
+
+    if not kwargs.get("api_key"):
+        raise ValueError(
+            f"Missing API key for model '{model_key}'. "
+            f"Provider={info.provider}. Check your .env configuration."
+        )
 
     return ChatOpenAI(**kwargs)
 

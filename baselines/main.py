@@ -13,9 +13,10 @@ from datasets import load_dataset  # (unused right now but kept)
 from utilities.fetch_failed_commit_changed_files import (
     collect_changed_files_for_fail_and_parent,
 )
-from utilities.llm_provider import get_llm, get_tracked_llm
+from utilities.llm_provider import filesystem_safe_model_key, get_default_model_key, get_llm, get_tracked_llm
 from utilities.token_tracker import TokenTracker
 from utilities.fl_evaluator import evaluate_fl
+from utilities.memory_plugin import MemoryPlugin
 from ci_repair.ci_log_analyzer_bm25 import CILogAnalyzerBM25
 from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
 from ci_repair.fault_localization import FaultLocalization
@@ -23,6 +24,21 @@ from ci_repair.patch_generation import PatchGeneration
 from utilities.ensure_repo import ensure_repo_at_commit
 
 load_dotenv()
+
+
+def _make_run_suffix(config) -> str:
+    """
+    Compute the result-dir suffix based on memory mode and ablation level.
+    baseline        → _baseline
+    memory L1       → _memory_L1
+    memory L1+L2    → _memory_L1L2
+    memory L1+L2+L3 → _memory   (backward-compat with already-existing runs)
+    """
+    if not bool(config.get("memory_enabled", False)):
+        return "_baseline"
+    ablation = str(config.get("memory_ablation_levels", "L1+L2+L3"))
+    level_tag = ablation.replace("+", "")  # "L1" | "L1L2" | "L1L2L3"
+    return "_memory" if level_tag == "L1L2L3" else f"_memory_{level_tag}"
 
 
 def _load_json_list(path):
@@ -51,11 +67,13 @@ def process_entire_dataset(
     log_analyzer_type="llm",
     tracker: TokenTracker = None,
 ):
+    model_dir_key = filesystem_safe_model_key(model_key)
     result_dir = os.path.join(
-        config.project_result_dir, f"{model_key}_{log_analyzer_type}"
+        config.project_result_dir, f"{model_dir_key}_{log_analyzer_type}{_make_run_suffix(config)}"
     )
     os.makedirs(result_dir, exist_ok=True)
     token_report_path = os.path.join(result_dir, "token_report.json")
+    memory_plugin = MemoryPlugin(config=config, result_dir=result_dir, llm=llm)
 
     # ------------------------------------------------------------------
     # Always load whatever already exists on disk so every run accumulates
@@ -67,6 +85,11 @@ def process_entire_dataset(
     error_details      = _load_json_list(os.path.join(result_dir, "log_details.json"))
     fault_localization = _load_json_list(os.path.join(result_dir, "fault_localization.json"))
     generated_patches  = _load_json_list(os.path.join(result_dir, "generated_patches.json"))
+    existing_generated_patch_shas = {
+        str(item.get("sha_fail") or "")
+        for item in generated_patches
+        if str(item.get("sha_fail") or "")
+    }
 
     if tracker:
         tracker.load_prior_report(token_report_path)
@@ -97,6 +120,10 @@ def process_entire_dataset(
         sha_success = datapoint["sha_success"]
 
         print(f"\n[MAIN] Proceeding with failed commit: {sha_fail}")
+
+        if bool(config.get("resume_skip_generated_patches", False)) and sha_fail in existing_generated_patch_shas:
+            print(f"[MAIN] Skipping {sha_fail}: patch already generated in existing results.")
+            continue
 
         if tracker:
             tracker.start_task(task_id)
@@ -134,6 +161,10 @@ def process_entire_dataset(
                         task_id=task_id,
                     ).run()
 
+                if log_analysis_result.get("error"):
+                    print(f"[MAIN] Log analysis failed for {sha_fail}: {log_analysis_result['error']} — skipping FL/patch")
+                    continue
+
                 error_details = _merge_by_key(error_details, log_analysis_result, "sha_fail")
 
                 with open(os.path.join(result_dir, "log_details.json"), "w") as f:
@@ -168,6 +199,19 @@ def process_entire_dataset(
             # 3) FAULT LOCALIZATION (later we can inject changed_files_info)
             # ------------------------------------------------------------------
             try:
+                memory_context = {"enabled": False, "matches": []}
+                if memory_plugin.is_enabled():
+                    memory_query = memory_plugin.build_query(
+                        task_id=task_id,
+                        sha_fail=sha_fail,
+                        repo_name=repo_name,
+                        workflow_path=workflow_path,
+                        workflow=workflow,
+                        log_analysis_result=log_analysis_result,
+                        changed_files_info=changed_files_info,
+                    )
+                    memory_context = memory_plugin.retrieve(memory_query)
+
                 _llm_fl = get_tracked_llm(model_key, tracker, "FaultLocalization") if tracker else llm
                 fault_localizer = FaultLocalization(
                     sha_fail=sha_fail,
@@ -177,7 +221,26 @@ def process_entire_dataset(
                     llm=_llm_fl,
                     model_name=model_key,
                     changed_files_info=changed_files_info,
+                    memory_plugin=memory_plugin,
+                    memory_context=memory_context,
                 ).run()
+
+                # Embed full memory context so each FL entry is self-contained
+                # for ablation analysis (no need to join memory_retrieval_log.jsonl).
+                fault_localizer["memory_summary"] = {
+                    "ablation_levels": str(config.get("memory_ablation_levels", "L1+L2+L3")),
+                    "memory_enabled": memory_context.get("enabled", False),
+                    "level_scores": memory_context.get("level_scores", {"L1": 0.0, "L2": 0.0, "L3": 0.0}),
+                    "weighted_similarity": memory_context.get("weighted_similarity", 0.0),
+                    "selected_memory_levels": memory_context.get("selected_memory_levels", []),
+                    "memory_injected": bool(memory_context.get("matches")),
+                    "suppressed_reason": memory_context.get("reason"),
+                    "candidate_files": memory_context.get("candidate_files", []),
+                    "high_level_hints": memory_context.get("high_level_hints", []),
+                    "l1_matches": memory_context.get("l1_matches", []),
+                    "l2_matches": memory_context.get("l2_matches", []),
+                    "l3_matches": memory_context.get("l3_matches", []),
+                }
 
                 fault_localization = _merge_by_key(fault_localization, fault_localizer, "sha_fail")
 
@@ -214,9 +277,35 @@ def process_entire_dataset(
                     continue
 
                 generated_patches = _merge_by_key(generated_patches, patch_generator, "sha_fail")
+                existing_generated_patch_shas.add(sha_fail)
 
                 with open(os.path.join(result_dir, "generated_patches.json"), "w") as f:
                     json.dump(generated_patches, f, indent=4)
+
+                # Incremental FL evaluation — updates fl_evaluation.json after every
+                # issue so scores are visible without waiting for the full run to finish.
+                try:
+                    evaluate_fl(
+                        fault_localization_path=os.path.join(result_dir, "fault_localization.json"),
+                        generated_patches_path=os.path.join(result_dir, "generated_patches.json"),
+                        output_path=os.path.join(result_dir, "fl_evaluation.json"),
+                    )
+                except Exception as _fl_err:
+                    print(f"[MAIN] Incremental FL evaluation failed: {_fl_err}")
+
+                if bool(config.get("memory_writeback_enabled", False)):
+                    memory_plugin.save_memory_entry(
+                        task_id=task_id,
+                        sha_fail=sha_fail,
+                        repo_name=repo_name,
+                        repo_owner=repo_owner,
+                        workflow_path=workflow_path,
+                        workflow=workflow,
+                        log_analysis_result=log_analysis_result,
+                        changed_files_info=changed_files_info,
+                        fault_localizer=fault_localizer,
+                        patch_generator=patch_generator,
+                    )
 
             except Exception as e:
                 print(f"[ERROR] Failed processing {sha_fail} during patch generation: {e}")
@@ -242,7 +331,7 @@ if __name__ == "__main__":
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    model_key = "gpt-5-mini"  # or "gpt4o", "deepseek-chat", etc.
+    model_key = get_default_model_key()  # or "gpt4o", "deepseek-chat", etc.
     log_analyzer_type = "llm"  # "llm" or "bm25"
     llm = get_llm(model_key)
 
@@ -277,7 +366,8 @@ if __name__ == "__main__":
         # ------------------------------------------------------------------
         tracker.print_summary()
         result_dir = os.path.join(
-            config.project_result_dir, f"{model_key}_{log_analyzer_type}"
+            config.project_result_dir,
+            f"{filesystem_safe_model_key(model_key)}_{log_analyzer_type}{_make_run_suffix(config)}",
         )
         os.makedirs(result_dir, exist_ok=True)
 
@@ -300,7 +390,10 @@ if __name__ == "__main__":
             except Exception as fl_err:
                 print(f"[MAIN] FL evaluation failed: {fl_err}")
 
-    output_file = os.path.join(config.project_result_dir, "generated_patches.json")
+    output_file = os.path.join(
+        config.project_result_dir,
+        f"generated_patches_{'memory' if config.get('memory_enabled', False) else 'baseline'}.json",
+    )
     with open(output_file, "w") as f:
         json.dump(results, f, indent=4)
 

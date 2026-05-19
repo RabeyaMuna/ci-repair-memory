@@ -40,6 +40,8 @@ class FaultLocalization:
         llm: ChatOpenAI,
         model_name: Optional[str] = None,
         changed_files_info: Optional[dict] = None,
+        memory_plugin: Optional[Any] = None,
+        memory_context: Optional[Dict[str, Any]] = None,
     ):
         """
         FaultLocalization agent.
@@ -88,6 +90,13 @@ class FaultLocalization:
 
         self.model_name = model_name
         self.llm = llm
+        self.memory_plugin = memory_plugin
+        if self.memory_plugin is not None:
+            try:
+                self.memory_plugin.set_llm(llm)
+            except Exception:
+                pass
+        self.memory_context = memory_context or {"enabled": False, "matches": []}
 
         self.parser = JsonOutputParser()
 
@@ -103,6 +112,7 @@ class FaultLocalization:
 
             print("[Step 1] Running File Selection...")
             suspecious_files = self.select_suspecious_files()
+            suspecious_files = self._apply_memory_to_suspicious_files(suspecious_files)
             print("[Step 2] Running final fault localization...")
             result = self._final_fault_localization(suspecious_files)
             result["id"] = self.id 
@@ -315,6 +325,27 @@ FAILED JOBS (CI context):
 
         return suspecious_files
 
+    def _apply_memory_to_suspicious_files(
+        self,
+        suspicious_files: List[Dict[str, Any]],
+    ) -> List[Dict[str, Any]]:
+        matches = self.memory_context.get("matches", []) or []
+        if not matches or self.memory_plugin is None:
+            return suspicious_files
+
+        augmented = self.memory_plugin.augment_suspicious_files(
+            suspicious_files=suspicious_files,
+            changed_files_info=self.changed_files_info,
+            retrieval_result=self.memory_context,
+        )
+        ranked = self.memory_plugin.rank_files(augmented, self.memory_context)
+
+        print(
+            f"[Memory] Retrieved {len(matches)} similar cases. "
+            f"Candidate files after memory augmentation: {len(ranked)}"
+        )
+        return ranked
+
 
     # ------------------------------------------------------------------ #
     # Final fault localization over selected files
@@ -324,9 +355,17 @@ FAILED JOBS (CI context):
         print("[Tool] read_error_file called")
 
         fault_localization: List[Dict[str, Any]] = []
-        for item in suspecious_files:
+        queue: List[Dict[str, Any]] = list(suspecious_files)
+        seen_files: set[str] = set()
+        processed_files: set[str] = set()
+
+        while queue:
+            item = queue.pop(0)
             file_path = (item.get("file") or item.get("path") or "").strip()
             if not file_path:
+                continue
+            normalized_file = os.path.normpath(file_path)
+            if normalized_file in processed_files:
                 continue
 
             ext = Path(file_path).suffix.lower()
@@ -375,14 +414,37 @@ FAILED JOBS (CI context):
                     original_content=content,
                     chunk_idx=idx,
                     num_chunks=num_chunks,
-                    faults=all_faults,
                     outline=outline,
                     chunk=ch["content"]
                 )
 
                 if faults:
                     all_faults.extend(faults)
-            
+                    if self.memory_plugin is not None and (self.memory_context.get("selected_memory_levels") or []):
+                        suggested = self.memory_plugin.get_additional_files_for_file(
+                            file_path=file_path,
+                            file_context=file_summary,
+                            retrieval_result=self.memory_context,
+                        )
+                        for ref in suggested:
+                            candidate = (ref.get("file") or "").strip()
+                            if not candidate:
+                                continue
+                            candidate_norm = os.path.normpath(candidate)
+                            if candidate_norm in processed_files or candidate_norm in seen_files:
+                                continue
+                            resolved_candidate = self.find_full_file_path(candidate)
+                            if resolved_candidate.get("status") != "found":
+                                continue
+                            queue.append(
+                                {
+                                    "file": candidate,
+                                    "memory_source": "file_level_memory",
+                                    "memory_reason": ref.get("reason", ""),
+                                }
+                            )
+                            seen_files.add(candidate_norm)
+
             if all_faults:
                 fault_localization.append(
                     {
@@ -391,6 +453,7 @@ FAILED JOBS (CI context):
                         "faults": all_faults,
                     }
                 )
+            processed_files.add(normalized_file)
 
         results = {
             "sha_fail": self.failed_commit,
@@ -406,10 +469,10 @@ FAILED JOBS (CI context):
     def prompt_for_fault_localization(
     self,
     *,
+    file_path: str,
     file_summary: str,
     valid_start: int,
     valid_end: int,
-    faults: list,
     ) -> str:
         """
         Build the strict fault-localization prompt for a single (sub)chunk.
@@ -418,6 +481,7 @@ FAILED JOBS (CI context):
         - valid_start/valid_end: absolute (file-level) line numbers for this chunk window.
         - faults: previously detected faults (used only to avoid duplicates).
         """
+        memory_context_text = self._memory_context_for_file(file_path, file_summary)
         return f"""
 You are a **Strict Fault Localization Agent**.
 
@@ -454,6 +518,9 @@ ERROR TYPES:
 
 RELEVANT FILES FROM LOGS:
 {json.dumps(self.relevant_files, indent=2, ensure_ascii=False)}
+
+RETRIEVED PREVIOUS EXPERIENCE:
+{memory_context_text}
 
 CHUNK WINDOW: lines {valid_start}–{valid_end}
 
@@ -536,9 +603,12 @@ If you cannot name exact line numbers → DO NOT return the fault.
 ==============================================================================
 LINE RANGE RULES
 ------------------------------------------------------------------------------
-- "line_range" MUST include the faulty line(s).
+- "line_range" MUST always be exactly TWO integers: [start, end].
+- For a single faulty line N, use [N, N] — NEVER [N] alone.
+- For a range of lines N to M, use [N, M].
 - Must stay within {valid_start}–{valid_end}.
 - Use displayed line numbers as integers (no leading zeros).
+- INVALID: [10]  VALID: [10, 10]  VALID: [10, 25]
 
 ==============================================================================
 FAULT MERGING RULE
@@ -574,6 +644,7 @@ FINAL CHECK
 - No speculation
 - Numeric containment strictly respected
 - Exact line numbers cited
+- Use retrieved memory only as supporting evidence. Current CI logs and current code always win.
 - Valid JSON only
 """.strip()
                             
@@ -588,7 +659,6 @@ FINAL CHECK
     original_content: str,
     chunk_idx: int,
     num_chunks: int,
-    faults: list,
     outline: List[Dict[str, Any]],
     chunk: str,
     ) -> list:
@@ -596,10 +666,10 @@ FINAL CHECK
         token_limit = get_prompt_token_budget(self.model_name)
 
         prompt = self.prompt_for_fault_localization(
+            file_path=file_path,
             file_summary=file_summary,
             valid_start=valid_start,
             valid_end=valid_end,
-            faults=faults,
         )
 
         print(f"[Chunk {chunk_idx+1}/{num_chunks}] Analyzing lines {valid_start}-{valid_end}...")
@@ -607,12 +677,22 @@ FINAL CHECK
         def _invoke_and_parse(p: str):
             raw_response = self.llm.invoke([HumanMessage(content=p)]).content.strip()
             if raw_response.startswith("```"):
-                raw_response = raw_response.strip("` \n")
+                lines = raw_response.splitlines()
+                lines = lines[1:]  # drop opening fence line (``` or ```json)
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                raw_response = "\n".join(lines).strip()
+
+            if not raw_response:
+                return []
 
             try:
                 parsed = json.loads(raw_response)
             except json.JSONDecodeError:
-                parsed = demjson3.decode(raw_response)
+                try:
+                    parsed = demjson3.decode(raw_response)
+                except Exception:
+                    return []
 
             if not isinstance(parsed, list) or not parsed:
                 return []
@@ -672,10 +752,10 @@ FINAL CHECK
                 )
 
                 sub_prompt = self.prompt_for_fault_localization(
+                    file_path=file_path,
                     file_summary=sub_file_summary,
                     valid_start=abs_start,
                     valid_end=abs_end,
-                    faults=faults,
                 )
 
                 if estimate_tokens(sub_prompt, model=model_for_count) > token_limit:
@@ -710,10 +790,10 @@ FINAL CHECK
             line_range = fault.get("line_range")
             fault_level = fault.get("fault_localization_level")
 
-            if not line_range:
+            if not line_range or len(line_range) < 2:
                 continue
 
-            start, end = line_range
+            start, end = line_range[0], line_range[1]
             if valid_start <= start and end <= valid_end:
                 extended_range = self._expand_line_range_with_outline(
                     line_range=line_range,
@@ -742,6 +822,14 @@ FINAL CHECK
                 )
 
         return fault_locations
+
+    def _memory_context_for_file(self, file_path: str, file_context: str = "") -> str:
+        if not (self.memory_context.get("selected_memory_levels") or []):
+            return "No similar prior failures retrieved."
+        if self.memory_plugin is not None:
+            return self.memory_plugin.format_for_file_prompt(file_path, self.memory_context, file_context=file_context)
+
+        return json.dumps(self.memory_context, indent=2, ensure_ascii=False)
 
     # ------------------------------------------------------------------ #
     # Path & file helpers
@@ -962,10 +1050,14 @@ FINAL CHECK
         - anything else / None: return tightest containing node of any kind.
         """
 
-        if not line_range:
-            return line_range
+        if not line_range or len(line_range) < 2:
+            # Single-element range: treat as [N, N]
+            if line_range and len(line_range) == 1:
+                line_range = [line_range[0], line_range[0]]
+            else:
+                return line_range
 
-        start, end = line_range
+        start, end = line_range[0], line_range[1]
         if not (isinstance(start, int) and isinstance(end, int)):
             return line_range
 

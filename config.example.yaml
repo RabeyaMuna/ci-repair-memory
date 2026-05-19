@@ -32,6 +32,14 @@ base_dir: "<BASE_PROJECT_DIRECTORY>"
 project_result_dir: "<PROJECT_RESULTS_DIRECTORY>"
 
 # -------------------------
+# Memory plugin (optional)
+# -------------------------
+memory_enabled: false
+memory_top_k: 3
+memory_similarity_threshold: 0.55
+memory_retrieval_log_path: "<PROJECT_RESULTS_DIRECTORY>/memory_retrieval_log.jsonl"
+
+# -------------------------
 # Authentication
 # NOTE:
 # It is strongly recommended to store secrets in a .env file

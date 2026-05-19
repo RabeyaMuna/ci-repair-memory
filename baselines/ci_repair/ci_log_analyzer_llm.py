@@ -187,15 +187,17 @@ CI LOG CHUNK
 
                     response = self.llm.invoke([HumanMessage(content=prompt)]).content
                     content = self.load_json_maybe_fenced(response)
-                    if content is None:
+                    if not content or not content.strip():
                         continue
 
                     try:
-                    # Try standard JSON decoding
                         cleaned_json = json.loads(content)
                     except json.JSONDecodeError:
-                    # Fallback: tolerant decoder
-                        cleaned_json = demjson3.decode(content)
+                        try:
+                            cleaned_json = demjson3.decode(content)
+                        except Exception as dec_err:
+                            print(f"[WARN] demjson3 failed for chunk {i + 1}: {dec_err}")
+                            continue
                         
                     # Decide whether to skip this chunk
                     no_failures = not cleaned_json.get("relevant_failures")   # [] or missing -> True
@@ -254,7 +256,7 @@ of the CI failure for this step using the following STRICT JSON schema
 (**do not add or remove top-level keys**)
 
 {{
-"step_name": {step_name},
+"step_name": "{step_name}",
 "sha_fail": "{self.sha_fail}",
 "log_content": "<Explain overall details of the CI log in natural language>",
 "error_context": [
@@ -332,15 +334,20 @@ of the CI failure for this step using the following STRICT JSON schema
 """
 
             try:
-                
                 response = self.llm.invoke([HumanMessage(content=prompt)]).content
                 content = self.load_json_maybe_fenced(response)
+
+                if not content or not content.strip():
+                    raise ValueError("LLM returned an empty response for generate_log_summary")
 
                 try:
                     summary = json.loads(content)
                 except json.JSONDecodeError:
-                    summary = demjson3.decode(content)
-                    
+                    try:
+                        summary = demjson3.decode(content)
+                    except Exception as dec_err:
+                        raise ValueError(f"JSON parse failed: {dec_err} | raw: {content[:200]}")
+
                 log_details.append(summary)
             except Exception as e:
                 # If one chunk fails, log and continue
@@ -478,10 +485,16 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
             response = self.llm.invoke([HumanMessage(content=prompt)]).content
             content = self.load_json_maybe_fenced(response)
 
+            if not content or not content.strip():
+                raise ValueError("LLM returned an empty response for full_content_summary")
+
             try:
                 summary = json.loads(content)
             except json.JSONDecodeError:
-                summary = demjson3.decode(content)
+                try:
+                    summary = demjson3.decode(content)
+                except Exception as dec_err:
+                    raise ValueError(f"JSON parse failed: {dec_err} | raw: {content[:200]}")
             print(" Completed: _generate_summary")
             
             summary["sha_fail"] = self.sha_fail
@@ -510,8 +523,14 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
     # ------------------------------------------------------------------
     def run(self) -> Dict[str, Any]:
         print(f"Fully Autonomous Execution for Commit: {self.sha_fail}")
-        selected_logs= self.ci_log_analysis()
+        selected_logs = self.ci_log_analysis()
         log_details = self.generate_log_summary(selected_logs)
+        if not log_details:
+            return {
+                "error": "No step summaries produced — all CI log steps failed to parse.",
+                "sha_fail": self.sha_fail,
+                "id": self.task_id,
+            }
         generated_summary = self.full_content_summary(log_details, workflow_details=self.workflow)
         return generated_summary
 
