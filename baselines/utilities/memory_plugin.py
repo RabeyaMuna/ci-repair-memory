@@ -7,6 +7,76 @@ import re
 from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+try:
+    import numpy as np
+    from fastembed import TextEmbedding as _FastEmbedModel
+    _FASTEMBED_AVAILABLE = True
+except Exception:
+    _FASTEMBED_AVAILABLE = False
+
+
+# ---------------------------------------------------------------------------
+# Step 2 — Embedding Generation
+# Generates dense vector representations of text for cosine similarity
+# retrieval.  Uses fastembed (ONNX-optimized, local, no API cost) with a
+# module-level singleton so the model is loaded only once per process.
+# Falls back to TF-IDF bag-of-words if fastembed is unavailable.
+# ---------------------------------------------------------------------------
+
+class _EmbeddingProvider:
+    """Singleton dense-embedding provider backed by fastembed."""
+
+    _instance: Optional["_EmbeddingProvider"] = None
+
+    def __init__(self) -> None:
+        self._model: Any = None
+        self._cache: Dict[str, Any] = {}
+        if _FASTEMBED_AVAILABLE:
+            try:
+                self._model = _FastEmbedModel("BAAI/bge-small-en-v1.5")
+                print("[Memory] Embedding provider ready: BAAI/bge-small-en-v1.5 (fastembed)")
+            except Exception as exc:
+                print(f"[Memory] fastembed model load failed ({exc}); falling back to TF-IDF cosine similarity.")
+
+    @classmethod
+    def get(cls) -> "_EmbeddingProvider":
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def embed(self, text: str):
+        """Return a unit-norm numpy vector for *text*, or None on failure."""
+        if self._model is None or not text.strip():
+            return None
+        if text in self._cache:
+            return self._cache[text]
+        try:
+            vec = np.array(next(self._model.embed([text])), dtype=np.float32)
+            norm = np.linalg.norm(vec)
+            if norm > 0:
+                vec = vec / norm
+            self._cache[text] = vec
+            return vec
+        except Exception:
+            return None
+
+    def cosine_similarity(self, text_a: str, text_b: str) -> float:
+        """Dense cosine similarity, falling back to TF-IDF if unavailable."""
+        vec_a = self.embed(text_a)
+        vec_b = self.embed(text_b)
+        if vec_a is None or vec_b is None:
+            return _cosine_similarity_tfidf(text_a, text_b)
+        return float(np.dot(vec_a, vec_b))
+
+
+def _semantic_similarity(text_a: str, text_b: str) -> float:
+    """
+    Pipeline Step 3 — Cosine Similarity Retrieval.
+    Computes cosine similarity between dense embeddings of two texts.
+    Falls back to TF-IDF cosine similarity when fastembed is unavailable.
+    """
+    return _EmbeddingProvider.get().cosine_similarity(text_a, text_b)
+
 
 def _safe_list(value: Any) -> List[Any]:
     if value is None:
@@ -68,7 +138,8 @@ def _token_counter(text: str) -> Counter[str]:
     return Counter(_tokenize(text))
 
 
-def _cosine_similarity(left_text: str, right_text: str) -> float:
+def _cosine_similarity_tfidf(left_text: str, right_text: str) -> float:
+    """TF-IDF bag-of-words cosine similarity — used as fallback when fastembed is unavailable."""
     left = _token_counter(left_text)
     right = _token_counter(right_text)
     if not left or not right:
@@ -113,6 +184,85 @@ def _primary_failure_pattern(error_types: Any) -> str:
     if not rows:
         return ""
     return rows[0]["subcategory"] or rows[0]["category"]
+
+
+# ---------------------------------------------------------------------------
+# Issue-type normalization
+# Converts raw snake_case / kebab-case LLM output into a human-readable
+# descriptive phrase that embeds well and reads clearly in memory prompts.
+# ---------------------------------------------------------------------------
+
+_ISSUE_TYPE_LABELS: Dict[str, str] = {
+    # Formatting / linting
+    "formatting": "Code formatting violation",
+    "style": "Code style violation",
+    "unused_import": "Unused import detected by linter",
+    "unused-import": "Unused import detected by linter",
+    "missing_newline": "Missing newline at end of file",
+    "missing-newline": "Missing newline at end of file",
+    "whitespace": "Whitespace or indentation error",
+    "code_quality": "Code quality violation",
+    "lint_error": "Linter reported code quality issue",
+    # Dependency / environment
+    "dependency_or_env": "Dependency on environment",
+    "dependency": "External dependency issue",
+    "import_error": "Import path or module not found",
+    "import-error": "Import path or module not found",
+    "library_api_change": "Library API changed unexpectedly",
+    "api_change": "Third-party API changed or removed",
+    "env_config": "Environment configuration mismatch",
+    # Test failures
+    "test_failure": "Test assertion or logic failure",
+    "test_collection": "Test collection error due to import failure",
+    "assertion_error": "Assertion failed in test",
+    "assertion-error": "Assertion failed in test",
+    "mock_mismatch": "Mock or stub does not match actual API",
+    # Type checking
+    "type_checking": "Type annotation mismatch",
+    "type_error": "Type annotation or inference error",
+    "union_attr": "Union type attribute access error",
+    "union-attr": "Union type attribute access error",
+    # Config / workflow
+    "config_error": "Configuration or setup error",
+    "workflow": "CI workflow configuration issue",
+    "workflow_config": "CI workflow configuration issue",
+    "build_config": "Build configuration error",
+    # Build
+    "build_error": "Build or compilation failure",
+    "compile_error": "Compilation error in source",
+    # Runtime
+    "runtime_error": "Runtime error in test or build",
+    "attribute_error": "Attribute or method not found at runtime",
+}
+
+
+def _to_descriptive_issue_type(raw: str, error_type: str = "") -> str:
+    """
+    Convert a raw snake_case/kebab-case issue_type into a human-readable
+    descriptive phrase, e.g. 'dependency_or_env' → 'Dependency on environment'.
+    Falls back to humanizing the raw string when no mapping exists.
+    """
+    if not raw:
+        et = (error_type or "").lower()
+        if "dependency" in et or "import" in et:
+            return "Dependency on environment"
+        if "test" in et:
+            return "Test assertion or logic failure"
+        if "type" in et:
+            return "Type annotation mismatch"
+        if "format" in et or "quality" in et or "lint" in et:
+            return "Code formatting violation"
+        return "General CI failure"
+    key = raw.lower().replace("-", "_").replace(" ", "_")
+    if key in _ISSUE_TYPE_LABELS:
+        return _ISSUE_TYPE_LABELS[key]
+    # Partial match (e.g. "import_error_library_api_change" → "Import path or module not found")
+    for label_key, label_val in _ISSUE_TYPE_LABELS.items():
+        normalized_label_key = label_key.replace("-", "_")
+        if normalized_label_key in key:
+            return label_val
+    # Humanize: replace separators and title-case
+    return raw.replace("_", " ").replace("-", " ").capitalize()
 
 
 def extract_files_from_diff(diff_text: str) -> List[str]:
@@ -267,7 +417,13 @@ class MemoryPlugin:
         self.failure_memory = _load_json_list(self.failure_memory_path)
         self.repo_memory = _load_json_list(self.repo_memory_path)
         self.cross_memory = _load_json_list(self.cross_memory_path)
-        self.level_thresholds = {"L1": 0.30, "L2": 0.40, "L3": 0.50}
+        # Per-level gate thresholds applied before top-k selection.
+        # L1=0.40: file match alone (max 0.35) is insufficient — needs corroborating
+        #          error type, failure pattern, or semantic text signal.
+        # L2=0.40: same bar; repo-level needs semantic + error type corroboration.
+        # L3=0.50: strictest — cross-repo evidence must be high quality to avoid
+        #          injecting generic patterns that mislead fault localization.
+        self.level_thresholds = {"L1": 0.40, "L2": 0.40, "L3": 0.50}
 
         # Ablation: which memory levels are active (L1 / L1+L2 / L1+L2+L3)
         raw_levels = str(self._cfg("memory_ablation_levels", "L1+L2+L3"))
@@ -361,17 +517,8 @@ class MemoryPlugin:
             4,
         )
 
-        # Global threshold gate: suppress memory if overall confidence is too low
-        if weighted_similarity < self.similarity_threshold:
-            print(
-                f"[Memory] weighted_similarity={weighted_similarity} < threshold={self.similarity_threshold}. "
-                "Suppressing memory injection."
-            )
-            return self._empty_result(
-                query, "below_weighted_threshold",
-                level_scores=best_scores,
-                weighted_similarity=weighted_similarity,
-            )
+        # No threshold gate — all retrieved entries are ranked and passed to the LLM.
+        # The LLM uses similarity scores to decide what is relevant for this issue.
 
         # Candidate files: prefer LLM's suspected_files, fall back to L1/L2 paths
         candidate_files: List[str] = []
@@ -380,7 +527,7 @@ class MemoryPlugin:
             if path and path not in candidate_files:
                 candidate_files.append(path)
         for row in l2:
-            for file_row in (row.get("modified_files", []) or row.get("files", []))[:5]:
+            for file_row in (row.get("files", []) or row.get("modified_files", []))[:5]:
                 path = _normalize_path(file_row.get("file", ""))
                 if path and path not in candidate_files:
                     candidate_files.append(path)
@@ -388,7 +535,8 @@ class MemoryPlugin:
         # High-level hints: coarse retrieval only; file-specific refinement happens later in FL.
         high_level_hints: List[str] = []
         for row in l2:
-            reason = str(row.get("failure_reason") or "")
+            # Use new field name with backward compat fallback
+            reason = str(row.get("overall_failure_reason") or row.get("failure_reason") or "")
             if reason:
                 high_level_hints.append(_clip(reason, 220))
         for row in l3:
@@ -413,8 +561,7 @@ class MemoryPlugin:
             "level_scores": best_scores,
             "weighted_similarity": weighted_similarity,
             "selected_memory_levels": [
-                lvl for lvl, rows in (("L1", l1), ("L2", l2), ("L3", l3))
-                if rows and best_scores.get(lvl, 0.0) >= self.level_thresholds[lvl]
+                lvl for lvl, rows in (("L1", l1), ("L2", l2), ("L3", l3)) if rows
             ],
             "candidate_files": candidate_files[:10],
             "high_level_hints": high_level_hints[:6],
@@ -479,13 +626,17 @@ class MemoryPlugin:
             if repo and str(row.get("repo") or "") != repo:
                 continue
             row_error = str(row.get("error_type") or "").lower()
-            row_pattern = str(row.get("failure_pattern") or row.get("issue_type") or "").lower()
+            # failure_pattern: prefer keyword field, fall back to issue_type keyword (backward compat)
+            # Note: issue_type in new data is a descriptive phrase; failure_pattern is the keyword
+            row_pattern = str(row.get("failure_pattern") or "").lower()
             row_reason = str(row.get("failure_reason") or row.get("reason") or "")
             row_tools = [str(x).lower() for x in _safe_list(row.get("failed_tool", []))]
+            # Include issue_type (descriptive phrase) in doc for richer semantic matching
             row_doc = " ".join(
                 [
                     str(row.get("error_type") or ""),
-                    str(row.get("failure_pattern") or row.get("issue_type") or ""),
+                    str(row.get("failure_pattern") or ""),
+                    str(row.get("issue_type") or ""),  # descriptive phrase adds semantic richness
                     row_reason,
                     " ".join(row_tools),
                     str(row.get("file") or ""),
@@ -501,20 +652,18 @@ class MemoryPlugin:
                 ]
             )
 
-            # Check whether the memory's file appears in the query's file list.
-            # Jaccard(many_query_files, one_memory_file) = 1/N even for a perfect
-            # match, so use a direct membership check instead.
+            # Exact normalized path match only — basename fallback excluded
+            # to ensure L1 memory is only retrieved for the same file.
             row_file_norm = _normalize_path(str(row.get("file") or ""))
-            row_file_base = _basename(row_file_norm)
             file_score = (
                 1.0 if row_file_norm and row_file_norm in {_normalize_path(p) for p in query_files}
-                else (0.7 if row_file_base and row_file_base in {_basename(p) for p in query_files}
-                      else 0.0)
+                else 0.0
             )
-            error_score = 1.0 if error_type and row_error and row_error == error_type else 0.0
-            pattern_score = 1.0 if failure_pattern and row_pattern and row_pattern == failure_pattern else _cosine_similarity(failure_pattern, row_pattern)
+            # error_score: semantic similarity instead of exact match to handle LLM vocabulary drift
+            error_score = _semantic_similarity(error_type, row_error) if (error_type and row_error) else 0.0
+            pattern_score = 1.0 if failure_pattern and row_pattern and row_pattern == failure_pattern else _semantic_similarity(failure_pattern, row_pattern)
             tool_score = _jaccard(query_tools, row_tools)
-            text_score = _cosine_similarity(query_doc, row_doc)
+            text_score = _semantic_similarity(query_doc, row_doc)
             similarity = round(
                 0.35 * file_score
                 + 0.20 * error_score
@@ -523,9 +672,6 @@ class MemoryPlugin:
                 + 0.20 * text_score,
                 4,
             )
-            if similarity < self.level_thresholds["L1"]:
-                continue
-
             scored.append(
                 {
                     **row,
@@ -565,31 +711,33 @@ class MemoryPlugin:
             if repo and str(row.get("repo") or "") != repo:
                 continue
             row_error = str(row.get("error_type") or "").lower()
+            # New field: failure_pattern (keyword); old field: pattern_name (fallback)
             row_pattern = str(row.get("failure_pattern") or row.get("pattern_name") or "").lower()
-            modified_files = row.get("modified_files", []) or row.get("files", [])
-            row_files = [str(item.get("file") or "") for item in modified_files if isinstance(item, dict)]
+            # Files from new structure (files[].file) or legacy (modified_files)
+            file_entries = row.get("files", []) or row.get("modified_files", [])
+            row_files = [str(item.get("file") or "") for item in file_entries if isinstance(item, dict)]
             row_tools = [str(x).lower() for x in _safe_list(row.get("failed_tool", []))]
+            # Include issue_type (descriptive) and overall_failure_reason in doc
             row_doc = " ".join(
                 [
                     str(row.get("error_type") or ""),
                     str(row.get("failure_pattern") or row.get("pattern_name") or ""),
-                    str(row.get("failure_reason") or ""),
-                    " ".join(str(x) for x in _safe_list(row.get("fix_pattern", []))),
+                    str(row.get("issue_type") or ""),           # descriptive phrase
+                    str(row.get("overall_failure_reason") or row.get("failure_reason") or ""),
+                    str(row.get("fix_approach") or row.get("fix_strategy") or ""),
                     " ".join(row_tools),
                     " ".join(row_files),
                 ]
             )
-            error_score = 1.0 if error_type and row_error and row_error == error_type else 0.0
-            pattern_score = 1.0 if failure_pattern and row_pattern and row_pattern == failure_pattern else _cosine_similarity(failure_pattern, row_pattern)
+            # Semantic error_score — handles LLM vocabulary drift ("Code Quality" vs "code quality error")
+            error_score = _semantic_similarity(error_type, row_error) if (error_type and row_error) else 0.0
+            pattern_score = 1.0 if failure_pattern and row_pattern and row_pattern == failure_pattern else _semantic_similarity(failure_pattern, row_pattern)
             tool_score = _jaccard(query_tools, row_tools)
-            text_score = _cosine_similarity(query_doc, row_doc)
+            text_score = _semantic_similarity(query_doc, row_doc)
             similarity = round(
                 0.45 * text_score + 0.25 * error_score + 0.15 * pattern_score + 0.15 * tool_score,
                 4,
             )
-            if similarity < self.level_thresholds["L2"]:
-                continue
-
             scored.append(
                 {
                     **row,
@@ -626,30 +774,31 @@ class MemoryPlugin:
             # L3 records store failure_pattern or issue_type (no singular failure_pattern field guaranteed)
             row_pattern = str(row.get("failure_pattern") or row.get("issue_type") or "").lower()
             row_tools = [str(x).lower() for x in _safe_list(row.get("failed_tool", []))]
-            # L3 records have failure_reasons (list); join them for semantic text matching
+            # failure_reasons: list of concrete examples — join for semantic matching
             row_failure_reason = " | ".join(
                 str(r) for r in _safe_list(row.get("failure_reasons", [])) if str(r).strip()
-            ) or str(row.get("failure_reason") or row.get("principle") or "")
+            ) or str(row.get("principle") or "")
             row_doc = " ".join(
                 [
                     str(row.get("error_type") or ""),
+                    str(row.get("issue_type") or ""),       # descriptive phrase
                     row_pattern,
+                    # all_failure_patterns provides extra keyword signal
+                    " ".join(str(p) for p in _safe_list(row.get("failure_patterns", []))),
                     row_failure_reason,
-                    " ".join(str(x) for x in _safe_list(row.get("fix_strategies", []) or row.get("fix_pattern", []))),
+                    " ".join(str(x) for x in _safe_list(row.get("fix_strategies", []))),
                     " ".join(row_tools),
                 ]
             )
-            error_score = 1.0 if error_type and row_error and row_error == error_type else 0.0
-            pattern_score = 1.0 if failure_pattern and row_pattern and row_pattern == failure_pattern else _cosine_similarity(failure_pattern, row_pattern)
+            # Semantic error_score and pattern_score for robustness against LLM vocabulary drift
+            error_score = _semantic_similarity(error_type, row_error) if (error_type and row_error) else 0.0
+            pattern_score = 1.0 if failure_pattern and row_pattern and row_pattern == failure_pattern else _semantic_similarity(failure_pattern, row_pattern)
             tool_score = _jaccard(query_tools, row_tools)
-            text_score = _cosine_similarity(query_doc, row_doc)
+            text_score = _semantic_similarity(query_doc, row_doc)
             similarity = round(
                 0.55 * text_score + 0.20 * error_score + 0.15 * pattern_score + 0.10 * tool_score,
                 4,
             )
-            if similarity < self.level_thresholds["L3"]:
-                continue
-
             scored.append(
                 {
                     **row,
@@ -666,6 +815,122 @@ class MemoryPlugin:
 
         scored.sort(key=lambda item: item.get("similarity_score", 0.0), reverse=True)
         return scored[: self.top_k]
+
+    def retrieve_for_file(
+        self,
+        file_path: str,
+        file_context: str,
+        issue_query: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Per-file memory retrieval pipeline (Steps 1–8).
+
+        For each file being analyzed in FL, this method:
+          Step 1  — builds a file-enriched query from the current failure context
+                    (file_path + error_type + failure_pattern + failure_reason)
+          Step 2  — generates a dense embedding of the combined file context
+          Step 3  — retrieves similar entries from L1 / L2 / L3 via cosine similarity
+          Step 4  — computes weighted similarity score across levels
+          Step 5  — ranks retrieved entries highest → lowest similarity
+          Steps 6–8 — (lazy) the result is passed to format_for_file_prompt() /
+                      analyze_relevance_for_file() which call the LLM to select
+                      only the memories relevant to this specific file and failure.
+        """
+        if not self.enabled:
+            return self._empty_result(issue_query, "memory_disabled")
+
+        # Step 1: File-specific query.
+        # relevant_files = [this file only] so L1 file_score targets exactly this file.
+        # changed_files cleared — it would otherwise contain ALL commit-changed files and
+        # cause L1 to match records for unrelated files with the same file_score=1.0.
+        file_query = dict(issue_query)
+        file_query["relevant_files"] = [_normalize_path(file_path)]
+        file_query["changed_files"] = []
+        file_query["file_path"] = _normalize_path(file_path)
+
+        # Enrich failure_reason with file-level semantic context so the
+        # embedding (Step 2) captures both issue and file signals.
+        existing_reason = file_query.get("failure_reason", "")
+        file_snippet = _clip(file_context, 800)
+        file_query["failure_reason"] = (
+            f"{existing_reason} | file: {_normalize_path(file_path)} | {file_snippet}"
+            if file_snippet else existing_reason
+        )
+
+        # Steps 2–5: Embedding Generation → Cosine Similarity → Scoring → Ranking
+        l1 = self._retrieve_l1(file_query) if "L1" in self.active_levels else []
+        l2 = self._retrieve_l2(file_query) if "L2" in self.active_levels else []
+        l3 = self._retrieve_l3(file_query) if "L3" in self.active_levels else []
+
+        best_scores = {
+            "L1": round(max((float(r.get("similarity_score", 0.0)) for r in l1), default=0.0), 4),
+            "L2": round(max((float(r.get("similarity_score", 0.0)) for r in l2), default=0.0), 4),
+            "L3": round(max((float(r.get("similarity_score", 0.0)) for r in l3), default=0.0), 4),
+        }
+        weighted_similarity = round(
+            sum(self.level_weights[lvl] * best_scores[lvl] for lvl in ("L1", "L2", "L3")), 4
+        )
+
+        # No threshold gate — all retrieved entries are ranked and passed to the LLM.
+        # The LLM uses similarity scores to decide what is relevant for this file.
+
+        # Candidate files from L1 direct matches + L2 modified-file entries
+        candidate_files: List[str] = []
+        for row in l1:
+            path = _normalize_path(row.get("file", ""))
+            if path and path not in candidate_files:
+                candidate_files.append(path)
+        for row in l2:
+            for file_row in (row.get("modified_files", []) or row.get("files", []))[:5]:
+                path = _normalize_path(file_row.get("file", ""))
+                if path and path not in candidate_files:
+                    candidate_files.append(path)
+
+        high_level_hints: List[str] = []
+        for row in l2:
+            reason = str(row.get("failure_reason") or "")
+            if reason:
+                high_level_hints.append(_clip(reason, 220))
+        for row in l3:
+            principle = str(row.get("principle") or row.get("fix_strategy") or "")
+            if principle:
+                high_level_hints.append(_clip(principle, 220))
+
+        result = {
+            "enabled": True,
+            "query": {
+                "task_id": file_query.get("task_id"),
+                "sha_fail": file_query.get("sha_fail"),
+                "repo": file_query.get("repo"),
+                "error_type": file_query.get("error_type"),
+                "failure_pattern": file_query.get("failure_pattern"),
+                "file_path": file_path,
+            },
+            "thresholds": {
+                "similarity_threshold": self.similarity_threshold,
+                **self.level_thresholds,
+            },
+            "weights": dict(self.level_weights),
+            "level_scores": best_scores,
+            "weighted_similarity": weighted_similarity,
+            "selected_memory_levels": [
+                lvl for lvl, rows in (("L1", l1), ("L2", l2), ("L3", l3)) if rows
+            ],
+            "candidate_files": candidate_files[:10],
+            "high_level_hints": high_level_hints[:6],
+            "l1_matches": l1,
+            "l2_matches": l2,
+            "l3_matches": l3,
+            "matches": [*l1, *l2, *l3],
+        }
+        print(
+            f"[Memory] file={_normalize_path(file_path)} "
+            f"weighted_similarity={weighted_similarity} "
+            f"retrieved_levels={result['selected_memory_levels']} "
+            f"l1={len(l1)} l2={len(l2)} l3={len(l3)}"
+        )
+        self._append_jsonl(self.retrieval_log_path, result)
+        return result
 
     def augment_suspicious_files(
         self,
@@ -777,9 +1042,11 @@ class MemoryPlugin:
         return f"""You are a file-level memory relevance analyst for CI fault localization.
 
 Your task:
-- Compare the CURRENT FILE and CURRENT FAILURE context against the retrieved memory candidates.
-- Keep only memory that is truly relevant and transferable for this file.
-- Discard candidates that are weak, incompatible, or only globally similar.
+- All candidates below were retrieved and ranked by similarity score (highest → lowest).
+- You must analyze each candidate against the CURRENT FILE and CURRENT FAILURE context.
+- Use the similarity score as a signal, but make your own relevance judgement.
+- Select only memory that is directly useful for localizing or fixing the fault in THIS file.
+- A high score does not guarantee relevance; a low score does not disqualify a candidate.
 
 CURRENT FAILURE
 - repo: {query.get("repo", "")}
@@ -792,15 +1059,15 @@ file_path: {file_path}
 file_context:
 {_clip(file_context, 2600)}
 
-RETRIEVED CANDIDATES
+RETRIEVED CANDIDATES (ranked highest → lowest similarity score)
 {candidate_block}
 
-Selection criteria:
-1. Same or compatible error_type
-2. Same or compatible failure_pattern
-3. Relevant to this file, not just the issue globally
-4. Same or compatible tool/failure mode
-5. Useful for fault localization, not just patch description
+Selection criteria — select a candidate if it provides:
+1. A matching or compatible error_type / failure_pattern for THIS file
+2. A directly applicable fix direction or localization hint for THIS file
+3. Dependent files that must also be modified to resolve the failure
+4. Cross-repo principles transferable to this exact failure mode
+Reject candidates that only match at the issue level but are irrelevant to this specific file.
 
 Return STRICT JSON only:
 {{
@@ -818,17 +1085,11 @@ Return STRICT JSON only:
       "failure_pattern": "<compatible pattern>",
       "failure_reason": "<relevant reason>",
       "dependent_files": [
-          {
-              "file": "file_a",
-              "reason": "<why this file is relevant for the current file>"
-          },
-          {
-              "file": "file_b",
-              "reason": "<why this file is relevant for the current file>"
-          }
+          {{"file": "file_a", "reason": "<why this file is relevant for the current file>"}},
+          {{"file": "file_b", "reason": "<why this file is relevant for the current file>"}}
       ],
       "additional_localization_files": [
-          {"file": "file_c", "reason": "<why this file is relevant for the current file>"}
+          {{"file": "file_c", "reason": "<why this file is relevant for the current file>"}}
       ],
       "localization_hint": "<what to inspect in the current file>",
       "fix_direction": "<transferable fix direction>"
@@ -1029,24 +1290,29 @@ Rules:
 
         repo_id = repo_name
         error_type = _first_error_type(log_analysis_result)
+        # issue-level failure_pattern from log analysis (subcategory of the primary error type)
+        issue_failure_pattern = _primary_failure_pattern(log_analysis_result.get("error_types", []))
         failed_jobs = log_analysis_result.get("failed_jobs", log_analysis_result.get("failed_job", []))
         failed_cmd, failed_tool = _extract_failed_commands_and_tools(failed_jobs)
         diff_text = str((patch_generator or {}).get("diff", "") or "")
         ground_truth_files = extract_files_from_diff(diff_text)
         fl_data = (fault_localizer or {}).get("fault_localization_data", []) or []
-        relevant_files = _extract_log_file_paths(log_analysis_result)
-        changed_files = _extract_changed_file_paths(changed_files_info)
         error_context_summary = _clip(
             json.dumps(log_analysis_result.get("error_context", []), ensure_ascii=False),
             1800,
         )
+        # Derive workflow_name from path (e.g. ".github/workflows/test.yml" → "test")
+        workflow_name = os.path.splitext(os.path.basename(workflow_path or ""))[0]
 
         l1_rows = self._build_l1_rows(
             task_id=task_id,
             sha_fail=sha_fail,
             repo_id=repo_id,
             repo_name=repo_name,
+            workflow_path=workflow_path,
+            workflow_name=workflow_name,
             error_type=error_type,
+            issue_failure_pattern=issue_failure_pattern,
             failed_cmd=failed_cmd,
             failed_tool=failed_tool,
             ground_truth_files=ground_truth_files,
@@ -1058,7 +1324,7 @@ Rules:
             self._upsert_list_record(
                 self.failure_memory,
                 row,
-                keys=("sha_fail", "file", "error_type", "issue_type"),
+                keys=("sha_fail", "file", "error_type", "failure_pattern"),
             )
 
         repo_row = self._build_l2_row(
@@ -1073,7 +1339,7 @@ Rules:
             ground_truth_files=ground_truth_files,
             error_context_summary=error_context_summary,
         )
-        self._merge_repo_memory(repo_row)
+        self._upsert_repo_memory(repo_row)
 
         cross_row = self._build_l3_row(
             task_id=task_id,
@@ -1098,7 +1364,10 @@ Rules:
         sha_fail: str,
         repo_id: str,
         repo_name: str,
+        workflow_path: str,
+        workflow_name: str,
         error_type: str,
+        issue_failure_pattern: str,
         failed_cmd: List[str],
         failed_tool: List[str],
         ground_truth_files: List[str],
@@ -1112,27 +1381,59 @@ Rules:
             if not file_path:
                 continue
             faults = entry.get("faults", []) or []
-            first_fault = faults[0] if faults else {}
+
+            # Aggregate fault-level fields
             reasons = [str(f.get("reason") or "").strip() for f in faults if str(f.get("reason") or "").strip()]
-            issue_types = [str(f.get("issue_type") or "").strip() for f in faults if str(f.get("issue_type") or "").strip()]
-            levels = [str(f.get("fault_localization_level") or "").strip() for f in faults if str(f.get("fault_localization_level") or "").strip()]
+            raw_issue_types = [str(f.get("issue_type") or "").strip() for f in faults if str(f.get("issue_type") or "").strip()]
+
+            # failure_pattern: fault's specific keyword (e.g. "dependency_or_env"),
+            # falling back to the issue-level pattern from log analysis
+            raw_pattern = raw_issue_types[0] if raw_issue_types else issue_failure_pattern
+
+            # issue_type: human-readable descriptive phrase
+            issue_type_desc = _to_descriptive_issue_type(raw_pattern, error_type)
+
+            # failure_pattern stays as the keyword for exact/semantic matching
+            failure_pattern = raw_pattern
+
+            # fix_direction: lines added in this file's diff chunk (brief, readable)
+            file_diff = _extract_file_diff(diff_text, file_path)
+            added_lines = [
+                ln.lstrip("+").strip()
+                for ln in file_diff.splitlines()
+                if ln.startswith("+") and not ln.startswith("+++") and ln.lstrip("+").strip()
+            ]
+            fix_direction = _clip("; ".join(added_lines[:5]), 500) if added_lines else ""
+
+            # dependent_files: structured [{file, reason}] — other files co-patched in the same fix
+            dep_files: List[Dict[str, str]] = [
+                {
+                    "file": p,
+                    "reason": "Co-modified in the same fix — directly or indirectly dependent on this file",
+                }
+                for p in ground_truth_files
+                if p != file_path
+            ]
+
             row = {
-                "issue_id": task_id,
                 "sha_fail": sha_fail,
+                "issue_id": task_id,
                 "repo": repo_id,
                 "repo_name": repo_name,
+                "workflow_path": workflow_path,
+                "workflow_name": workflow_name,
                 "file": file_path,
-                "line_range": first_fault.get("line_range") or [],
                 "error_type": error_type,
-                "error_subtype": "",
-                "issue_type": issue_types[0] if issue_types else "",
-                "failed_cmd": failed_cmd,
+                # issue_type: descriptive phrase — "Dependency on environment"
+                "issue_type": issue_type_desc,
+                # failure_pattern: specific keyword — "dependency_or_env" / "import-error"
+                "failure_pattern": failure_pattern,
+                "failure_reason": _clip(" | ".join(reasons) or error_context_summary, 500),
+                # fix_direction: the actual lines added/changed (brief readable summary)
+                "fix_direction": fix_direction,
                 "failed_tool": failed_tool,
-                "dependent_files": [path for path in ground_truth_files if path != file_path],
-                "reason": _clip(" | ".join(reasons) or error_context_summary, 400),
-                "fix_strategy": _clip(_extract_file_diff(diff_text, file_path), 500),
-                "error_level": sorted(set(levels)),
-                "recommended_api": [],
+                # dependent_files: [{file, reason}] — files that depend on or are affected by this file
+                "dependent_files": dep_files,
             }
             rows.append(row)
         return rows
@@ -1151,43 +1452,56 @@ Rules:
         ground_truth_files: List[str],
         error_context_summary: str,
     ) -> Dict[str, Any]:
-        issue_type = next((str(row.get("issue_type") or "").strip() for row in l1_rows if row.get("issue_type")), "")
-        issue_levels = sorted({level for row in l1_rows for level in row.get("error_level", []) if level})
-        file_entries = [
-            {
+        # Primary issue_type and failure_pattern from L1 rows (first non-empty wins)
+        issue_type_desc = next((str(row.get("issue_type") or "").strip() for row in l1_rows if row.get("issue_type")), "")
+        failure_pattern = next((str(row.get("failure_pattern") or "").strip() for row in l1_rows if row.get("failure_pattern")), "")
+
+        # Per-file detail entries — one entry per file with full context
+        file_entries: List[Dict[str, Any]] = []
+        for row in l1_rows:
+            file_entries.append({
+                # Which file and what specific issue it has
                 "file": row.get("file", ""),
-                "line_range": row.get("line_range", []),
-                "reason": row.get("reason", ""),
-                "issue_type": row.get("issue_type", ""),
-                "error_type": row.get("error_type", ""),
-            }
-            for row in l1_rows
-        ]
-        changed_entries = [
-            {"file": path, "line_range": [], "fix_family": "", "issue_id": task_id}
-            for path in ground_truth_files
-        ]
-        fix_strategies = [row.get("fix_strategy", "") for row in l1_rows if row.get("fix_strategy")]
-        fix_strategies = list(dict.fromkeys(fix_strategies))
-        pattern_name = f"{error_type} {issue_type}".strip() or error_type or "repo_failure_pattern"
+                "issue_type": row.get("issue_type", ""),         # descriptive: "Dependency on environment"
+                "failure_pattern": row.get("failure_pattern", ""), # keyword: "dependency_or_env"
+                "failure_reason": row.get("failure_reason", ""),   # WHY this file failed
+                # What was changed to fix this file
+                "fix_direction": row.get("fix_direction", ""),
+                # Files that directly or indirectly depend on this file
+                "dependent_files": row.get("dependent_files", []),  # [{file, reason}]
+            })
+
+        # Overall failure reason connecting all files
+        all_reasons = list(dict.fromkeys(
+            r for row in l1_rows for r in [row.get("failure_reason", "")] if r
+        ))
+        overall_failure_reason = _clip(" | ".join(all_reasons[:3]) or error_context_summary, 600)
+
+        # Fix approach: combine unique fix directions across files
+        fix_directions = list(dict.fromkeys(
+            row.get("fix_direction", "") for row in l1_rows if row.get("fix_direction")
+        ))
+        fix_approach = _clip("; ".join(fix_directions[:3]), 500)
+
         return {
+            # Identity — keyed by sha_fail so each issue is its own L2 record
+            "sha_fail": sha_fail,
+            "issue_id": task_id,
             "repo": repo_id,
             "repo_name": repo_name,
+            # Error classification
             "error_type": error_type,
-            "issue_type": issue_type,
-            "failed_cmd": failed_cmd,
-            "error_level": issue_levels,
+            "issue_type": issue_type_desc,   # descriptive: "Dependency on environment"
+            "failure_pattern": failure_pattern,  # keyword: "dependency_or_env"
+            # Narrative context
+            "overall_failure_reason": overall_failure_reason,
+            "fix_approach": fix_approach,
+            # Per-file details (each with issue_type, failure_reason, fix_direction, dependent_files)
             "files": file_entries,
+            # Ground-truth patched files (for retrieval augmentation)
             "changed_files": ground_truth_files,
-            "changed_file_entries": changed_entries,
-            "fix_strategy": fix_strategies[0] if fix_strategies else "",
-            "fix_strategies": fix_strategies,
-            "failure_reason": _clip(error_context_summary, 400),
-            "failure_reasons": [row.get("reason", "") for row in l1_rows if row.get("reason")][:5],
             "failed_tool": failed_tool,
-            "pattern_name": pattern_name,
-            "issue_ids": [task_id],
-            "sha_fail_refs": [sha_fail],
+            "failed_cmd": failed_cmd,
         }
 
     def _build_l3_row(
@@ -1202,32 +1516,72 @@ Rules:
         repo_row: Dict[str, Any],
         ground_truth_files: List[str],
     ) -> Dict[str, Any]:
-        issue_type = str(repo_row.get("issue_type") or "").strip()
-        reason_parts = [str(r) for r in _safe_list(repo_row.get("failure_reasons", [])) if str(r).strip()]
-        reason_snippet = _clip(" | ".join(reason_parts[:2]), 300) if reason_parts else ""
+        # issue_type: descriptive phrase carried forward from L2
+        issue_type_desc = str(repo_row.get("issue_type") or "").strip()
+        # failure_pattern: specific keyword from L2
+        failure_pattern = str(repo_row.get("failure_pattern") or "").strip()
+
+        # Failure reason for principle construction
+        overall_reason = str(repo_row.get("overall_failure_reason") or repo_row.get("failure_reason") or "").strip()
+        reason_snippet = _clip(overall_reason, 300) if overall_reason else ""
+
+        # Build an abstract principle for this (error_type, issue_type) combination
         principle = (
-            f"error_type={error_type}"
-            + (f" issue_type={issue_type}" if issue_type else "")
+            f"{error_type}"
+            + (f" — {issue_type_desc}" if issue_type_desc else "")
+            + (f" [{failure_pattern}]" if failure_pattern else "")
             + (f": {reason_snippet}" if reason_snippet else "")
             + f" (seen in repo: {repo_name})"
         )
+
+        # Fix strategies from L2's fix_approach
+        fix_approach = str(repo_row.get("fix_approach") or "").strip()
+        fix_strategies = [fix_approach] if fix_approach else []
+
+        # Failure reasons: collect from L2 file entries
+        file_failure_reasons = list(dict.fromkeys(
+            str(f.get("failure_reason") or "")
+            for f in (repo_row.get("files") or [])
+            if f.get("failure_reason")
+        ))
+        failure_reasons = ([overall_reason] + file_failure_reasons)[:4] if overall_reason else file_failure_reasons[:4]
+
+        # Example files: top files from L2 for concrete retrieval context
+        example_files = [
+            {"file": f.get("file", ""), "issue_type": f.get("issue_type", ""), "failure_pattern": f.get("failure_pattern", "")}
+            for f in (repo_row.get("files") or [])[:3]
+            if f.get("file")
+        ]
+
+        # failure_patterns: all patterns observed across files in this issue
+        file_patterns = list(dict.fromkeys(
+            str(f.get("failure_pattern") or "")
+            for f in (repo_row.get("files") or [])
+            if f.get("failure_pattern")
+        ))
+        all_failure_patterns = list(dict.fromkeys([failure_pattern] + file_patterns)) if failure_pattern else file_patterns
+
         return {
+            # Classification (merge key for cross-issue accumulation)
             "error_type": error_type,
-            "issue_type": issue_type,
-            "failure_pattern": issue_type,
+            "issue_type": issue_type_desc,       # descriptive: "Dependency on environment"
+            "failure_pattern": failure_pattern,   # primary keyword for this pattern
+            # Abstract principle and fix guidance
+            "principle": principle,
+            "fix_strategies": fix_strategies,
+            "fix_strategy": fix_strategies[0] if fix_strategies else "",
+            # Accumulated patterns and reasons (grow as more issues are seen)
+            "failure_patterns": all_failure_patterns,  # all specific patterns for this issue type
+            "failure_reasons": failure_reasons,         # concrete failure reason examples
+            # Provenance
             "repos": [repo_id],
             "repo_names": [repo_name],
             "failed_tool": failed_tool,
             "failed_cmd": failed_cmd,
-            "error_level": repo_row.get("error_level", []),
-            "principle": principle,
-            "failure_reasons": repo_row.get("failure_reasons", [])[:3],
-            "fix_strategies": repo_row.get("fix_strategies", []),
-            "fix_strategy": repo_row.get("fix_strategy", ""),
             "evidence_issue_ids": [task_id],
-            "recommended_tools": [],
+            # Concrete file examples for retrieval grounding
+            "example_files": example_files,
             "changed_files": ground_truth_files,
-            "changed_file_entries": repo_row.get("changed_file_entries", []),
         }
 
     def _upsert_list_record(self, rows: List[Dict[str, Any]], record: Dict[str, Any], keys: Tuple[str, ...]) -> None:
@@ -1237,38 +1591,27 @@ Rules:
                 return
         rows.append(record)
 
-    def _merge_repo_memory(self, incoming: Dict[str, Any]) -> None:
-        key = (
-            str(incoming.get("repo") or ""),
-            str(incoming.get("error_type") or ""),
-            str(incoming.get("issue_type") or ""),
-        )
-        for index, row in enumerate(self.repo_memory):
-            row_key = (
-                str(row.get("repo") or ""),
-                str(row.get("error_type") or ""),
-                str(row.get("issue_type") or ""),
-            )
-            if row_key != key:
-                continue
-            merged = dict(row)
-            for field in ("failed_cmd", "error_level", "changed_files", "fix_strategies", "failure_reasons", "failed_tool", "issue_ids", "sha_fail_refs"):
-                merged[field] = list(dict.fromkeys((row.get(field) or []) + (incoming.get(field) or [])))
-            merged["files"] = self._merge_dict_list(row.get("files", []), incoming.get("files", []), "file")
-            merged["changed_file_entries"] = self._merge_dict_list(
-                row.get("changed_file_entries", []),
-                incoming.get("changed_file_entries", []),
-                "file",
-            )
-            if incoming.get("fix_strategy"):
-                merged["fix_strategy"] = incoming["fix_strategy"]
-            if incoming.get("failure_reason"):
-                merged["failure_reason"] = incoming["failure_reason"]
-            self.repo_memory[index] = merged
-            return
+    def _upsert_repo_memory(self, incoming: Dict[str, Any]) -> None:
+        """
+        Upsert L2 record keyed by sha_fail.
+        Each issue gets its own clean L2 record — no cross-issue merging.
+        This preserves the per-issue context (files, reasons, fix directions)
+        without polluting entries with unrelated issues that share the same error_type.
+        """
+        sha = str(incoming.get("sha_fail") or "")
+        if sha:
+            for index, row in enumerate(self.repo_memory):
+                if str(row.get("sha_fail") or "") == sha:
+                    self.repo_memory[index] = incoming
+                    return
         self.repo_memory.append(incoming)
 
     def _merge_cross_memory(self, incoming: Dict[str, Any]) -> None:
+        """
+        Merge L3 records by (error_type, issue_type).
+        L3 is the abstract pattern level — multiple issues of the same type
+        accumulate failure_patterns and fix_strategies here.
+        """
         key = (
             str(incoming.get("error_type") or ""),
             str(incoming.get("issue_type") or ""),
@@ -1281,13 +1624,18 @@ Rules:
             if row_key != key:
                 continue
             merged = dict(row)
-            for field in ("repos", "repo_names", "failed_tool", "failed_cmd", "error_level", "failure_reasons", "fix_strategies", "evidence_issue_ids", "changed_files"):
-                merged[field] = list(dict.fromkeys((row.get(field) or []) + (incoming.get(field) or [])))
-            merged["changed_file_entries"] = self._merge_dict_list(
-                row.get("changed_file_entries", []),
-                incoming.get("changed_file_entries", []),
-                "file",
+            # Accumulate list fields — deduplicated
+            for field in ("repos", "repo_names", "failed_tool", "failed_cmd",
+                          "failure_reasons", "fix_strategies", "failure_patterns",
+                          "evidence_issue_ids", "changed_files"):
+                merged[field] = list(dict.fromkeys(
+                    (row.get(field) or []) + (incoming.get(field) or [])
+                ))
+            # Accumulate example_files (keyed by file path)
+            merged["example_files"] = self._merge_dict_list(
+                row.get("example_files", []), incoming.get("example_files", []), "file"
             )
+            # Always take the latest principle and fix_strategy
             if incoming.get("principle"):
                 merged["principle"] = incoming["principle"]
             if incoming.get("fix_strategy"):

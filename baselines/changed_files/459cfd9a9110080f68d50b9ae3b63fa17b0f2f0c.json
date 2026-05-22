@@ -4,7 +4,7 @@
         {
             "commit": "459cfd9a9110080f68d50b9ae3b63fa17b0f2f0c",
             "file_path": "test/integration/tools/system/package_manager_test.py",
-            "diff": "diff --git a/test/integration/tools/system/package_manager_test.py b/test/integration/tools/system/package_manager_test.py\nindex daf5d2c95..1b989d74a 100644\n--- a/test/integration/tools/system/package_manager_test.py\n+++ b/test/integration/tools/system/package_manager_test.py\n@@ -428,7 +428,7 @@ def test_tools_install_archless_with_version(tool_class, result):\n \n @pytest.mark.parametrize(\"tool_class, result\", [\n     (Apk, 'apk info -e package'),\n-    (Apt, 'dpkg-query -W -f=\\'${Status}\\' package | grep -q \"ok installed\"'),\n+    (Apt, 'dpkg -l | grep -q -E \"^ii\\\\s+\\\\bpackage\\\\s+\\\\b\"'),\n     (Yum, 'rpm -q package'),\n     (Dnf, 'rpm -q package'),\n     (Brew, 'test -n \"$(brew ls --versions package)\"'),\n"
+            "diff": "diff --git a/test/integration/tools/system/package_manager_test.py b/test/integration/tools/system/package_manager_test.py\nindex daf5d2c95b..1b989d74a0 100644\n--- a/test/integration/tools/system/package_manager_test.py\n+++ b/test/integration/tools/system/package_manager_test.py\n@@ -428,7 +428,7 @@ def test_tools_install_archless_with_version(tool_class, result):\n \n @pytest.mark.parametrize(\"tool_class, result\", [\n     (Apk, 'apk info -e package'),\n-    (Apt, 'dpkg-query -W -f=\\'${Status}\\' package | grep -q \"ok installed\"'),\n+    (Apt, 'dpkg -l | grep -q -E \"^ii\\\\s+\\\\bpackage\\\\s+\\\\b\"'),\n     (Yum, 'rpm -q package'),\n     (Dnf, 'rpm -q package'),\n     (Brew, 'test -n \"$(brew ls --versions package)\"'),\n"
         }
     ]
 }

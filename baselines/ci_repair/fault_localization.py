@@ -98,6 +98,23 @@ class FaultLocalization:
                 pass
         self.memory_context = memory_context or {"enabled": False, "matches": []}
 
+        # Build the issue-level memory query once; used as base for per-file retrieval.
+        self._memory_query: Optional[Dict[str, Any]] = None
+        if self.memory_plugin is not None and self.memory_plugin.is_enabled():
+            try:
+                repo_name = os.path.basename(self.repo_path.rstrip("/\\"))
+                self._memory_query = self.memory_plugin.build_query(
+                    task_id=str(self.id),
+                    sha_fail=sha_fail,
+                    repo_name=repo_name,
+                    workflow_path="",
+                    workflow=self.workflow or "",
+                    log_analysis_result=self.error_logs,
+                    changed_files_info=None,  # per-file targeting happens in retrieve_for_file()
+                )
+            except Exception as _qe:
+                print(f"[Memory] Could not build query: {_qe}")
+
         self.parser = JsonOutputParser()
 
     # ------------------------------------------------------------------ #
@@ -388,8 +405,21 @@ FAILED JOBS (CI context):
             numbered_full_content = self._numbered_file_content(content)
 
             chunks = self._chunk_file(numbered_full_content)
-
             num_chunks = len(chunks)
+
+            # Steps 2–8: Per-file memory retrieval using the file's own context.
+            # This runs the full pipeline: embed file context → cosine similarity
+            # retrieval from L1/L2/L3 → ranking → LLM selection (lazy, in prompt).
+            per_file_memory = self.memory_context  # fallback to issue-level
+            if self.memory_plugin is not None and self._memory_query is not None:
+                try:
+                    per_file_memory = self.memory_plugin.retrieve_for_file(
+                        file_path=file_path,
+                        file_context=content[:1500],
+                        issue_query=self._memory_query,
+                    )
+                except Exception as _me:
+                    print(f"[Memory] Per-file retrieval failed for {file_path}: {_me}")
 
             # Per-chunk strict FL
             all_faults: List[Dict[str, Any]] = []
@@ -415,16 +445,17 @@ FAILED JOBS (CI context):
                     chunk_idx=idx,
                     num_chunks=num_chunks,
                     outline=outline,
-                    chunk=ch["content"]
+                    chunk=ch["content"],
+                    per_file_memory=per_file_memory,
                 )
 
                 if faults:
                     all_faults.extend(faults)
-                    if self.memory_plugin is not None and (self.memory_context.get("selected_memory_levels") or []):
+                    if self.memory_plugin is not None and (per_file_memory.get("selected_memory_levels") or []):
                         suggested = self.memory_plugin.get_additional_files_for_file(
                             file_path=file_path,
                             file_context=file_summary,
-                            retrieval_result=self.memory_context,
+                            retrieval_result=per_file_memory,
                         )
                         for ref in suggested:
                             candidate = (ref.get("file") or "").strip()
@@ -473,15 +504,16 @@ FAILED JOBS (CI context):
     file_summary: str,
     valid_start: int,
     valid_end: int,
+    per_file_memory: Optional[Dict[str, Any]] = None,
     ) -> str:
         """
         Build the strict fault-localization prompt for a single (sub)chunk.
 
         - file_summary: includes file metadata + outline + the code chunk (already fenced).
         - valid_start/valid_end: absolute (file-level) line numbers for this chunk window.
-        - faults: previously detected faults (used only to avoid duplicates).
+        - per_file_memory: retrieval result from retrieve_for_file() for this specific file.
         """
-        memory_context_text = self._memory_context_for_file(file_path, file_summary)
+        memory_context_text = self._memory_context_for_file(file_path, file_summary, per_file_memory)
         return f"""
 You are a **Strict Fault Localization Agent**.
 
@@ -661,6 +693,7 @@ FINAL CHECK
     num_chunks: int,
     outline: List[Dict[str, Any]],
     chunk: str,
+    per_file_memory: Optional[Dict[str, Any]] = None,
     ) -> list:
         fault_locations: List[Dict[str, Any]] = []
         token_limit = get_prompt_token_budget(self.model_name)
@@ -670,6 +703,7 @@ FINAL CHECK
             file_summary=file_summary,
             valid_start=valid_start,
             valid_end=valid_end,
+            per_file_memory=per_file_memory,
         )
 
         print(f"[Chunk {chunk_idx+1}/{num_chunks}] Analyzing lines {valid_start}-{valid_end}...")
@@ -756,6 +790,7 @@ FINAL CHECK
                     file_summary=sub_file_summary,
                     valid_start=abs_start,
                     valid_end=abs_end,
+                    per_file_memory=per_file_memory,
                 )
 
                 if estimate_tokens(sub_prompt, model=model_for_count) > token_limit:
@@ -823,13 +858,19 @@ FINAL CHECK
 
         return fault_locations
 
-    def _memory_context_for_file(self, file_path: str, file_context: str = "") -> str:
-        if not (self.memory_context.get("selected_memory_levels") or []):
+    def _memory_context_for_file(
+        self,
+        file_path: str,
+        file_context: str = "",
+        per_file_memory: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        # Use per-file retrieval result if provided; fall back to issue-level context.
+        ctx = per_file_memory if per_file_memory is not None else self.memory_context
+        if not (ctx.get("selected_memory_levels") or []):
             return "No similar prior failures retrieved."
         if self.memory_plugin is not None:
-            return self.memory_plugin.format_for_file_prompt(file_path, self.memory_context, file_context=file_context)
-
-        return json.dumps(self.memory_context, indent=2, ensure_ascii=False)
+            return self.memory_plugin.format_for_file_prompt(file_path, ctx, file_context=file_context)
+        return json.dumps(ctx, indent=2, ensure_ascii=False)
 
     # ------------------------------------------------------------------ #
     # Path & file helpers
@@ -876,7 +917,16 @@ FINAL CHECK
 
     def _read_file_content(self, resolved_path: str) -> str:
         """Return file content as a string, or '' if file is missing/unreadable."""
-        self._ensure_repo_at_commit(self.failed_commit, require_clean=True)
+        try:
+            self._ensure_repo_at_commit(self.failed_commit, require_clean=True)
+        except RuntimeError:
+            # Repo is dirty (e.g. leftover patch state); attempt force clean and continue.
+            try:
+                self._force_clean_and_checkout(self.failed_commit)
+            except Exception as clean_err:
+                print(f"[WARN] Could not restore repo to {self.failed_commit}: {clean_err}")
+                return ""
+
         if not os.path.exists(resolved_path):
             print(f"[WARN] File not found: {resolved_path}")
             return ""
