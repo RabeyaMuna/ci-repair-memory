@@ -383,6 +383,9 @@ Each element in `log_details` corresponds to ONE CI step and typically includes:
 - "relevant_files": list of files tied to the failure in this step, each with:
   - "file"
   - "line_number" (may be null)
+  - "issue_type": short failure classification for this file (may be null)
+  - "failed_cmd": the command that triggered the failure for this file (may be null)
+  - "failed_tool": the tool that reported the failure for this file (may be null)
   - "reason"
 - "error_types": list of error classifications for this step, each with:
   - "category"
@@ -414,6 +417,9 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
     {{
       "file": "path/to/file.py",
       "line_number": 123,
+      "issue_type": "Short failure classification for this file, e.g. 'Test Failure', 'Import Error', 'Type Error', 'Dependency Error', 'Lint Error'. Use null if not clearly tied to a failure.",
+      "failed_cmd": "The exact command that triggered the failure for this file, e.g. 'pytest tests/', 'python -m mypy src/'. Use null if not identifiable.",
+      "failed_tool": "The tool that reported or caused the failure for this file, e.g. 'pytest', 'mypy', 'flake8', 'pip'. Use null if not identifiable.",
       "reason": "Short evidence-based explanation of why this file is tied to the failure."
     }},
   ],
@@ -455,6 +461,12 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
    - If the same file appears in multiple steps, merge the reasons into a single concise,
      evidence-based `"reason"` that reflects all relevant contexts.
    - Use `"line_number":` the most specific failing line if available; otherwise `null`.
+   - For each file, analyze the failure evidence together with the matching workflow job/step/command to infer:
+     - `"failed_cmd"` from the exact workflow `run` command or `uses` action tied to the failing step.
+     - `"failed_tool"` from the reporting tool or command invoked in that step (for example `pytest`, `mypy`, `ruff`, `flake8`, `pip`, `npm`, `go test`).
+     - `"issue_type"` from the file-specific failure mode described in the logs (for example test failure, lint error, import error, type error, dependency error).
+   - Prefer file-specific values from the step analysis when present. Otherwise, infer them from the workflow step that produced the file-level failure. Use `null` only when the value cannot be supported by the logs or workflow.
+   - The `"reason"` for each file must explain why that file is tied to the failure and, when possible, mention the step/tool/command that connects the file to the failing workflow step.
    - Include only files that are clearly tied to failures, errors, or critical warnings.
    - If no such file exists, return `"relevant_files": []`.
 
@@ -474,6 +486,7 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
        - The value of `"run"` if present, or `"uses"` if it is an action reference.
        - If no command can be found, use `null`.
    - If multiple jobs/steps clearly fail, include multiple entries in `"failed_job"`.
+   - Reuse this same step-to-workflow mapping when populating each file's `"failed_cmd"` and `"failed_tool"` so the file-level metadata stays consistent with the recorded failed job/step.
 
 6. **Output Rules**
    - Return **only valid JSON** — no markdown, commentary, or code fences.

@@ -4,7 +4,7 @@ Phase 2 of the memory bank pipeline:
   Run CILogAnalyzerLLM on each seed issue → save structured error context.
 
 Inputs:
-  --seed-file    memory_seed_issues.json  (from prepare_memory_seed_split.py)
+  --seed-file    trs_memory_seed_issues.json  (from the enriched TRS memory split)
   --dataset      lca_dataset.parquet
   --config       config.yaml
 
@@ -38,10 +38,10 @@ from utilities.ensure_repo import ensure_repo_at_commit
 from utilities.llm_provider import get_default_model_key, get_llm
 
 
-DEFAULT_SEED_FILE = PROJECT_ROOT / "baselines" / "results" / "memory_seed_issues.json"
+DEFAULT_SEED_FILE = PROJECT_ROOT / "baselines" / "results" / "trs" / "trs_memory_seed_issues.json"
 DEFAULT_DATASET   = PROJECT_ROOT / "dataset" / "lca_dataset.parquet"
 DEFAULT_CONFIG    = PROJECT_ROOT / "config.yaml"
-DEFAULT_OUTPUT    = PROJECT_ROOT / "baselines" / "results"
+DEFAULT_OUTPUT    = PROJECT_ROOT / "baselines" / "results" / "trs"
 
 
 def _write_json(path: Path, payload: Any) -> None:

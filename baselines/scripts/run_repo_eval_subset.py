@@ -27,12 +27,9 @@ from utilities.token_tracker import TokenTracker  # noqa: E402
 from utilities.fl_evaluator import evaluate_fl  # noqa: E402
 
 
-DEFAULT_SPLIT = PROJECT_ROOT / "baselines" / "results" / "memory_eval_issues.json"
+DEFAULT_SPLIT = PROJECT_ROOT / "baselines" / "results" / "trs" / "trs_eval_issues.json"
 DEFAULT_DATASET = PROJECT_ROOT / "dataset" / "lca_dataset.parquet"
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
-TARGET_REPOS = ("agno", "axolotl", "conan", "flower")
-
-
 def _load_dataset(local_dataset: Path, config) -> List[Dict[str, Any]]:
     if local_dataset.exists():
         df = pd.read_parquet(local_dataset)
@@ -55,6 +52,9 @@ def _filter_eval_rows(
     repos: List[str],
     max_per_repo: int,
 ) -> List[Dict[str, Any]]:
+    if not repos:
+        repos = sorted({str(row.get("repo_name") or "") for row in split_rows if str(row.get("repo_name") or "")})
+
     grouped: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for row in split_rows:
         repo_name = str(row.get("repo_name") or "")
@@ -75,7 +75,7 @@ def main() -> int:
     parser.add_argument("--split-file", type=Path, default=DEFAULT_SPLIT)
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument("--repos", nargs="+", default=list(TARGET_REPOS))
+    parser.add_argument("--repos", nargs="*", default=[])
     parser.add_argument("--max-per-repo", type=int, default=0, help="0 means all remaining eval issues for each repo.")
     parser.add_argument("--memory-mode", choices=("baseline", "memory"), default="baseline")
     parser.add_argument(

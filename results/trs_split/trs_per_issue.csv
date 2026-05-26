@@ -1,0 +1,476 @@
+repo,id,sha_fail,error_types,fix_type,temporal_rank_all,temporal_pct_all,temporal_rank_recurrent,recurrence_count,future_count,past_count,avg_sim,rcss_score,best_past_sim,pool,role
+agno-agi/agno,186,7da71b58b1eb9b56ac1b4423afd9da61679a706e,"Import Error, Code Styling",import_fix,59,69.9,59,45,14,31,0.6905,45.6905,0.8253,eval,eval
+agno-agi/agno,207,b55b03d12d1c33d6fb57e3c36aad243bb089b41c,"Type Checking, Import Error",import_fix,80,95.2,79,45,2,43,0.6781,45.6781,0.8099,eval,eval
+agno-agi/agno,184,7b8834b321a97bc57d7a5ac82680c24aff793b91,"Import Error, Type Checking",test_fix,57,67.5,57,45,15,30,0.6632,45.6632,0.7921,eval,eval
+agno-agi/agno,74,c434e89bee35d93f4e741c32dc36c5a9a68404df,"Type Checking, Import Error",import_fix,4,3.6,4,42,41,1,0.6776,42.6776,0.7972,memory,memory
+agno-agi/agno,86,f2436c62292765f014a0dd30a013035abd13c33f,"Type Checking, Import Error",minor_fix,16,18.1,16,40,37,3,0.6473,40.6473,0.6997,memory,memory
+agno-agi/agno,78,d78ebf9508e112a8d2526ec26bcc37d8e8a2bfa2,"Import Error, Type Checking",import_fix,8,8.4,8,37,33,4,0.6733,37.6733,0.809,memory,memory
+agno-agi/agno,199,9ebc254bb14ed052a0ac459d8c109ae8e0c12233,"Code Styling, Import Error",import_fix,72,85.5,71,37,5,32,0.6719,37.6719,0.8493,eval,eval
+agno-agi/agno,202,a52d22193b0ad09104ad4afdc6adddffeb5b8894,"Type Checking, Import Error",minor_fix,75,89.2,74,37,5,32,0.671,37.671,0.8647,eval,eval
+agno-agi/agno,79,da9d2e853bd3c3111d4d8864906975c75f7e9888,"Type Checking, Import Error",import_fix,9,9.6,9,36,31,5,0.6784,36.6784,0.8756,memory,memory
+agno-agi/agno,189,82609349d7098fd5ad1c71f0e057f50cd0074404,"Code Styling, Import Error",import_fix,62,73.5,62,36,8,28,0.6648,36.6648,0.7652,eval,eval
+agno-agi/agno,151,09c3a7624b042f0af173fb95362fbefbb3d32522,"Import Error, Type Checking",structural_fix,24,27.7,24,36,24,12,0.6565,36.6565,0.7641,memory,memory
+agno-agi/agno,152,110e09997f8a22a617e261dec9e301129bbead65,"Test Failure, Type Checking",type_annotation_fix,25,28.9,25,35,22,13,0.6765,35.6765,0.7175,eval,eval
+agno-agi/agno,156,1a6efefa726610d7ca262beb8e6adf1607829dbb,"Type Checking, Import Error",structural_fix,29,33.7,29,34,19,15,0.6596,34.6596,0.7464,eval,eval
+agno-agi/agno,159,1da36493c0905f61ee6fa58ebf792f993d3579dc,"Import Error, Type Checking",minor_fix,32,37.3,32,34,19,15,0.6432,34.6432,0.7136,eval,eval
+agno-agi/agno,192,8474427eeab92e28766b8051d92e6b46379581e9,"Code Styling, Import Error",import_fix,65,77.1,64,33,6,27,0.6666,33.6666,0.7785,eval,eval
+agno-agi/agno,165,344c0994f4fce22a64ad9c57270679e51b8e66e6,"Type Checking, Import Error",test_fix,38,44.6,38,32,15,17,0.6604,32.6604,0.7881,eval,eval
+agno-agi/agno,73,c27ea5332c1d979ad2fc0c2b09ff571c9538f423,Import Error,import_fix,3,2.4,3,31,31,0,0.6739,31.6739,0.0,memory,memory
+agno-agi/agno,191,840ad511b904f43678ec438464deb893fda58c8b,"Code Styling, Import Error",test_fix,64,75.9,63,28,6,22,0.6517,28.6517,0.7324,eval,eval
+agno-agi/agno,89,fb10c6e8e2f7ca6d855f8cfeda8bae8f4a644e7c,"Import Error, Type Checking",import_fix,19,21.7,19,28,21,7,0.6502,28.6502,0.6446,memory,memory
+agno-agi/agno,167,39d992d415c335b61f670c31a68c0edc578e5062,"Import Error, Type Checking",structural_fix,40,47.0,40,26,9,17,0.6554,26.6554,0.7533,eval,eval
+agno-agi/agno,193,84d26c4b6b5881367cdabfc56d29b50389f1ba92,"Import Error, Type Checking",structural_fix,66,78.3,65,26,5,21,0.6547,26.6547,0.7526,eval,eval
+agno-agi/agno,175,67b1780b01f5d7461dc9b3d189d25acecbdb171d,"Type Checking, Import Error",type_annotation_fix,48,56.6,48,26,10,16,0.6535,26.6535,0.7281,eval,eval
+agno-agi/agno,176,6865351833c002710b5e861a4ff6bc05b74afd4b,"Code Styling, Import Error",import_fix,49,57.8,49,25,11,14,0.6762,25.6762,0.7966,eval,eval
+agno-agi/agno,162,3045ad82fb7ebc1182bf5d0a1d64713bec621512,"Code Styling, Import Error",import_fix,35,41.0,35,25,20,5,0.6717,25.6717,0.663,eval,eval
+agno-agi/agno,77,d340b3a337398d539f38101282d09dd5e9966354,Import Error,import_fix,7,7.2,7,25,22,3,0.6507,25.6507,0.8093,memory,memory
+agno-agi/agno,76,d1e88b8766d152d7d4e7911a0072591db1eb4bcd,"Import Error, Type Checking",type_annotation_fix,6,6.0,6,23,21,2,0.6629,23.6629,0.6921,memory,memory
+agno-agi/agno,172,55c8c01643e65d53cf29664e5d5dc6d7307272d6,"Test Failure, Type Checking",type_annotation_fix,45,53.0,45,23,12,11,0.6541,23.6541,0.7527,eval,eval
+agno-agi/agno,187,7efb1f09096dd41ea09b30ceb17746686931d1cf,"Code Styling, Import Error",import_fix,60,71.1,60,22,7,15,0.6569,22.6569,0.7502,eval,eval
+agno-agi/agno,200,a19827aa499277f65d5314ace68e2ddee7a25f4c,"Type Checking, Test Failure",import_fix,73,86.7,72,22,2,20,0.6544,22.6544,0.7169,eval,eval
+agno-agi/agno,84,ede117552a48bee7f674fbfab87d9586f2fabe19,"Import Error, Type Checking",dependency_install_fix,14,15.7,14,22,18,4,0.6401,22.6401,0.6459,memory,memory
+agno-agi/agno,155,1a41bfdce3fbdd13b1269f0acc04885762c39dd1,"Type Checking, Import Error",structural_fix,28,32.5,28,21,12,9,0.661,21.661,0.7079,eval,eval
+agno-agi/agno,90,ff5106ea7e8f83cb7a85bbee6f2299ac736ac860,"Type Checking, Test Failure",test_fix,20,22.9,20,21,16,5,0.6566,21.6566,0.6969,memory,memory
+agno-agi/agno,203,ac2b8825370e010e3875415296d16506d231bb90,"Type Checking, Import Error",minor_fix,76,90.4,75,21,1,20,0.6514,21.6514,0.7427,eval,eval
+agno-agi/agno,197,98c0877ed94c574c7a6eae2f2eb662bfcef1ba87,"Test Failure, Type Checking",test_fix,70,83.1,69,21,5,16,0.6358,21.6358,0.7034,eval,eval
+agno-agi/agno,205,ae364459a503a2867eeef3ede75f24ad3b5d5839,Import Error,import_fix,78,92.8,77,19,2,17,0.6801,19.6801,0.8141,eval,eval
+agno-agi/agno,209,b9a749745c9e91ee446a6ebdda7640d49cac8027,"Test Failure, Type Checking",import_fix,82,97.6,81,19,0,19,0.6656,19.6656,0.7855,eval,eval
+agno-agi/agno,183,78c5d662bf2145c91356e5185db05a17950b3dc4,"Type Checking, Import Error",minor_fix,56,66.3,56,19,8,11,0.6469,19.6469,0.7245,eval,eval
+agno-agi/agno,295,d6626e5de246cce87651793060322ff1b3f7e0c0,Import Error,test_fix,83,98.8,82,18,0,18,0.6601,18.6601,0.771,eval,eval
+agno-agi/agno,168,3a9a0b4124d28c2f4735ffad30b83bf4b1c82477,"Import Error, Code Styling",minor_fix,41,48.2,41,18,12,6,0.6315,18.6315,0.6687,eval,eval
+agno-agi/agno,181,6fe4e00e8863c8da28d241cb65632725de6db64b,"Code Styling, Import Error",minor_fix,54,63.9,54,17,8,9,0.6594,17.6594,0.7086,eval,eval
+agno-agi/agno,150,073ad2a4332ae2ea545fd18c601fdf2171d150c6,"Type Checking, Import Error",minor_fix,23,26.5,23,17,15,2,0.6536,17.6536,0.6335,memory,memory
+agno-agi/agno,204,acdbed3f7aacf32067b3353d653825efd06caeac,"Import Error, Type Checking",test_fix,77,91.6,76,17,0,17,0.6415,17.6415,0.7122,eval,eval
+agno-agi/agno,153,16c6139ab089f3cd774175cc7a5bc2e0cbd52699,"Import Error, Type Checking",import_fix,26,30.1,26,17,7,10,0.6268,17.6268,0.689,eval,eval
+agno-agi/agno,80,dc07b7a4e5314d29edb7e9c30d36e12a6dec3dd7,"Test Failure, Type Checking",import_fix,10,10.8,10,16,13,3,0.6478,16.6478,0.6951,memory,memory
+agno-agi/agno,88,fa597eab63defb9e7e146e73c6ee23fb00f16284,"Test Failure, Type Checking",test_fix,18,20.5,18,16,13,3,0.633,16.633,0.6449,memory,memory
+conan-io/conan,529,511a9296c9215864baf1a1a7ae843ccfa0efdfd9,"Environment Error, Runtime Error",minor_fix,7,25.0,7,15,12,3,0.6522,15.6522,0.7859,eval,eval
+agno-agi/agno,91,ff8929ce168fb87cf50f6a52e4cc3b12b8fd5e2e,"Import Error, Code Styling",import_fix,21,24.1,21,15,13,2,0.6356,15.6356,0.632,memory,memory
+agno-agi/agno,157,1c533e0065df6fa2c1c75c23125cdc5e8c12ce3c,"Import Error, Code Styling",import_fix,30,34.9,30,15,11,4,0.6305,15.6305,0.6192,eval,eval
+agno-agi/agno,177,69a56c3a1a48f96da4e8c6f71b19dfd71f3f2b8c,Code Styling,import_fix,50,59.0,50,14,5,9,0.692,14.692,0.8203,eval,eval
+agno-agi/agno,206,aef89d7979ff37db1e5e5a75265767e0c460b0ba,Type Checking,structural_fix,79,94.0,78,14,2,12,0.6741,14.6741,0.8248,eval,eval
+agno-agi/agno,163,31d6eba6f9be2ea8fc3bf80efc498075f6241cb5,"Code Styling, Test Failure",import_fix,36,42.2,36,14,10,4,0.6535,14.6535,0.6943,eval,eval
+agno-agi/agno,154,18f4596992d6c36ccf9da84ae30083ef65878130,"Code Styling, Import Error",test_fix,27,31.3,27,14,11,3,0.6364,14.6364,0.6251,eval,eval
+conan-io/conan,527,459cfd9a9110080f68d50b9ae3b63fa17b0f2f0c,"Environment Error, Test Failure",test_fix,5,16.7,5,13,11,2,0.6842,13.6842,0.6548,memory,memory
+agno-agi/agno,85,f06bfb4ef15132a04a3983b4aa40f2e385ef7c04,Type Checking,structural_fix,15,16.9,15,13,11,2,0.6718,13.6718,0.6788,memory,memory
+agno-agi/agno,83,e36b14dc3ee04beb3f0d8c2b89252eb864ea5c1a,"Type Checking, Import Error",import_fix,13,14.5,13,13,7,6,0.6626,13.6626,0.807,memory,memory
+browser-use/browser-use,507,82fe739a979a58067738c7f97cbb8444f12277d5,"Type Checking, Code Styling",config_fix,12,42.3,9,13,8,5,0.6565,13.6565,0.7007,eval,eval
+agno-agi/agno,179,6e5f3fc6534025b5711d84f144d3071f1ff403d2,"Import Error, Code Styling",dependency_update,52,61.4,52,13,8,5,0.6311,13.6311,0.6629,eval,eval
+agno-agi/agno,160,233c76da6b91def1e9d09a3fe170578c0bded0aa,Code Styling,import_fix,33,38.6,33,12,8,4,0.6947,12.6947,0.8306,eval,eval
+agno-agi/agno,87,f6f8da08fb440f8856510d0837876c41eb182dfc,Type Checking,type_check_fix,17,19.3,17,12,9,3,0.6896,12.6896,0.7409,memory,memory
+adap/flower,115,992b9a36ee14ce62ac8639c1ec88ba83e375e525,Type Checking,format_fix,14,50.0,14,12,6,6,0.6773,12.6773,0.7409,eval,eval
+adap/flower,117,a6517d5fc23bbb6be3424924264025b961df3fe2,"Code Styling, Type Checking",format_fix,16,57.7,16,12,1,11,0.6665,12.6665,0.7816,eval,eval
+browser-use/browser-use,506,80fe937279863ecf49a66640859a9d9dd17ec23b,Code Styling,minor_fix,11,38.5,8,12,9,3,0.6615,12.6615,0.6481,eval,eval
+browser-use/browser-use,508,845e83099b5364b6bede874608bdad62ac318bc9,Type Checking,minor_fix,13,46.2,10,12,8,4,0.6455,12.6455,0.7103,eval,eval
+conan-io/conan,546,dcba90e30c60bdb723989d610211052f9034bdc8,"Environment Error, Test Failure",import_fix,24,95.8,20,11,0,11,0.7225,11.7225,0.9119,eval,eval
+agno-agi/agno,158,1d0fff71ae9ea258fad3d54257be9ca9b3eb499e,Code Styling,import_fix,31,36.1,31,11,9,2,0.682,11.682,0.7012,eval,eval
+agno-agi/agno,296,f6adbaa7d295c83c481fbd8ad452eb1883f42a2c,"Import Error, Code Styling",import_fix,84,100.0,83,11,0,11,0.6273,11.6273,0.6851,eval,excluded_eval_no_mem
+agno-agi/agno,198,9b52669238946cd01f9cc5e99a4b6babf0942cdf,Code Styling,import_fix,71,84.3,70,10,1,9,0.6887,10.6887,0.8019,eval,eval
+agno-agi/agno,169,3ab735577ed448887a8f1f463c73a611a4ca253e,Code Styling,import_fix,42,49.4,42,10,5,5,0.6853,10.6853,0.7124,eval,eval
+conan-io/conan,544,c69fd6009fd8b027305163e7e4200f6ad67af95a,"Environment Error, Test Failure",minor_fix,22,87.5,18,10,2,8,0.6835,10.6835,0.7793,eval,eval
+conan-io/conan,535,917c6c79402d69402ae4d4229f9a44cb49bf6867,Environment Error,test_fix,13,50.0,12,10,7,3,0.6798,10.6798,0.6744,eval,eval
+agno-agi/agno,188,7f4d750eaf81c6f8384ed8246180c29bb45ea7bf,Type Checking,type_annotation_fix,61,72.3,61,10,3,7,0.6755,10.6755,0.7949,eval,eval
+agno-agi/agno,81,dc63689a775dcb8f90cac9824149e21c3a868cc1,Type Checking,import_fix,11,12.0,11,10,9,1,0.6511,10.6511,0.6254,memory,memory
+conan-io/conan,545,c6e622ac4765055bd95f5358a6f19ed3970da9b4,"Environment Error, Test Failure",test_fix,23,91.7,19,10,1,9,0.649,10.649,0.7418,eval,eval
+agno-agi/agno,182,754f4d3afe097bd3d360bb8a186acd95cc2542ea,Test Failure,test_fix,55,65.1,55,10,3,7,0.6391,10.6391,0.6625,eval,eval
+agno-agi/agno,170,4b5113e905468a8710137ff717685e5728e9cadf,"Import Error, Type Checking",test_fix,43,50.6,43,10,4,6,0.6351,10.6351,0.6587,eval,eval
+conan-io/conan,540,b41c3a617f8b67bd12b40558e6ce45fcfe18be16,Environment,import_fix,18,70.8,16,9,3,6,0.7263,9.7263,0.8893,eval,eval
+agno-agi/agno,208,b71bbb2badf2b10a82cbf28201187592972c377d,Type Checking,import_fix,81,96.4,80,9,0,9,0.6897,9.6897,0.7614,eval,eval
+agno-agi/agno,82,e22825fa77b3e549db08147a90c061e695726fb2,Code Styling,import_fix,12,13.3,12,9,9,0,0.6712,9.6712,0.0,memory,memory
+agno-agi/agno,180,6f19da809ef086cec3d81173f2c1b849e81c896d,Type Checking,structural_fix,53,62.7,53,9,4,5,0.6645,9.6645,0.6867,eval,eval
+browser-use/browser-use,517,a33b26d8520a396ba5dd2de736b63046422ca368,"Code Styling, Type Checking",config_fix,22,80.8,19,9,2,7,0.6598,9.6598,0.7851,eval,eval
+axolotl-ai-cloud/axolotl,464,770f97a0a0b3f9c8a1e7f4b55ad99376197e28f2,Code Styling,format_fix,20,38.0,17,9,4,5,0.6579,9.6579,0.7271,eval,eval
+agno-agi/agno,75,ca75b3dc2cfaf4d6a9409109f10b285bdf6a8097,Type Checking,import_fix,5,4.8,5,9,9,0,0.6538,9.6538,0.0,memory,memory
+conan-io/conan,537,9dc2989bf314072dcfa5ddc2e481df5fc3132b07,Test Failure,import_fix,15,58.3,13,8,4,4,0.7223,8.7223,0.7956,eval,eval
+axolotl-ai-cloud/axolotl,490,c2b5e0bfc9cbe7e066893953cb5a06851e303a54,Network,minor_fix,46,90.0,40,8,1,7,0.7161,8.7161,0.7677,eval,eval
+1panel-dev/maxkb,330,34d266419c7e9ea075d674394e5fa567c2720d08,Code Styling,type_annotation_fix,3,18.2,3,8,6,2,0.6813,8.6813,0.7179,memory,memory
+agno-agi/agno,195,96cab6eebb5bd0c37a60a93f3e3495fdb08793f9,Type Checking,structural_fix,68,80.7,67,8,2,6,0.6759,8.6759,0.7231,eval,eval
+agno-agi/agno,178,6ad4e8d6bb1ea167fa88d68f5396968b713dd7ba,Type Checking,type_annotation_fix,51,60.2,51,8,3,5,0.6647,8.6647,0.7327,eval,eval
+axolotl-ai-cloud/axolotl,445,02237e2a7e177390256eef0d1beb3a0a8c942acc,Code Formatting,minor_fix,1,0.0,1,8,8,0,0.6564,8.6564,0.0,memory,memory
+browser-use/browser-use,504,7b5ea73b4d5ae96d3e764a48f2d123c35e4295d2,"Code Styling, Type Checking",minor_fix,9,30.8,6,8,8,0,0.6495,8.6495,0.0,memory,memory
+browser-use/browser-use,515,9f1e1bd929f24c15a85450be0835ca82fa187cd2,Type Checking,minor_fix,20,73.1,17,8,1,7,0.6429,8.6429,0.6756,eval,eval
+agno-agi/agno,166,37c595ac6f390dbccbcfa20f742faa36f34b194a,Import Error,test_fix,39,45.8,39,8,5,3,0.6396,8.6396,0.6477,eval,eval
+adap/flower,116,a02c53a0eed80e7332e03b39bac351260afde289,Code Styling,format_fix,15,53.8,15,7,3,4,0.7191,7.7191,0.8086,eval,eval
+axolotl-ai-cloud/axolotl,475,9388a2af668cc9def219ceca43c66a649bdc69d0,Network,minor_fix,31,60.0,26,7,5,2,0.7179,7.7179,0.7871,eval,eval
+axolotl-ai-cloud/axolotl,495,f20dec3285bbb18784f228e767f58580cdbc5251,Network,minor_fix,51,100.0,44,7,0,7,0.7178,7.7178,0.7626,eval,eval
+1panel-dev/maxkb,333,95dd5bb1f7ae87cf5ab482420b4dd72454165ff3,Static Analysis,type_annotation_fix,6,45.5,6,7,5,2,0.7173,7.7173,0.8134,eval,eval
+axolotl-ai-cloud/axolotl,459,6af171ff8190efbbd9b72aa19b11564279fd37f2,Network,minor_fix,15,28.0,12,7,7,0,0.7117,7.7117,0.0,memory,memory
+axolotl-ai-cloud/axolotl,482,a55d718a92a401e1e0f9d9ad56a588f5ec072d74,Network,structural_fix,38,74.0,32,7,2,5,0.7061,7.7061,0.7576,eval,eval
+axolotl-ai-cloud/axolotl,473,926f6108861434b74b89f4836c9ee0f3bd0ebe78,Network,test_fix,29,56.0,24,7,6,1,0.6858,7.6858,0.6393,eval,eval
+axolotl-ai-cloud/axolotl,479,9df3e7857276b4804d1fadc0c33b4df0c6e5c254,Network,import_fix,35,68.0,29,7,3,4,0.6776,7.6776,0.79,eval,eval
+adap/flower,126,ed13d89504c50a1b3f5d9757b74c7aaf38356150,"Static Analysis, Type Checking",format_fix,25,92.3,23,7,0,7,0.6731,7.6731,0.7728,eval,eval
+adap/flower,107,44cc14aa3f36dbd14049106933dcd12bdb1fead4,Type Checking,format_fix,6,19.2,6,7,7,0,0.6687,7.6687,0.0,memory,memory
+axolotl-ai-cloud/axolotl,446,083b48256813564d301995020b838bfaf6055d79,Code Formatting,config_fix,2,2.0,2,7,6,1,0.6619,7.6619,0.6003,memory,memory
+agno-agi/agno,201,a4f765fa10f5588775b757a3b3bafb3194f8ac86,"Import Error, Type Checking",import_fix,74,88.0,73,7,1,6,0.6571,7.6571,0.6961,eval,eval
+agno-agi/agno,161,235e19d6998790dd527e8a43710990aef29359b1,"Test Failure, Type Checking",test_fix,34,39.8,34,7,5,2,0.6553,7.6553,0.7558,eval,eval
+berriai/litellm,378,b80cb885466e25f0de4304f14493d6cff6c7ba20,Test Failure,import_fix,2,3.4,2,7,7,0,0.6521,7.6521,0.0,memory,memory
+adap/flower,108,44eb41928c49ec0438728ea76283495461dc2e19,Code Styling,import_fix,7,23.1,7,7,4,3,0.6387,7.6387,0.6089,memory,memory
+berriai/litellm,383,bbe646cb38f74b164402f9eac9ee486176f22b8d,Test Failure,test_fix,7,20.7,7,7,6,1,0.6309,7.6309,0.6834,memory,memory
+1panel-dev/maxkb,332,8dc44333c309188f0a8337f20af6f2c01313b0de,Static Analysis,type_annotation_fix,5,36.4,5,6,4,2,0.7329,6.7329,0.7081,eval,eval
+axolotl-ai-cloud/axolotl,480,9f86e5eaae5340895bc2ff917672bb3d0b8c8a3c,Network,structural_fix,36,70.0,30,6,3,3,0.7064,6.7064,0.764,eval,eval
+camel-ai/camel,418,ed81322247e526f87264c1f8b8e067307cf4a2e3,Dependency,type_annotation_fix,12,78.6,10,6,1,5,0.698,6.698,0.7919,eval,excluded_eval_no_mem
+adap/flower,114,78131a41338361909ae6e81399a5eac2579498bf,"Dependency Error, Type Checking",format_fix,13,46.2,13,6,4,2,0.6846,6.6846,0.6858,eval,eval
+axolotl-ai-cloud/axolotl,451,2e7fac1fa5dc8fc049721d23698810c2d2518adf,Code Formatting,minor_fix,7,12.0,6,6,5,1,0.6826,6.6826,0.7152,memory,memory
+axolotl-ai-cloud/axolotl,486,b5b9507e0e063bd08038c29b13d10a09e66a198d,Code Styling,format_fix,42,82.0,36,6,1,5,0.6822,6.6822,0.8038,eval,eval
+1panel-dev/maxkb,339,e6d2dc68133f80003d2ac7429bcf7715b8c920d0,Static Analysis,type_annotation_fix,12,100.0,12,6,0,6,0.6816,6.6816,0.8426,eval,eval
+1panel-dev/maxkb,334,a1741388832b295ac6f4f031820ea292f484c64a,Static Analysis,type_annotation_fix,7,54.5,7,6,3,3,0.6695,6.6695,0.6913,eval,excluded_eval_no_mem
+conan-io/conan,541,b83cb34fc3527b13da672608f375fedf557d6853,"Environment Error, Test Failure",test_fix,19,75.0,17,6,2,4,0.6649,6.6649,0.7256,eval,eval
+browser-use/browser-use,518,a45d6ed960156b41ffc8168a07719c49655cf40b,"Code Styling, Type Checking",type_annotation_fix,23,84.6,20,6,1,5,0.6585,6.6585,0.679,eval,eval
+axolotl-ai-cloud/axolotl,493,e693b7399ee5911784f4ac4defb28baf9587f984,Code Styling,format_fix,49,96.0,42,6,0,6,0.6527,6.6527,0.6819,eval,eval
+adap/flower,113,6aee1d58e8ce6402c48325c8c479dae84596d352,Type Checking,test_fix,12,42.3,12,6,4,2,0.6501,6.6501,0.6633,eval,eval
+agno-agi/agno,173,5f24cca27fe01045314ee6ddb7619e164ada0c91,Import Error,test_fix,46,54.2,46,6,2,4,0.6434,6.6434,0.7164,eval,eval
+browser-use/browser-use,522,ab9c7f77e0f9f30dc850a0e808f8eacace0a4b2b,Code Styling,minor_fix,27,100.0,23,6,0,6,0.6377,6.6377,0.7298,eval,excluded_eval_no_mem
+conan-io/conan,534,7e7ae9921daa1d1c5c74e8f3f8852333b3cd7c53,"Import Error, Environment Error",import_fix,12,45.8,11,6,2,4,0.634,6.634,0.655,eval,eval
+berriai/litellm,386,be303e1d1fbff72f804da366b171ac94b4286acc,Test Failure,type_annotation_fix,10,31.0,10,6,2,4,0.6283,6.6283,0.6565,eval,eval
+camel-ai/camel,415,e1dbd83b5eccd0a5435563900d30381bb4d4f27a,Dependency,test_fix,9,57.1,7,5,2,3,0.7164,5.7164,0.7504,eval,excluded_eval_no_mem
+adap/flower,112,6aec23d104a077af68fbcf236630ed69d6d965ac,Code Styling,structural_fix,11,38.5,11,5,3,2,0.6882,5.6882,0.6625,eval,eval
+camel-ai/camel,419,f35834221f9415921e1e7f49ecd2db4fb92e1daf,Dependency,test_fix,13,85.7,11,5,0,5,0.678,5.678,0.7582,eval,excluded_eval_no_mem
+berriai/litellm,398,c2b2c04d2b5fdc5462e0db7eb8847aa85c31b5d9,Type Checking,minor_fix,22,72.4,21,5,0,5,0.6734,5.6734,0.8334,eval,eval
+adap/flower,109,5f98672f68c7f4acdf3e6f68fd79e66b56d0b529,Code Formatting,format_fix,8,26.9,8,5,4,1,0.6618,5.6618,0.6611,eval,eval
+axolotl-ai-cloud/axolotl,491,c46ca36c8e3d00d736d38f01c0f716cd2cade957,"Code Formatting, Network Error",import_fix,47,92.0,41,5,0,5,0.6609,5.6609,0.701,eval,eval
+conan-io/conan,538,9fa5da63d346f105d76d80a88d8f8adeb15dc991,Environment Error,minor_fix,16,62.5,14,5,3,2,0.6569,5.6569,0.7093,eval,excluded_eval_no_mem
+axolotl-ai-cloud/axolotl,447,091b008384f701eda98979586e9f051aeb6ab7e6,Network Error,import_fix,3,4.0,3,5,5,0,0.6557,5.6557,0.0,memory,memory
+axolotl-ai-cloud/axolotl,452,35bcc1e64e7a71cdf06972952cdcebe52cc6a6e9,Code Formatting,format_fix,8,14.0,7,5,3,2,0.6481,5.6481,0.7267,memory,memory
+adap/flower,118,a7a139ca8f5d0acdebb205d469166fbe034c2372,Type Checking,minor_fix,17,61.5,17,5,2,3,0.6386,5.6386,0.6847,eval,eval
+browser-use/browser-use,513,9bb69bd3d47cee279dd2a63d65476ad37d0398dd,Type Checking,config_fix,18,65.4,15,5,1,4,0.6383,5.6383,0.6776,eval,eval
+adap/flower,106,444017d8b29540c809f8a7b6479fcb124f229ab8,"Test Failure, Type Checking",format_fix,5,15.4,5,5,5,0,0.6371,5.6371,0.0,memory,memory
+camel-ai/camel,413,dbe785e7397a3849c329fda9c181e9290ac95a2a,Dependency,import_fix,7,42.9,5,5,4,1,0.635,5.635,0.6116,eval,eval
+agno-agi/agno,194,8c8e822266755d103faa9166aaa4ab3f2aa3e578,Import Error,dependency_update,67,79.5,66,5,1,4,0.6339,5.6339,0.6237,eval,eval
+conan-io/conan,533,724d69aae2ea31412605bf8687fed1abb3a29ba9,Test Failure,minor_fix,11,41.7,10,5,1,4,0.6338,5.6338,0.703,eval,eval
+adap/flower,103,1366645090f139b99f4606faf8cb1f054330213e,Type Checking,import_fix,2,3.8,2,5,5,0,0.6305,5.6305,0.0,memory,memory
+conan-io/conan,526,44cf736f9ad32392d86c990b2c3140d0ef359fd2,Environment Error,test_fix,4,12.5,4,5,5,0,0.6259,5.6259,0.0,memory,memory
+browser-use/browser-use,512,88c4f3ff124763577043c1741057863ee519f9b2,"Type Checking, Code Formatting",dependency_install_fix,17,61.5,14,5,2,3,0.6214,5.6214,0.629,eval,eval
+axolotl-ai-cloud/axolotl,462,74f293da0a4e2fbf000f41dcf5d004bfe763efd2,Code Styling,format_fix,18,34.0,15,5,4,1,0.62,5.62,0.6172,eval,excluded_eval_no_mem
+skypilot-org/skypilot,15,c3f4fe9eefdb297183b6d51bfc305e40feeec358,Code Formatting,minor_fix,5,100.0,5,4,0,4,0.7665,4.7665,0.7852,eval,eval
+camel-ai/camel,414,e067bbd31dc6889b33989fa6f38609e9e58969a0,Dependency,minor_fix,8,50.0,6,4,3,1,0.7653,4.7653,0.8528,eval,excluded_eval_no_mem
+conan-io/conan,528,4cb814c27dd37bbf6ccd194f9d6b2c0a2ac0119d,Environment Error,import_fix,6,20.8,6,4,4,0,0.7581,4.7581,0.0,memory,memory
+camel-ai/camel,412,d85d774b0920cc0438fb1f084c93df696fb3f6c8,Dependency,test_fix,6,35.7,4,4,4,0,0.738,4.738,0.0,eval,excluded_eval_no_mem
+avaiga/taipy,137,7c228365e8de18c41dfe96d6035bc7c528663f2b,Type Checking,import_fix,5,36.4,5,4,1,3,0.709,4.709,0.7672,eval,eval
+axolotl-ai-cloud/axolotl,460,734baee3ea9e591888c79c1976e36c460da45528,Code Styling,format_fix,16,30.0,13,4,4,0,0.704,4.704,0.0,memory,memory
+agno-agi/agno,72,c0f40b6ac7f75f8a20f3af07f5277d97188c378f,Code Styling,dependency_update,2,1.2,2,4,4,0,0.7006,4.7006,0.0,memory,memory
+agno-agi/agno,164,33ed019c7f623b9fb89b1430b38c7e7a7aefa57c,Type Checking,type_check_fix,37,43.4,37,4,3,1,0.6929,4.6929,0.677,eval,eval
+avaiga/taipy,132,1559358d5679d353417ef140c1894997b4c7160f,Type Checking,import_fix,1,0.0,1,4,4,0,0.6859,4.6859,0.0,memory,memory
+adap/flower,119,af6a0b457a537777e1e18111b49dbe9abfffb2cd,"Code Styling, Network Error",import_fix,18,65.4,18,4,0,4,0.6839,4.6839,0.7392,eval,eval
+berriai/litellm,388,bee41c19610cd35c5663e176e0fe1459e6bd80f3,Type Checking,test_fix,12,37.9,12,4,2,2,0.6796,4.6796,0.6394,eval,eval
+avaiga/taipy,140,c9766a5e3d0c982cd148a391e63fb0f7c386b17e,Type Checking,import_fix,8,63.6,7,4,0,4,0.6785,4.6785,0.7509,eval,eval
+axolotl-ai-cloud/axolotl,463,769e78aa95c081c96ab52c3fb449b6230bb245db,Code Formatting,import_fix,19,36.0,16,4,2,2,0.674,4.674,0.7007,eval,eval
+1panel-dev/maxkb,337,d1fc8665c79e298c95cecc5e770fd2454ff5aada,Static Analysis,type_annotation_fix,10,81.8,10,4,1,3,0.6622,4.6622,0.7432,eval,eval
+arc53/docsgpt,432,cec8c72b4609f69a21bebd233c2662fa7bdd078b,Linting,import_fix,13,85.7,9,4,1,3,0.6574,4.6574,0.6715,eval,eval
+browser-use/browser-use,510,8607b72d71832c853bbf49929ff06c4429e99cd9,Code Styling,minor_fix,15,53.8,12,4,1,3,0.6535,4.6535,0.7598,eval,eval
+1panel-dev/maxkb,335,abc695c3074f1400432fd74ecc75d50f439147b3,Static Analysis,import_fix,8,63.6,8,4,1,3,0.6504,4.6504,0.6776,eval,excluded_eval_no_mem
+berriai/litellm,392,c058e355b7652337c512f4cad727cc391e641b63,Import Error,minor_fix,16,51.7,16,4,0,4,0.6429,4.6429,0.7342,eval,eval
+browser-use/browser-use,502,76dde6d520faf6beef94f3522da08d2fd6d0d372,Type Checking,import_fix,7,23.1,4,4,4,0,0.6425,4.6425,0.0,memory,memory
+adap/flower,122,cbb7561e4e0d81a027fbd7ff6482fea13ee17398,Type Checking,import_fix,21,76.9,20,4,0,4,0.6421,4.6421,0.709,eval,eval
+axolotl-ai-cloud/axolotl,455,46e4e85039f556a4ddb395d794a161e99045f6ec,Code Formatting,type_annotation_fix,11,20.0,8,4,3,1,0.6388,4.6388,0.6851,memory,memory
+browser-use/browser-use,500,6ddeb2324ee74fde5f816427b0a2c933e1205d12,"Code Styling, Type Checking",type_annotation_fix,5,15.4,3,4,4,0,0.6358,4.6358,0.0,memory,memory
+adap/flower,121,c3a3944a6d50067aa5937e22e97eac0a64631f47,"Type Checking, Dependency Error",import_fix,20,73.1,19,4,2,2,0.6328,4.6328,0.6574,eval,excluded_eval_no_mem
+berriai/litellm,382,bb01eda695bcf0f7d79149c2353ca9cd400cd9ff,Type Checking,minor_fix,6,17.2,6,4,4,0,0.6305,4.6305,0.0,memory,memory
+berriai/litellm,385,bdf0e8ccb9f8ba396d78e8154e6ad213cff059a7,Type Checking,import_fix,9,27.6,9,4,3,1,0.6252,4.6252,0.6144,eval,eval
+browser-use/browser-use,505,7d72b013e4ef17166f056cdd94741156d0001114,Type Checking,type_annotation_fix,10,34.6,7,4,3,1,0.6248,4.6248,0.6055,eval,eval
+conan-io/conan,523,2bc817d871c542da601633e6ba1db878bd9bb1fc,"Environment Error, Test Failure",test_fix,1,0.0,1,4,4,0,0.6242,4.6242,0.0,memory,memory
+berriai/litellm,381,ba48f0fe90578d842327c4ee49980fc212524cf6,Test Failure,minor_fix,5,13.8,5,4,2,2,0.6118,4.6118,0.625,memory,memory
+skypilot-org/skypilot,12,edaf59b69f96acdf155c4514061ea648ea6df122,Code Formatting,minor_fix,2,25.0,2,3,2,1,0.7887,3.7887,0.7435,eval,eval
+skypilot-org/skypilot,14,d2f64daf7608d00cb7a8659cfd1dee42c54bb12c,Code Formatting,minor_fix,4,75.0,4,3,1,2,0.7817,3.7817,0.8509,eval,eval
+skypilot-org/skypilot,11,cced5b5d68a3fe1a02d8ac1186e9d12b6c75dc8d,Code Formatting,type_annotation_fix,1,0.0,1,3,3,0,0.7488,3.7488,0.0,memory,memory
+avaiga/taipy,138,92f010054982b709ab300f53b9a8bd407ab51e3f,Code Styling,minor_fix,6,45.5,6,3,2,1,0.7143,3.7143,0.6615,eval,excluded_eval_no_mem
+crewaiinc/crewai,571,148c3bae1aa467fb5a22a91f7fa6e4f434032ba1,Linting,test_fix,11,83.3,8,3,0,3,0.6955,3.6955,0.7437,eval,eval
+crewaiinc/crewai,569,130a7fc1e0a80a2f0f25f03663afd7fe38493e2c,Code Styling,minor_fix,9,66.7,7,3,1,2,0.6953,3.6953,0.7415,eval,eval
+berriai/litellm,400,c33c39fbc60b7b4c253555282f5f50c051086b41,Test Failure,type_annotation_fix,24,79.3,22,3,1,2,0.683,3.683,0.7334,eval,eval
+axolotl-ai-cloud/axolotl,478,9cf62fab15cce046bb01baf9d0d312ba4da659c3,Code Styling,import_fix,34,66.0,28,3,0,3,0.6823,3.6823,0.7467,eval,eval
+arc53/docsgpt,433,d461f312431b69d9e3a4068b50fca6449fd34940,Linting,import_fix,14,92.9,10,3,0,3,0.6792,3.6792,0.7352,eval,eval
+axolotl-ai-cloud/axolotl,469,8c67faaa0010c3a9195ae073f68410fd60ee3300,Static Analysis,format_fix,25,48.0,20,3,0,3,0.6724,3.6724,0.7096,eval,eval
+1panel-dev/maxkb,331,6964fcd4152f54ef1091ddb84a102bde8ba8c12f,Static Analysis,structural_fix,4,27.3,4,3,3,0,0.6719,3.6719,0.0,eval,excluded_eval_no_mem
+camel-ai/camel,417,ec5fbc16becebb97e5635f2522fcdad3e2340023,Dependency Error,type_annotation_fix,11,71.4,9,3,1,2,0.6715,3.6715,0.6988,eval,eval
+crewaiinc/crewai,567,0d95b133ddb0fa253ec05ebaeef9ec901c6f7237,Test Failure,test_fix,7,50.0,5,3,0,3,0.6693,3.6693,0.6944,eval,eval
+adap/flower,123,d4593aedbc14dbd885f63009dcb0a4b962a04be6,"Test Failure, Type Checking",import_fix,22,80.8,21,3,1,2,0.6692,3.6692,0.6205,eval,excluded_eval_no_mem
+1panel-dev/maxkb,336,d01e72609895cf1020f3118efb54c523bde6d9af,Code Styling,import_fix,9,72.7,9,3,0,3,0.6686,3.6686,0.6946,eval,eval
+axolotl-ai-cloud/axolotl,484,ae9efd4a08b946413fb9953a389df6d548068066,Code Formatting,import_fix,40,78.0,34,3,1,2,0.6646,3.6646,0.6672,eval,eval
+avaiga/taipy,133,166f99e7023eb1ab623926aa8ce743e7fb2a6d50,Type Checking,import_fix,2,9.1,2,3,2,1,0.6636,3.6636,0.6821,memory,memory
+agno-agi/agno,171,557f5305cd8dc547495ea9bbfec35bee632b63be,Code Styling,minor_fix,44,51.8,44,3,1,2,0.6622,3.6622,0.6926,eval,eval
+axolotl-ai-cloud/axolotl,461,73be451c05da635aa2828a6c3afb6e924da1ca03,"Code Formatting, Code Styling",structural_fix,17,32.0,14,3,2,1,0.6568,3.6568,0.6328,eval,eval
+aider-ai/aider,96,803a8db60cb2ce21c0e3b0ed2b773d2ecc5142bd,Test Failure,minor_fix,6,62.5,4,3,1,2,0.6568,3.6568,0.7209,eval,eval
+axolotl-ai-cloud/axolotl,488,bb1cae1a20dd10bce644319d6fc26b1d51c1d666,Network Error,dependency_update,44,86.0,38,3,1,2,0.6566,3.6566,0.6934,eval,eval
+django-import-export/django-import-export,32,2f0605c9ec79b7a675728cb525ad55b36ade2e93,Code Styling,structural_fix,4,42.9,4,3,1,2,0.6566,3.6566,0.6851,eval,eval
+axolotl-ai-cloud/axolotl,483,a75910a20e55e34431db5c3d7626c954b4d4f388,Code Formatting,structural_fix,39,76.0,33,3,0,3,0.6522,3.6522,0.7204,eval,eval
+beetbox/beets,20,537b57d99d10ecbcf8a9835bda18a73ee284d88f,Code Formatting,structural_fix,5,80.0,5,3,0,3,0.652,3.652,0.7233,eval,excluded_eval_no_mem
+arc53/docsgpt,375,248a0b8e6a790d65a3e47ce1972967cdf5baf786,Linting,test_fix,1,0.0,1,3,3,0,0.6519,3.6519,0.0,memory,memory
+camel-ai/camel,409,d1d58073979cfb6eb10b25f18aa061b137c20c3a,Dependency Error,config_fix,3,14.3,2,3,3,0,0.6503,3.6503,0.0,memory,memory
+conan-io/conan,539,af5fcb21859b6be4d60ee75ffdec5ef326932b6d,"Environment, Test Failure",minor_fix,17,66.7,15,3,0,3,0.6495,3.6495,0.6598,eval,eval
+avaiga/taipy,135,668b6127c95ae34b03f404321b94337c846166d2,Type Checking,structural_fix,3,18.2,3,3,2,1,0.6425,3.6425,0.6248,eval,eval
+berriai/litellm,396,c18a9ef7091afb77bfdcc44b11809cd8c9274652,Test Failure,test_fix,20,65.5,20,3,0,3,0.6415,3.6415,0.6597,eval,eval
+berriai/litellm,380,b9f8134e8fde8560545d73ff924ed9ed7e490ef9,Test Failure,type_annotation_fix,4,10.3,4,3,2,1,0.6397,3.6397,0.6776,memory,memory
+berriai/litellm,395,c1403f5eff1e82c734b26cd56894654dcee4d502,Type Checking,type_annotation_fix,19,62.1,19,3,1,2,0.6326,3.6326,0.623,eval,excluded_eval_no_mem
+arc53/docsgpt,430,ab4ebf9a9dc3c4ee40947141afdbc96a981d1ed5,Test Failure,import_fix,11,71.4,7,3,0,3,0.6325,3.6325,0.6472,eval,eval
+adap/flower,102,07c55e7c8bee5b60d9d9647d647f89bec137ef4d,Code Styling,structural_fix,1,0.0,1,3,3,0,0.6317,3.6317,0.0,memory,memory
+browser-use/browser-use,511,87ef1325e80dbb82693c7e59dff4f4f37d68da65,Type Checking,minor_fix,16,57.7,13,3,1,2,0.6316,3.6316,0.6346,eval,eval
+axolotl-ai-cloud/axolotl,465,78b289243ec6c116209d27f3de4b11c211f97f91,Code Formatting,import_fix,21,40.0,18,3,1,2,0.6315,3.6315,0.6344,eval,eval
+browser-use/browser-use,514,9c2fddfc969337f28739a65dcbed6d3ca0e65d6e,Code Formatting,type_annotation_fix,19,69.2,16,3,1,2,0.6289,3.6289,0.6837,eval,eval
+axolotl-ai-cloud/axolotl,458,5b325d99df8607748c1c3653cc42730a135bd53d,Static Analysis,import_fix,14,26.0,11,3,2,1,0.6284,3.6284,0.611,memory,memory
+axolotl-ai-cloud/axolotl,472,91a466d66855d3123a7fc03f9685de730f724895,"Code Styling, Network Error",structural_fix,28,54.0,23,3,2,1,0.6273,3.6273,0.6153,eval,excluded_eval_no_mem
+beetbox/beets,19,454164496177fd8b9d6aad4f106e68e816becb6c,Code Formatting,structural_fix,4,60.0,4,3,1,2,0.6258,3.6258,0.6236,eval,eval
+berriai/litellm,393,c07f0ba427e83c43ad8c7068aafd1b032cfe34c1,Test Failure,type_annotation_fix,17,55.2,17,3,0,3,0.6257,3.6257,0.6403,eval,eval
+berriai/litellm,406,c4b91c30a2238a1f3399143e846f1b814b7ae6e2,Test Failure,import_fix,30,100.0,26,3,0,3,0.619,3.619,0.6289,eval,eval
+browser-use/browser-use,519,a6fe43891c18bd852285700abf2b9f32c9c44441,Type Checking,test_fix,24,88.5,21,3,0,3,0.617,3.617,0.6259,eval,excluded_eval_no_mem
+browser-use/browser-use,497,5da261310ba61373d9546eaa6a817049ca75b9c5,Code Styling,type_annotation_fix,2,3.8,1,3,3,0,0.6165,3.6165,0.0,memory,memory
+conan-io/conan,532,6bc48372692f87d88299e38e4f000bec2b5f88c8,Test Failure,minor_fix,10,37.5,9,3,1,2,0.6161,3.6161,0.6243,eval,eval
+agno-agi/agno,185,7d51d48b09bbc5e6311becec1c1a4150fde89b4e,"Type Checking, Test Failure",test_fix,58,68.7,58,3,1,2,0.6071,3.6071,0.6071,eval,eval
+berriai/litellm,390,c0170b76dce30f86ad587eb32a2e030d8c715480,Code Styling,minor_fix,14,44.8,14,2,1,1,0.8174,2.8174,0.8819,eval,excluded_eval_no_mem
+berriai/litellm,389,c00dcda416ea115343732869949ac3b1d872d755,Code Styling,minor_fix,13,41.4,13,2,2,0,0.803,2.803,0.0,eval,excluded_eval_no_mem
+nicolargo/glances,315,48674ee71fd28378322b16a8796b2288507831bd,Code Formatting,minor_fix,3,100.0,3,2,0,2,0.7797,2.7797,0.9023,eval,eval
+nicolargo/glances,255,ce27d795db2ad56eabd9c05bf7a17c9a7bea951f,Code Formatting,minor_fix,2,50.0,2,2,1,1,0.7702,2.7702,0.6381,eval,eval
+andrewyng/aisuite,372,96dafcc506deebe62c5cc7baf77861e0222fd4de,Dependency Error,dependency_update,5,66.7,1,2,2,0,0.7434,2.7434,0.0,memory,memory
+crewaiinc/crewai,568,10a55bd2102c1f482ef8f7a0d6efd2f3776d3cf2,Linting,minor_fix,8,58.3,6,2,2,0,0.7426,2.7426,0.0,eval,excluded_eval_no_mem
+berriai/litellm,405,c4ad9dac070fb520b3e6d5a68fa9822a9620b311,Code Styling,import_fix,29,96.6,25,2,0,2,0.7386,2.7386,0.7529,eval,excluded_eval_no_mem
+aider-ai/aider,98,852f8655c69f4704965b19c0bbfadca6777ef23e,"Runtime Error, Test Failure",config_fix,8,87.5,6,2,1,1,0.737,2.737,0.6098,eval,eval
+adap/flower,124,da7ae359227a089cedf0b7aba53962766e7eb0b2,"Type Checking, Dependency Error",import_fix,23,84.6,22,2,0,2,0.7056,2.7056,0.7685,eval,excluded_eval_no_mem
+andrewyng/aisuite,374,ceac7609b4d07be6653735414990c9218fc4eac8,Dependency Error,import_fix,7,100.0,3,2,0,2,0.6991,2.6991,0.752,eval,eval
+huggingface/accelerate,49,c9991372b81edabb86965638db110ab930f8e165,Code Styling,import_fix,4,100.0,3,2,0,2,0.695,2.695,0.734,eval,eval
+berriai/litellm,387,beb9de2399518898238ae072750ada0050e774cc,Import Error,test_fix,11,34.5,11,2,1,1,0.6947,2.6947,0.6552,eval,eval
+canonical/cloud-init,8,385c14d0ae500918cff5565ea836884bfaa2bfa5,"Code Styling, Code Formatting",test_fix,3,40.0,1,2,2,0,0.6934,2.6934,0.0,memory,memory
+conan-io/conan,525,33e5d459bac7a0bbc907a8e48c36565a9c5b7cc6,Test Failure,import_fix,3,8.3,3,2,2,0,0.6933,2.6933,0.0,memory,memory
+huggingface/accelerate,47,3dd8e4404a0ce2e29db4911dc2cd7e94755be631,Code Styling,minor_fix,2,33.3,1,2,2,0,0.6911,2.6911,0.0,memory,memory
+avaiga/taipy,136,700c695eea898caaa6fe527ec9957c47e9c3002c,Code Styling,import_fix,4,27.3,4,2,2,0,0.6908,2.6908,0.0,eval,excluded_eval_no_mem
+andrewyng/aisuite,373,bad6b76af688c10ecd094e8e7d9c14a20e1137a7,Dependency Error,dependency_update,6,83.3,2,2,1,1,0.6904,2.6904,0.7347,eval,eval
+hkuds/deepcode,309,064c3b62f835ae5315b5893b3b4bd98b54e34ffa,Code Formatting,type_annotation_fix,4,100.0,3,2,0,2,0.6898,2.6898,0.6955,eval,eval
+django-import-export/django-import-export,30,d4ca3713b196de2aee52fd0344d0eb9a9eaada64,Code Styling,import_fix,2,14.3,2,2,2,0,0.6894,2.6894,0.0,memory,memory
+1panel-dev/maxkb,329,2c5abd2cb0b8434be180e7931e1b18e4227dbbb3,Code Styling,type_annotation_fix,2,9.1,2,2,2,0,0.6866,2.6866,0.0,memory,memory
+axolotl-ai-cloud/axolotl,494,ee19007ba4a51af406a9e80d2b1b53ffc7d713a7,Network Error,import_fix,50,98.0,43,2,0,2,0.6838,2.6838,0.7544,eval,eval
+camel-ai/camel,410,d2fc7ed0a8fbbc659c3bc88ed1a352815a3c3e71,Dependency Error,minor_fix,4,21.4,3,2,1,1,0.681,2.681,0.6632,memory,memory
+django-import-export/django-import-export,31,2a59b55e6124b33dca7f48c12845c78130b20fd5,Code Styling,structural_fix,3,28.6,3,2,1,1,0.6768,2.6768,0.6684,eval,eval
+berriai/litellm,384,bd65f8074258cddb4e29eb1cc1bce77d1a46883f,Test Failure,type_annotation_fix,8,24.1,8,2,2,0,0.6755,2.6755,0.0,eval,excluded_eval_no_mem
+beetbox/beets,17,7440ca51fb0ff3fb94a725fcd278f7fd5ea77c04,Code Formatting,minor_fix,2,20.0,2,2,2,0,0.6734,2.6734,0.0,eval,excluded_eval_no_mem
+aider-ai/aider,94,5548acee0b31576cae313185aa3c859f88818939,Test Failure,test_fix,4,37.5,3,2,1,1,0.672,2.672,0.6232,eval,eval
+axolotl-ai-cloud/axolotl,466,7c3b428f2344da7888dfe3cc87e2ee9cab8d49f6,Network Error,dependency_install_fix,22,42.0,19,2,1,1,0.6715,2.6715,0.6496,eval,eval
+avaiga/taipy,436,0f47a35383b9379d4ae85795eb9275fbc887e593,Code Styling,import_fix,11,90.9,8,2,0,2,0.6688,2.6688,0.72,eval,excluded_eval_no_mem
+axolotl-ai-cloud/axolotl,471,8fd7325232883e144ae2afda75f0ae100f30fd20,Code Styling,import_fix,27,52.0,22,2,2,0,0.6678,2.6678,0.0,eval,excluded_eval_no_mem
+arc53/docsgpt,423,487e1157df0cb267387c26cbb92b9b52077ea31d,Test Failure,import_fix,4,21.4,3,2,1,1,0.6603,2.6603,0.6944,memory,memory
+arc53/docsgpt,422,39b871ce5e33ecaa12e176f850014d7f1a0fc81a,Test Failure,import_fix,3,14.3,2,2,2,0,0.6592,2.6592,0.0,memory,memory
+axolotl-ai-cloud/axolotl,474,92c4ad86527a2bae4c7d10f2304f57c7d3d1f531,Code Formatting,minor_fix,30,58.0,25,2,0,2,0.6537,2.6537,0.6964,eval,eval
+huggingface/accelerate,48,028ad1efee2c41691d78e5a4de90ebd6f8236cad,Code Formatting,import_fix,3,66.7,2,2,1,1,0.6521,2.6521,0.6481,eval,eval
+crewaiinc/crewai,565,0bef3aba9a6f8b20804f2234ab6392359091e965,Test Failure,minor_fix,5,33.3,3,2,1,1,0.6513,2.6513,0.6082,eval,eval
+crewaiinc/crewai,566,0ca45f6bc5636846b3aeaf10321cb07218bc23f3,Test Failure,minor_fix,6,41.7,4,2,2,0,0.6503,2.6503,0.0,eval,excluded_eval_no_mem
+nicolargo/glances,254,11bab0fb5ed6c9b67ae9a4de2694c2fda47e2b62,Code Formatting,structural_fix,1,0.0,1,2,2,0,0.6476,2.6476,0.0,memory,memory
+conan-io/conan,531,6bba89ef571ce4e6cc51725bb6f64080153e0f0a,Test Failure,import_fix,9,33.3,8,2,1,1,0.6472,2.6472,0.6836,eval,eval
+hacs/integration,25,5b9b7a0f0f73cc0257f1b41b4904dc9056e9baa1,Code Formatting,test_fix,2,50.0,2,2,1,1,0.6454,2.6454,0.6584,eval,eval
+adap/flower,111,66718a2530fcc65c0adfa0a6ea380e1978c12ebe,"Test Failure, Type Checking",import_fix,10,34.6,10,2,1,1,0.6429,2.6429,0.6225,eval,eval
+1panel-dev/maxkb,338,e2105a08c4f170a19caf838d8a84e13271a77334,Code Styling,type_annotation_fix,11,90.9,11,2,0,2,0.6394,2.6394,0.6655,eval,eval
+arc53/docsgpt,427,946865a335e58efdaee920affe3f3fe737f292b6,Linting,minor_fix,8,50.0,5,2,2,0,0.6339,2.6339,0.0,eval,excluded_eval_no_mem
+axolotl-ai-cloud/axolotl,485,b3662574643c396d85eacf7b4472ba9f50350d92,"Network Error, Code Styling",import_fix,41,80.0,35,2,1,1,0.6316,2.6316,0.6346,eval,excluded_eval_no_mem
+agno-agi/agno,71,bd46af653e25571f377664c7b7e9228ae8b28e96,Code Styling,import_fix,1,0.0,1,2,2,0,0.6297,2.6297,0.0,memory,memory
+agentscope-ai/agentscope,346,db36ac2d272850e6b2f37ff6980f23c47017550a,Code Styling,type_annotation_fix,7,100.0,3,2,0,2,0.6269,2.6269,0.6335,eval,eval
+crewaiinc/crewai,562,06e2683fd889129c12e6bd818a3b4a5bd880444a,Code Styling,import_fix,2,8.3,2,2,2,0,0.6247,2.6247,0.0,memory,memory
+crewaiinc/crewai,560,033df9f74d897a258ccc62d712bdcf192308be62,Import Error,import_fix,1,0.0,1,2,2,0,0.6246,2.6246,0.0,memory,memory
+adap/flower,105,424e2bec035589620a6ae25f51d4f389adc3a12e,Code Formatting,minor_fix,4,11.5,4,2,2,0,0.6242,2.6242,0.0,memory,memory
+browser-use/browser-use,516,a0e2fac3caab48e049f40f221414d3dc648c6326,Type Checking,import_fix,21,76.9,18,2,0,2,0.6234,2.6234,0.6433,eval,excluded_eval_no_mem
+camel-ai/camel,421,f4ed7a6f985ea8135f1cb2b2b01bd794a7f45520,Dependency Error,import_fix,15,100.0,13,2,0,2,0.6194,2.6194,0.6376,eval,excluded_eval_no_mem
+aider-ai/aider,92,48376e59c2d51260b1c6d2a14dcf58ab5066f88e,Test Failure,test_fix,2,12.5,2,2,2,0,0.6193,2.6193,0.0,memory,memory
+axolotl-ai-cloud/axolotl,487,b5bb4c11018952a0f9f5693ce84dd3df18c644d7,Linting,structural_fix,43,84.0,37,2,0,2,0.6124,2.6124,0.6232,eval,eval
+hkuds/lightrag,236,331dcf050910618b9bb5e3028da4597770199f72,Code Formatting,minor_fix,1,0.0,1,2,2,0,0.6116,2.6116,0.0,memory,memory
+axolotl-ai-cloud/axolotl,481,a04519a24a8f6e554b6df68099118c350223953a,Static Analysis,import_fix,37,72.0,31,2,1,1,0.6103,2.6103,0.6071,eval,excluded_eval_no_mem
+berriai/litellm,379,b98eccc009b47575b38d985dc18b8655eb2f6143,Type Checking,import_fix,3,6.9,3,2,2,0,0.6102,2.6102,0.0,memory,memory
+aio-libs/aiohttp,359,f0b242b6794352fc7d4c8e46f7a1c532b31f0418,"Static Analysis, Test Failure",import_fix,13,92.3,8,2,1,1,0.6045,2.6045,0.603,eval,excluded_eval_no_mem
+django-import-export/django-import-export,302,3fecab1b8e5668d6fa49529e87195f6ee7eba268,Test Failure,test_fix,7,85.7,7,1,1,0,0.9987,1.9987,0.0,eval,excluded_eval_no_mem
+django-import-export/django-import-export,303,dadeba110a5a98dbc810f9b8f3896424175318c1,Test Failure,test_fix,8,100.0,8,1,0,1,0.9987,1.9987,0.9987,eval,excluded_eval_no_mem
+HKUDS/LightRAG,293,a0593ec1c9613ae8ab78fddd30e47114ded16f00,Code Formatting,type_annotation_fix,2,50.0,1,1,1,0,0.979,1.979,0.0,memory,memory
+HKUDS/LightRAG,294,60564cf453626802e147b5b929b8b1c6427fb3d8,Code Formatting,type_annotation_fix,3,100.0,2,1,0,1,0.979,1.979,0.979,eval,eval
+sqlmapproject/sqlmap,221,e87521de11a3590c9e844173d80eba1a07e36dd8,Test Failure,import_fix,1,0.0,1,1,1,0,0.9673,1.9673,0.0,memory,memory
+sqlmapproject/sqlmap,222,86e4cd55fa5e00e99c72cd91c4b69b231d79a270,Test Failure,import_fix,2,50.0,2,1,0,1,0.9673,1.9673,0.9673,eval,eval
+encode/uvicorn,306,c4330a42492e01350945e09419953aa3f40fb796,"Tooling Error, Workflow Error",dependency_update,3,66.7,1,1,1,0,0.9081,1.9081,0.0,memory,memory
+encode/uvicorn,307,1635d1811c3630bf60e4392671e04be7765d902e,"Tooling Error, Workflow Error",dependency_update,4,100.0,2,1,0,1,0.9081,1.9081,0.9081,eval,eval
+aio-libs/aiohttp,348,3a7e3367046eb22823eed815391d0845ff3c6835,"Code Styling, Test Failure",import_fix,2,7.7,2,1,1,0,0.8982,1.8982,0.0,memory,memory
+aio-libs/aiohttp,354,95daf0c88c0124cfe87000050efe81be97516d51,"Code Styling, Test Failure",import_fix,8,53.8,6,1,0,1,0.8982,1.8982,0.8982,eval,eval
+aider-ai/aider,99,b79f8486bf2063658bf3b2e658c07b7cfbe519bc,Test Failure,config_fix,9,100.0,7,1,0,1,0.8641,1.8641,0.8641,eval,excluded_eval_no_mem
+avaiga/taipy,440,7939c1ba9f52be99b937172cf52cb090ad8bbe60,Code Styling,minor_fix,12,100.0,9,1,0,1,0.8636,1.8636,0.8636,eval,excluded_eval_no_mem
+canonical/cloud-init,9,4d5898b8a73c93e1ed4434744c2fa7c3f7fbd501,Code Styling,test_fix,4,60.0,2,1,0,1,0.7562,1.7562,0.7562,eval,eval
+python/cpython,214,d76dc85f4b7ccf18eb28510f36e2b8fcd7ce2bff,Type Checking,minor_fix,2,33.3,1,1,1,0,0.741,1.741,0.0,memory,memory
+python/cpython,215,6045a677ac736652e43bacb313f2fa2ab56c7cda,Type Checking,minor_fix,3,66.7,2,1,0,1,0.741,1.741,0.741,eval,eval
+aws/aws-cli,143,076846e0a5144086c33090675a893d97305c8d52,Test Failure,import_fix,1,0.0,1,1,1,0,0.7381,1.7381,0.0,memory,memory
+aws/aws-cli,444,2d3846f9b793ef4830755e953779cbd4f5d7680c,"Configuration Error, Dependency Error",import_fix,5,100.0,2,1,0,1,0.7381,1.7381,0.7381,eval,eval
+django-import-export/django-import-export,33,c359d794dd0e4baf40be48d584193f88c2213f37,Code Styling,test_fix,5,57.1,5,1,0,1,0.7344,1.7344,0.7344,eval,eval
+skypilot-org/skypilot,13,b639adb71066410b3b12d97a674ee7fcb51e9980,Code Styling,minor_fix,3,50.0,3,1,1,0,0.7326,1.7326,0.0,eval,excluded_eval_no_mem
+agno-agi/agno,196,978b0f29982c558b12d775a884ebeea1869c16da,Code Styling,import_fix,69,81.9,68,1,0,1,0.7234,1.7234,0.7234,eval,excluded_eval_no_mem
+axolotl-ai-cloud/axolotl,489,bfa16fa84a9e18c196dcfdc90c35a2e8ae1e0437,Code Formatting,minor_fix,45,88.0,39,1,0,1,0.7173,1.7173,0.7173,eval,eval
+kovidgoyal/calibre,232,0c72143691d2bd88c3346287b827c1952293e338,Security,minor_fix,1,0.0,1,1,1,0,0.7163,1.7163,0.0,memory,memory
+kovidgoyal/calibre,234,44464700849670aefca66ee42eb7e75abd5c1ba3,Security,structural_fix,3,40.0,2,1,0,1,0.7163,1.7163,0.7163,eval,eval
+berriai/litellm,402,c3fd06821675215812f41eff838ddfca7a421ba3,Test Failure,type_annotation_fix,26,86.2,23,1,0,1,0.7145,1.7145,0.7145,eval,excluded_eval_no_mem
+aio-libs/aiohttp,347,03cacd5d36463c63f2fde9f8c8b600e7b3cbdd9b,"Code Styling, Test Failure",test_fix,1,0.0,1,1,1,0,0.7104,1.7104,0.0,memory,memory
+aio-libs/aiohttp,356,b1bd65dbd191b318325c4b87d626bb5d7967cda7,"Test Failure, Workflow",import_fix,10,69.2,7,1,0,1,0.7104,1.7104,0.7104,eval,eval
+encode/httpx,39,83b5e4bf130d204fbb25b26a341c62aee4fc2d0f,Linting,minor_fix,2,25.0,1,1,1,0,0.7093,1.7093,0.0,memory,memory
+encode/httpx,42,897a5deb406b53ea2f4675cdf0c2f1fa93fc6238,Code Styling,import_fix,5,100.0,2,1,0,1,0.7093,1.7093,0.7093,eval,eval
+openai/openai-python,228,b0ad27a67681f1b6fb473cc75c642efa1f4941d5,"Type Checking, Import Error",import_fix,1,0.0,1,1,1,0,0.7047,1.7047,0.0,memory,memory
+openai/openai-python,240,ed370d805e4d5d1ec14a136f5b2516751277059f,Type Checking,import_fix,4,100.0,2,1,0,1,0.7047,1.7047,0.7047,eval,eval
+pallets-eco/flask-admin,287,73dfb313ca4efa46a4b018ac388ed26040556feb,Test Failure,test_fix,1,0.0,1,1,1,0,0.7024,1.7024,0.0,memory,memory
+pallets-eco/flask-admin,288,4846dead90a34de7b3d8addf4ddf36300ccbc6e3,Test Failure,test_fix,2,50.0,2,1,0,1,0.7024,1.7024,0.7024,eval,eval
+axolotl-ai-cloud/axolotl,457,4b5b93503e92fd894093b0ddf456abb6ac1a98d3,"Code Styling, Network Error",import_fix,13,24.0,10,1,1,0,0.701,1.701,0.0,memory,memory
+aio-libs/aiohttp,351,4c8a64962e9e5ed22e05a2e0423a26c83dbb72cc,"Test Failure, Workflow",test_fix,5,30.8,3,1,1,0,0.701,1.701,0.0,eval,excluded_eval_no_mem
+aio-libs/aiohttp,352,6775f4c2839c9d529d3984d76610b54d5a8a19db,"Test Failure, Workflow Error",test_fix,6,38.5,4,1,0,1,0.701,1.701,0.701,eval,excluded_eval_no_mem
+berriai/litellm,394,c0e7057231ad7ef5d5f90be470a100647ff9d4fb,Code Styling,minor_fix,18,58.6,18,1,1,0,0.7006,1.7006,0.0,eval,excluded_eval_no_mem
+berriai/litellm,403,c413feb604bbcf548863094deafc71c8074493af,Code Styling,type_annotation_fix,27,89.7,24,1,0,1,0.7006,1.7006,0.7006,eval,excluded_eval_no_mem
+axolotl-ai-cloud/axolotl,450,256be889efa8d1760e21d71fb905529969c16015,Code Formatting,import_fix,6,10.0,5,1,0,1,0.6974,1.6974,0.6974,memory,excluded_mem_no_eval
+hkuds/deepcode,278,daad35b9c60770a655eaaea4565bf81f63ae1b38,Code Styling,import_fix,1,0.0,1,1,1,0,0.6955,1.6955,0.0,memory,memory
+agno-agi/agno,129,0309bd9e095b3da3cb01d220541674d3b8e0a803,Type Checking,structural_fix,22,25.3,22,1,0,1,0.6928,1.6928,0.6928,memory,excluded_mem_no_eval
+hkuds/deepcode,280,219bc58c7f1bfe425ddc1d628ff5cda9639afc1e,Code Formatting,type_annotation_fix,3,66.7,2,1,1,0,0.6842,1.6842,0.0,eval,excluded_eval_no_mem
+django-import-export/django-import-export,29,616eb3b10db94cf4a4c209377f36b2ce995bd01c,Code Formatting,minor_fix,1,0.0,1,1,1,0,0.6684,1.6684,0.0,memory,memory
+systran/faster-whisper,257,bbfcebbc60b0bc5d238af2941a175f019d5b2aa4,"Code Styling, Dependency Error",minor_fix,1,0.0,1,1,1,0,0.6682,1.6682,0.0,memory,memory
+systran/faster-whisper,258,0b806e8ab76c7c89d77ba91d827fbe0d52ec97b0,"Code Formatting, Dependency Error",type_annotation_fix,2,50.0,2,1,0,1,0.6682,1.6682,0.6682,eval,eval
+axolotl-ai-cloud/axolotl,476,99d0e8fb13e8389c1c8ea51be1193f674aa47034,Linting,minor_fix,32,62.0,27,1,0,1,0.6594,1.6594,0.6594,eval,excluded_eval_no_mem
+hacs/integration,24,d985231d83ec0cb50784548dae26236dd03bd2a6,Linting,import_fix,1,0.0,1,1,1,0,0.6584,1.6584,0.0,memory,memory
+secdev/scapy,265,261adce4ce40a3fbd323f79ba7823cf8523a8110,"Code Styling, Build",import_fix,1,0.0,1,1,1,0,0.6503,1.6503,0.0,memory,memory
+secdev/scapy,266,4e9d6740404d5413fce712e489e74fdb28c263ad,"Build, Code Styling",import_fix,2,50.0,2,1,0,1,0.6503,1.6503,0.6503,eval,eval
+arc53/docsgpt,426,8efb5578f2c0b9ad8e539bb79ff522c50d3bb771,Dependency,import_fix,7,42.9,4,1,1,0,0.6472,1.6472,0.0,eval,excluded_eval_no_mem
+browser-use/browser-use,509,851f22cb8db8b8a426589f405dc91b75efbe234c,Code Styling,minor_fix,14,50.0,11,1,0,1,0.6431,1.6431,0.6431,eval,excluded_eval_no_mem
+1panel-dev/maxkb,328,285c5e3cc5594117a716edb859fc4b83c5e0bffd,Code Styling,import_fix,1,0.0,1,1,1,0,0.6428,1.6428,0.0,memory,excluded_mem_no_eval
+arc53/docsgpt,429,a1890457665c07d1a31b62684d57e8c4aa98bc0f,Linting,test_fix,10,64.3,6,1,0,1,0.6425,1.6425,0.6425,eval,eval
+django-import-export/django-import-export,34,cfbbed910a5d84c08f9af237cf6737502c456f66,Code Formatting,minor_fix,6,71.4,6,1,0,1,0.6401,1.6401,0.6401,eval,excluded_eval_no_mem
+encode/starlette,53,58c7cde15084b1c07373c00028dbd19b85fd5e1b,Test Failure,test_fix,3,66.7,1,1,1,0,0.6396,1.6396,0.0,memory,memory
+encode/starlette,304,16c48e2d1190bbc6fd907ae612921df5dd3f42f4,"Type Checking, Workflow Error",test_fix,4,100.0,2,1,0,1,0.6396,1.6396,0.6396,eval,eval
+adap/flower,128,f539ef9be2b510a9bef42e224e7c601f5965bcda,Code Styling,import_fix,27,100.0,24,1,0,1,0.6389,1.6389,0.6389,eval,excluded_eval_no_mem
+huggingface/diffusers,2,db6550a228941b538f340fb5b65ed16c43a21b88,Code Styling,import_fix,2,33.3,1,1,1,0,0.6363,1.6363,0.0,memory,memory
+huggingface/diffusers,21,68ddb2559e616656301858d441a523ebd64a710f,Code Styling,import_fix,3,66.7,2,1,0,1,0.6363,1.6363,0.6363,eval,eval
+browser-use/browser-use,503,79d3e3ca7de6cb8b16e836dfba7d12ffd8e71f42,Type Checking,config_fix,8,26.9,5,1,1,0,0.6346,1.6346,0.0,memory,memory
+aider-ai/aider,97,82f33c12206d1ab7a19d4b5369a40c3016b255ee,Test Failure,test_fix,7,75.0,5,1,0,1,0.634,1.634,0.634,eval,excluded_eval_no_mem
+agentscope-ai/agentscope,340,1269df3cb05ca13f7cddfb2eff4759a48060a501,Type Checking,type_annotation_fix,1,0.0,1,1,1,0,0.6335,1.6335,0.0,memory,memory
+hacs/integration,26,5fea24b4a3fc4952e83474db5e7dc05af9ec76f6,Code Formatting,import_fix,3,100.0,3,1,0,1,0.6324,1.6324,0.6324,eval,excluded_eval_no_mem
+canonical/cloud-init,10,ecb486addc70aecc9b28f2b30a77eaf2fd587091,"Type Checking, Code Styling",type_annotation_fix,5,80.0,3,1,0,1,0.6307,1.6307,0.6307,eval,eval
+crewaiinc/crewai,574,18ec9967ccaf892188f1d7275dc36ec6b1b0e06e,Import Error,import_fix,13,100.0,9,1,0,1,0.6283,1.6283,0.6283,eval,excluded_eval_no_mem
+hkuds/lightrag,238,5f349d507ced55bbb24469127b0eb9ac571f023c,Code Formatting,structural_fix,3,100.0,3,1,0,1,0.6222,1.6222,0.6222,eval,eval
+beetbox/beets,16,0d26cc1482ff5080ec579b17b29f22657a20c562,Code Formatting,import_fix,1,0.0,1,1,1,0,0.6218,1.6218,0.0,memory,memory
+agentscope-ai/agentscope,345,cc56de1de82a4b19a12b117697ebf21f7edcf8a1,Code Formatting,minor_fix,6,83.3,2,1,1,0,0.6203,1.6203,0.0,eval,excluded_eval_no_mem
+camel-ai/camel,408,d172aa270f1f8e46342a6f6944df7765e363460b,Dependency Error,structural_fix,2,7.1,1,1,1,0,0.6197,1.6197,0.0,memory,memory
+camel-ai/camel,420,f37e7e5966a4009e72e674100657575a9cb04b06,Dependency Error,minor_fix,14,92.9,12,1,0,1,0.6197,1.6197,0.6197,eval,eval
+berriai/litellm,391,c043aa7250bd524fe4a9c80b20ee864b59bf7155,Type Checking,structural_fix,15,48.3,15,1,0,1,0.6192,1.6192,0.6192,eval,eval
+axolotl-ai-cloud/axolotl,470,8f6f89ef939a8a2f5800f1b8e1bff2263fa88b41,Code Styling,test_fix,26,50.0,21,1,0,1,0.6189,1.6189,0.6189,eval,excluded_eval_no_mem
+arc53/docsgpt,431,ccd70011ea8680e351ccdea190cc7ae52486d404,Code Styling,type_annotation_fix,12,78.6,8,1,1,0,0.6161,1.6161,0.0,eval,excluded_eval_no_mem
+agno-agi/agno,174,601a9c6986f1659f3051449238c0c0c5d2ef4124,"Import Error, Type Checking",import_fix,47,55.4,47,1,0,1,0.6159,1.6159,0.6159,eval,excluded_eval_no_mem
+browser-use/browser-use,499,6bdb4d59201c468bf69d4c903e0a9800329857a0,Type Checking,import_fix,4,11.5,2,1,1,0,0.6111,1.6111,0.0,memory,memory
+axolotl-ai-cloud/axolotl,456,4a8ff81c3d4fa26b03a0268deb02d584d6e851ec,Type Checking,dependency_update,12,22.0,9,1,1,0,0.611,1.611,0.0,memory,excluded_mem_no_eval
+locustio/locust,248,fdf5d0ecff09bdd75fcd9a15b83f381d6e08b780,Test Failure,minor_fix,2,50.0,1,1,1,0,0.6103,1.6103,0.0,memory,memory
+locustio/locust,314,61b034a122453c563e1304c0977230172d5e8767,"Code Formatting, Test Failure",import_fix,3,100.0,2,1,0,1,0.6103,1.6103,0.6103,eval,eval
+aider-ai/aider,69,d85078a610cbad69e8561060229aa8f35b4e1163,Test Failure,minor_fix,1,0.0,1,1,1,0,0.6098,1.6098,0.0,memory,memory
+adap/flower,110,63b90b943bab2b7897e968fcea280f6a8ecc229b,Code Styling,minor_fix,9,30.8,9,1,0,1,0.6082,1.6082,0.6082,eval,excluded_eval_no_mem
+eleutherai/lm-evaluation-harness,273,49fc1f68d7b34a8ce47e5bfa8ae52b19222e6528,Code Formatting,import_fix,2,50.0,1,1,1,0,0.6065,1.6065,0.0,memory,memory
+eleutherai/lm-evaluation-harness,274,76de63fdc2facad254862b3db7e7f44a1e381cd2,Code Styling,import_fix,3,100.0,2,1,0,1,0.6065,1.6065,0.6065,eval,eval
+aio-libs/aiohttp,360,fcb5b3b5b2febd0e703e9afa1a0d7bba12a0e985,"Type Checking, Test Failure",minor_fix,14,100.0,9,1,0,1,0.606,1.606,0.606,eval,excluded_eval_no_mem
+conan-io/conan,524,2dc8938083a1e6e99ce7dd4105d32f1c5d7641a5,Test Failure,test_fix,2,4.2,2,1,1,0,0.6037,1.6037,0.0,memory,memory
+aio-libs/aiohttp,353,8b959a5c872c8ee674a62b24af1fc2babab4110c,"Type Checking, Runtime Error",structural_fix,7,46.2,5,1,1,0,0.603,1.603,0.0,eval,excluded_eval_no_mem
+browser-use/browser-use,520,a91c98ced7914988b5a263d91b8c476cbeaf34e5,Code Styling,import_fix,25,92.3,22,1,0,1,0.6029,1.6029,0.6029,eval,excluded_eval_no_mem
+axolotl-ai-cloud/axolotl,449,255a10c026e184769fe53a1f8efa331f998b5ee4,Linting,import_fix,5,8.0,4,1,1,0,0.6016,1.6016,0.0,memory,memory
+allenai/olmocr,366,261c722f561e06f100174ebd17e5b1b0aea5c1e2,"Code Formatting, Test Failure",type_annotation_fix,2,50.0,1,1,1,0,0.6013,1.6013,0.0,memory,memory
+allenai/olmocr,367,359abef6547dec814c4cbaaa57b1ef4e26641888,"Code Formatting, Test Failure",test_fix,3,100.0,2,1,0,1,0.6013,1.6013,0.6013,eval,eval
+camel-ai/camel,416,e9c4ddd5f996b5a4a8b82c05321573de50dbe6a9,Dependency Error,import_fix,10,64.3,8,1,1,0,0.6012,1.6012,0.0,eval,excluded_eval_no_mem
+hkuds/lightrag,237,b860ffe5103cf9bc6270707dd2a7955f74f7d3fb,Code Formatting,type_annotation_fix,2,50.0,2,1,0,1,0.6011,1.6011,0.6011,eval,eval
+adap/flower,104,14df8e5918cb5d6c4ca62d23b5a1f653a0e92212,Code Styling,import_fix,3,7.7,3,1,1,0,0.6006,1.6006,0.0,memory,excluded_mem_no_eval
+berriai/litellm,377,b75eeee81e1a99e307d41f6d6cb02066a1beca41,Type Checking,minor_fix,1,0.0,1,1,1,0,0.6005,1.6005,0.0,memory,memory
+beetbox/beets,18,b94b7e71f74eb6e8c4ef7f299c24a20f5cded2f8,Code Formatting,test_fix,3,40.0,3,1,1,0,0.6005,1.6005,0.0,eval,excluded_eval_no_mem
+agno-agi/agno,190,82bdfed0cf9ff57528d78ac9ad9f1179c8e117e3,Type Checking,config_fix,63,74.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+axolotl-ai-cloud/axolotl,448,0b595dbf31b9d086f29791e2cc8c24c8f3851be1,Static Analysis,import_fix,4,6.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+axolotl-ai-cloud/axolotl,453,3b35eb6545a900f5944b58e397a7d43329cf2ee2,Linting,config_fix,9,16.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+axolotl-ai-cloud/axolotl,454,439519c9d5848fa03b3a62bd7a95c59ebd5b3914,Type Checking,structural_fix,10,18.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+axolotl-ai-cloud/axolotl,467,7f12bde31f3a8dbc2e465756b7a4629e9d0ae884,Type Checking,type_annotation_fix,23,44.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+axolotl-ai-cloud/axolotl,468,899c6bc86d519a4555149ab953e9c911d62de054,"Type Checking, Network Error",structural_fix,24,46.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+axolotl-ai-cloud/axolotl,477,9cb48ac877ae303717dfd7b7f2566141d6f77ba1,Type Checking,format_fix,33,64.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+axolotl-ai-cloud/axolotl,492,c5f6c8039c85e1c8c1796ebac91f258f8cb0c860,Code Styling,import_fix,48,94.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+berriai/litellm,397,c1ea39ffad1daa6e847ae4dc6811aff7e82ed8b5,Type Checking,config_fix,21,69.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+berriai/litellm,399,c31ad733519355489ad66f1efba9f208c7eee88a,Test Failure,test_fix,23,75.9,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+berriai/litellm,401,c37621bad3137cea12a330066159f5db9644695e,Code Formatting,structural_fix,25,82.8,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+berriai/litellm,404,c433503f211cd2a10654a4f4c92851bedac3a82d,Type Checking,import_fix,28,93.1,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+adap/flower,120,b2a09db583937f76160cef9629dc7d172b86dbed,Code Formatting,structural_fix,19,69.2,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+adap/flower,125,df0344c9bd80f87fed394e512d67a3138a1d8176,"Code Styling, Type Checking",import_fix,24,88.5,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+adap/flower,127,f231d50356ccfb76ed54d27e9fd32dd40e824f28,"Type Checking, Code Styling",import_fix,26,96.2,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+browser-use/browser-use,496,58c3b25cfd4d29bb38d95f411068b5bbf1b65fed,Type Checking,config_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+browser-use/browser-use,498,5e1a5d6eae3111d8ff7e97e4283e42cee2ef467a,Code Styling,import_fix,3,7.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+browser-use/browser-use,501,6e17756e76d2a4c471575a5e5ff660d2058352f7,Dependency Error,test_fix,6,19.2,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+browser-use/browser-use,521,aa26ac1850194e02a202e7e8001abebb14467a89,Test Failure,minor_fix,26,96.2,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+conan-io/conan,530,57bfb66d105860c5dea08607c140d7ae7abf848d,Test Failure,minor_fix,8,29.2,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+conan-io/conan,536,9dba1fe9efb5435e5e0ad9c9038752d4991343b7,"Environment Error, Test Failure",minor_fix,14,54.2,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+conan-io/conan,542,b96e8f58cf2f208b16f7441b01158c46860514dd,Syntax,minor_fix,20,79.2,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+conan-io/conan,543,c55db1c25856c6c854c8557c45670aaaee4251a0,Test Failure,structural_fix,21,83.3,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+conan-io/conan,549,eb4acbc53a79e2747c5c1e33875be3e8d1acf943,Test Failure,minor_fix,25,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+arc53/docsgpt,376,36b5f53637cf5d45699494a41c6a26ff5e3bffe2,Code Styling,import_fix,2,7.1,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+arc53/docsgpt,424,50f5e8a9558dfa36d31f8b1758a1968d2615dc31,Code Styling,minor_fix,5,28.6,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+arc53/docsgpt,425,7e2cbdd88c51c352c84499ee1b8e47d9d2169956,Code Styling,structural_fix,6,35.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+arc53/docsgpt,428,9aa7f22fa67f08ff9fa2d398f1c0f850b9bc60fc,Dependency Error,import_fix,9,57.1,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+arc53/docsgpt,434,f36e8e3db8d679b426368e7fb40886a4ad3ec241,Test Failure,test_fix,15,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+camel-ai/camel,407,d060bc14f131099c1b8671a3e59a03704f67bb59,Configuration Error,dependency_update,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+camel-ai/camel,411,d31c3cbffdc728c53feae391e36e9e67248d0928,Import Error,import_fix,5,28.6,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aio-libs/aiohttp,349,3fc1ead04551db5616ead6f0526403b75ff0acdc,"Code Styling, Test Failure",type_annotation_fix,3,15.4,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aio-libs/aiohttp,350,4c387d563a3466ee7749ef3444ad470ec94b1733,"Type Checking, Dependency Error",import_fix,4,23.1,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aio-libs/aiohttp,355,adafb541714013634f654850ffd105f3e266568c,"Type Checking, Test Failure",test_fix,9,61.5,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aio-libs/aiohttp,357,d004843873a1eaf274622b9dd027b7de87f33e16,Test Failure,test_fix,11,76.9,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aio-libs/aiohttp,358,e1f83f4e100052b23c77ba60e4ff95d24a237ce8,"Type Checking, Test Failure",dependency_update,12,84.6,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+crewaiinc/crewai,563,09e5a829f92d1f0c9446be6e49553e30d3cdd5a8,Type Checking,import_fix,3,16.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+crewaiinc/crewai,564,0b704756f6d392dc02a8e2ce3dda9d719f128690,Type Checking,structural_fix,4,25.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+crewaiinc/crewai,570,14579a7861ec02a3c8f497fcc7113eae9341dccf,Linting,import_fix,10,75.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+crewaiinc/crewai,572,166bfec208af6891791f6eb63f13d346b460b0a6,Code Styling,import_fix,12,91.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+avaiga/taipy,139,bbe7b82b778adbafd56d40bd00bc3aabcd5cb9c9,Type Checking,minor_fix,7,54.5,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+avaiga/taipy,141,e5031012aded0867f1d3677586c7851da537bd82,Type Checking,minor_fix,9,72.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+avaiga/taipy,142,e56badcacbfa6003c45430e8b618073519844b07,"Dependency Error, Import Error",import_fix,10,81.8,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aider-ai/aider,93,4ab8faf21e04489caf1d2f0dfbace03521e90b25,Test Failure,structural_fix,3,25.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aider-ai/aider,95,73f1acb9539c928be57de3ecb4e9d2b49da62d9f,Test Failure,test_fix,5,50.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+agentscope-ai/agentscope,341,8c1154c05bc26ae09bdc28d2dc23d95ba4d03045,Test Failure,import_fix,2,16.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+agentscope-ai/agentscope,342,a5c10b0775fa7cf2c1e669ed67df7379a5484b50,Test Failure,test_fix,3,33.3,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+agentscope-ai/agentscope,343,bc00327a9a8a8af77dcf76a8316ddbbefb4ad19f,Code Styling,format_fix,4,50.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+agentscope-ai/agentscope,344,c178f4b30cd2b0be4cac506dbeb648c1ec4493cf,Test Failure,dependency_update,5,66.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+andrewyng/aisuite,368,22825e3fd71bb273404c07d9fb2d3fbba0e9ecf6,Code Formatting,structural_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+andrewyng/aisuite,369,2c0067cc759603ef930bffdbc0225479c8c5cd93,Code Formatting,import_fix,2,16.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+andrewyng/aisuite,370,83d739495ef5a0fd70e965b3efb70f840ce79e77,Test Failure,type_annotation_fix,3,33.3,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+andrewyng/aisuite,371,903b9c80d03035f48ee42afd56248f4d3c335e5b,Code Formatting,type_annotation_fix,4,50.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+canonical/cloud-init,6,f18f82de3e0270f6dfddf22f1f487104b2428e35,Code Styling,import_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+canonical/cloud-init,7,55d2e8d4abb024997be878797d5625effad65d43,Static Analysis,test_fix,2,20.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+canonical/cloud-init,298,6f27d0e8dbbb74ef34579d283621da82ebf3ba26,"Test Failure, Code Styling",import_fix,6,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+beetbox/beets,297,1ab3bc774b390a52cf998b70586f980b6684375a,Code Formatting,structural_fix,6,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+kovidgoyal/calibre,233,5e68d7e73930685c3ec5716e576e8ff13ffa53f4,Dependency Error,structural_fix,2,20.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+kovidgoyal/calibre,310,c9c582cbef0e49bb73fb65cb83042e2e5eb849b1,Build,structural_fix,4,60.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+kovidgoyal/calibre,311,496bc88f08677236887552428dea181ff16e7e46,Build Error,import_fix,5,80.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+kovidgoyal/calibre,312,5fd445c656b537125771608dac8823bded23f826,Build Error,import_fix,6,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+encode/httpx,38,aa8a42bcf03f3b89575a9cce2f8af715a5121c59,Test Failure,type_annotation_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+encode/httpx,40,1afe2c9cb192d3760d59190cc7892e7ac37d5e27,Type Checking,import_fix,3,50.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+encode/httpx,41,7f351340260c165e18ccd7c83dc783bb371b3797,Tooling Error,minor_fix,4,75.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aws/aws-cli,144,0e6f97d05d68c3d66d270865c31e9060c5a5b4de,Test Failure,test_fix,2,25.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aws/aws-cli,145,4a32a9357914d448b98bb5823f454902b92368e6,Build Error,minor_fix,3,50.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+aws/aws-cli,146,6daeaefa76ab8bfe9a6212b1e4263743079149ce,Test Failure,minor_fix,4,75.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+tobymao/sqlglot,275,16f544dc25d5d61277d32f02e4be18c10d16cf9f,Type Checking,import_fix,1,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+tobymao/sqlglot,276,2ee00eddc1bebd2fcffc4a026162e00378ebe3ae,Code Formatting,type_annotation_fix,2,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+tobymao/sqlglot,277,bddc230cc11627fdbb8bdd98b67489afcad87d98,Test Failure,test_fix,3,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+tobymao/sqlglot,324,a7b902770d8b2769920794cf4e2016525e3ea1d9,Test Failure,test_fix,4,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+tobymao/sqlglot,325,5df3ea92f59125955124ea1883b777b489db3042,Test Failure,test_fix,5,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+huggingface/diffusers,1,2c06ffa4c9d2c37846c60ad75899b4d72f214ff9,Code Formatting,import_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+huggingface/diffusers,22,ba66fb81a0c8db48fed7abe833409f447b95708b,Import Error,import_fix,4,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+huggingface/accelerate,46,44b56e01683771fb4ca583f9ea57c67dcee8e779,Code Styling,type_annotation_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+encode/starlette,51,e21f666b44b5c2ddf22f9a9d057787811dc92a30,Type Checking,structural_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+encode/starlette,52,cc0b066c05947c2a356d063d0137685205709c3e,Test Failure,import_fix,2,33.3,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+encode/uvicorn,54,0b93d2da3b721c80dcb6a2993a23876a97498dd5,Test Failure,minor_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+encode/uvicorn,305,207b861fbc10acc867a6f04eae0b4c866d1e508d,"Tooling Error, Test Failure",type_annotation_fix,2,33.3,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+hkuds/deepcode,279,238a409674f147334f43788013fdfa766fd8035c,Linting,structural_fix,2,33.3,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+kovidgoyal/kitty,223,e6f35571a577e5f0d2e2754871242438de3404de,"Test Failure, Code Styling",import_fix,1,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+kovidgoyal/kitty,224,b94d6dc7134d3bf6b510a164f1b7f02e4610cdbc,"Test Failure, Type Checking",dependency_update,2,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+kovidgoyal/kitty,225,34ae42cf302d34e412ea2c95f6a2058438cc2aac,"Type Checking, Test Failure",import_fix,3,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+kovidgoyal/kitty,313,4ffacbbe801b90aa147af206809b8c610ccbcefb,Dependency Error,config_fix,4,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+python/cpython,213,7ab76a8fcbc8388a54cc0ca3caaaac5a56bbe680,Test Failure,test_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+python/cpython,320,6066f06de3275801b19af5f23ccb5e3940991e60,Code Formatting,import_fix,4,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+openai/openai-python,229,b7c2ddc5e5dedda01015b3d0e14ea6eb68c282d3,Code Styling,import_fix,2,33.3,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+openai/openai-python,230,03f8b88a0d428b74a7822e678a60d0ef106ea961,Test Failure,type_annotation_fix,3,66.7,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+airbytehq/airbyte,361,1b0318d0f4d5b14fb18e025781bd9922e9c6d06f,Code Formatting,structural_fix,1,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+airbytehq/airbyte,362,5457d8f7169d6a1855367a7cb56ff9658f972421,Code Formatting,config_fix,2,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+airbytehq/airbyte,363,e3b35e51ceb12ec20f362927d38c03c990031af4,Code Formatting,import_fix,3,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+airbytehq/airbyte,364,eff8e29d670e06a40ccb39af8fef5c600bc5053a,Code Formatting,type_annotation_fix,4,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+mwaskom/seaborn,56,6cbb12e47665eda2c687b4431d6ce789e74ea4a4,Test Failure,import_fix,1,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+mwaskom/seaborn,57,2201be21886bb82201f3c3487f5f1468f6e6ac81,"Runtime Error, Code Styling",import_fix,2,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+mwaskom/seaborn,58,785242b646b54a33547ff1298cb945a05c24aa4c,Test Failure,test_fix,3,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+pygithub/pygithub,281,9ecbaeeb4d8db618ccdb6cb81f5edf4ba2c8b8de,Dependency,import_fix,1,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+pygithub/pygithub,282,20a0e348143cc9f47432d087a62ad5c2a4040fe2,Dependency Error,type_annotation_fix,2,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+pygithub/pygithub,283,6033729f8ed6df96607e43cb8739cd481b895519,"Dependency Error, Type Checking",type_annotation_fix,3,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+pallets-eco/flask-admin,316,026bbd5ffd1394338d51c1c0c5c8209205ae33ed,Code Formatting,type_annotation_fix,3,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+HKUDS/LightRAG,292,ce28f30ca68a2e0469f14beb1b4d65a4633d211e,Code Formatting,structural_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+facefusion/facefusion,239,a206d0817acd2948f4ed3f0af8402a2a368391dc,Linting,import_fix,1,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+facefusion/facefusion,249,43e32d5cecf8a6946ee3f147500687f17029140f,Test Failure,config_fix,2,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+facefusion/facefusion,308,df5e9e422993a051ab7e2fc7b1dc70485a40c7d3,Test Failure,import_fix,3,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+sqlmapproject/sqlmap,322,d01a6ec49f1aac932816c81c0354de64c0183373,Dependency Error,import_fix,3,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+stanfordnlp/dspy,226,0276b7a794ed6215d9da8584791916b37610e3b5,Test Failure,type_annotation_fix,1,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+stanfordnlp/dspy,227,d2a7890921a901795f0e33404b0d7b2f53836483,Code Styling,minor_fix,2,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+stanfordnlp/dspy,323,71b7fd4a926acb2c018af855f325502bfe03d417,Code Styling,import_fix,3,,—,0,0,0,0.0,0.0,0.0,—,excluded_singleton
+locustio/locust,247,efe1611a385c2853ac5406082ab72d78b5dfcbfb,Test Failure,minor_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+systran/faster-whisper,259,9090997d2545e86d4bf026012c0a74b6a92c568b,Dependency,dependency_update,3,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+allenai/olmocr,365,210389f0f1f96259c04f72dd120396d38ee8e24e,Code Styling,import_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+secdev/scapy,267,4b39624a941b0c6fc5e8b54d90174475dd411b5e,"Code Styling, Build Error",test_fix,3,100.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton
+eleutherai/lm-evaluation-harness,272,938a4fb3f5dbe7e6ae75e049ecc5059bd25c14bf,Code Formatting,import_fix,1,0.0,—,0,0,0,0.0,0.0,0.0,singleton,excluded_singleton

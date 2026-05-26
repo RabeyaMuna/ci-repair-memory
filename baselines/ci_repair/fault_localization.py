@@ -347,6 +347,7 @@ FAILED JOBS (CI context):
         suspicious_files: List[Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
         matches = self.memory_context.get("matches", []) or []
+        import pdb; pdb.set_trace()
         if not matches or self.memory_plugin is None:
             return suspicious_files
 

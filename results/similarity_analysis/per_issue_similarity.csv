@@ -1,0 +1,476 @@
+repo,id,sha_fail,error_types,group,group_size,similar_count,has_similar,avg_sim,max_sim
+agno-agi/agno,186,7da71b58b1eb9b56...,"Import Error, Code Styling",G1,83,45,True,0.6905,0.8253
+agno-agi/agno,207,b55b03d12d1c33d6...,"Type Checking, Import Error",G1,83,45,True,0.6781,0.8099
+agno-agi/agno,184,7b8834b321a97bc5...,"Import Error, Type Checking",G1,83,45,True,0.6632,0.8647
+agno-agi/agno,74,c434e89bee35d93f...,"Type Checking, Import Error",G1,83,42,True,0.6776,0.8756
+agno-agi/agno,86,f2436c62292765f0...,"Type Checking, Import Error",G1,83,40,True,0.6473,0.7697
+agno-agi/agno,78,d78ebf9508e112a8...,"Import Error, Type Checking",G1,83,37,True,0.6733,0.809
+agno-agi/agno,199,9ebc254bb14ed052...,"Code Styling, Import Error",G1,83,37,True,0.6719,0.8493
+agno-agi/agno,202,a52d22193b0ad091...,"Type Checking, Import Error",G1,83,37,True,0.671,0.8647
+agno-agi/agno,79,da9d2e853bd3c311...,"Type Checking, Import Error",G1,83,36,True,0.6784,0.8756
+agno-agi/agno,189,82609349d7098fd5...,"Code Styling, Import Error",G1,83,36,True,0.6648,0.806
+agno-agi/agno,151,09c3a7624b042f0a...,"Import Error, Type Checking",G1,83,36,True,0.6565,0.7727
+agno-agi/agno,152,110e09997f8a22a6...,"Test Failure, Type Checking",G1,83,35,True,0.6765,0.7921
+agno-agi/agno,156,1a6efefa726610d7...,"Type Checking, Import Error",G1,83,34,True,0.6596,0.7533
+agno-agi/agno,159,1da36493c0905f61...,"Import Error, Type Checking",G1,83,34,True,0.6432,0.7136
+agno-agi/agno,192,8474427eeab92e28...,"Code Styling, Import Error",G1,83,33,True,0.6666,0.7978
+agno-agi/agno,165,344c0994f4fce22a...,"Type Checking, Import Error",G1,83,32,True,0.6604,0.7881
+agno-agi/agno,73,c27ea5332c1d979a...,Import Error,G1,83,31,True,0.6739,0.8493
+agno-agi/agno,191,840ad511b904f436...,"Code Styling, Import Error",G1,83,28,True,0.6517,0.7324
+agno-agi/agno,89,fb10c6e8e2f7ca6d...,"Import Error, Type Checking",G1,83,28,True,0.6502,0.7641
+agno-agi/agno,167,39d992d415c335b6...,"Import Error, Type Checking",G1,83,26,True,0.6554,0.7533
+agno-agi/agno,193,84d26c4b6b588136...,"Import Error, Type Checking",G1,83,26,True,0.6547,0.7526
+agno-agi/agno,175,67b1780b01f5d746...,"Type Checking, Import Error",G1,83,26,True,0.6535,0.7281
+agno-agi/agno,176,6865351833c00271...,"Code Styling, Import Error",G1,83,25,True,0.6762,0.8253
+agno-agi/agno,162,3045ad82fb7ebc11...,"Code Styling, Import Error",G1,83,25,True,0.6717,0.7966
+agno-agi/agno,77,d340b3a337398d53...,Import Error,G1,83,25,True,0.6507,0.8093
+agno-agi/agno,76,d1e88b8766d152d7...,"Import Error, Type Checking",G1,83,23,True,0.6629,0.7409
+agno-agi/agno,172,55c8c01643e65d53...,"Test Failure, Type Checking",G1,83,23,True,0.6541,0.7527
+agno-agi/agno,187,7efb1f09096dd41e...,"Code Styling, Import Error",G1,83,22,True,0.6569,0.7652
+agno-agi/agno,200,a19827aa499277f6...,"Type Checking, Test Failure",G1,83,22,True,0.6544,0.7855
+agno-agi/agno,84,ede117552a48bee7...,"Import Error, Type Checking",G1,83,22,True,0.6401,0.7031
+agno-agi/agno,155,1a41bfdce3fbdd13...,"Type Checking, Import Error",G1,83,21,True,0.661,0.7193
+agno-agi/agno,90,ff5106ea7e8f83cb...,"Type Checking, Test Failure",G1,83,21,True,0.6566,0.7558
+agno-agi/agno,203,ac2b8825370e010e...,"Type Checking, Import Error",G1,83,21,True,0.6514,0.7427
+agno-agi/agno,197,98c0877ed94c574c...,"Test Failure, Type Checking",G1,83,21,True,0.6358,0.7034
+agno-agi/agno,205,ae364459a503a286...,Import Error,G1,83,19,True,0.6801,0.8141
+agno-agi/agno,209,b9a749745c9e91ee...,"Test Failure, Type Checking",G1,83,19,True,0.6656,0.7855
+agno-agi/agno,183,78c5d662bf2145c9...,"Type Checking, Import Error",G1,83,19,True,0.6469,0.7427
+agno-agi/agno,295,d6626e5de246cce8...,Import Error,G1,83,18,True,0.6601,0.771
+agno-agi/agno,168,3a9a0b4124d28c2f...,"Import Error, Code Styling",G1,83,18,True,0.6315,0.6982
+agno-agi/agno,181,6fe4e00e8863c8da...,"Code Styling, Import Error",G1,83,17,True,0.6594,0.7591
+agno-agi/agno,150,073ad2a4332ae2ea...,"Type Checking, Import Error",G1,83,17,True,0.6536,0.7262
+agno-agi/agno,204,acdbed3f7aacf320...,"Import Error, Type Checking",G1,83,17,True,0.6415,0.7122
+agno-agi/agno,153,16c6139ab089f3cd...,"Import Error, Type Checking",G1,83,17,True,0.6268,0.689
+agno-agi/agno,80,dc07b7a4e5314d29...,"Test Failure, Type Checking",G1,83,16,True,0.6478,0.7385
+agno-agi/agno,88,fa597eab63defb9e...,"Test Failure, Type Checking",G1,83,16,True,0.633,0.6681
+conan-io/conan,529,511a9296c9215864...,"Environment Error, Runtime Error",G1,20,15,True,0.6522,0.7859
+agno-agi/agno,91,ff8929ce168fb87c...,"Import Error, Code Styling",G1,83,15,True,0.6356,0.7464
+agno-agi/agno,157,1c533e0065df6fa2...,"Import Error, Code Styling",G1,83,15,True,0.6305,0.7256
+agno-agi/agno,177,69a56c3a1a48f96d...,Code Styling,G1,83,14,True,0.692,0.8203
+agno-agi/agno,206,aef89d7979ff37db...,Type Checking,G1,83,14,True,0.6741,0.8248
+agno-agi/agno,163,31d6eba6f9be2ea8...,"Code Styling, Test Failure",G1,83,14,True,0.6535,0.73
+agno-agi/agno,154,18f4596992d6c36c...,"Code Styling, Import Error",G1,83,14,True,0.6364,0.7238
+conan-io/conan,527,459cfd9a9110080f...,"Environment Error, Test Failure",G1,20,13,True,0.6842,0.7859
+agno-agi/agno,85,f06bfb4ef15132a0...,Type Checking,G1,83,13,True,0.6718,0.8248
+agno-agi/agno,83,e36b14dc3ee04beb...,"Type Checking, Import Error",G1,83,13,True,0.6626,0.807
+browser-use/browser-use,507,82fe739a979a5806...,"Type Checking, Code Styling",G1,23,13,True,0.6565,0.7851
+agno-agi/agno,179,6e5f3fc6534025b5...,"Import Error, Code Styling",G1,83,13,True,0.6311,0.6629
+agno-agi/agno,160,233c76da6b91def1...,Code Styling,G1,83,12,True,0.6947,0.8306
+agno-agi/agno,87,f6f8da08fb440f88...,Type Checking,G1,83,12,True,0.6896,0.8067
+adap/flower,115,992b9a36ee14ce62...,Type Checking,G1,24,12,True,0.6773,0.7728
+adap/flower,117,a6517d5fc23bbb6b...,"Code Styling, Type Checking",G1,24,12,True,0.6665,0.7816
+browser-use/browser-use,506,80fe937279863ecf...,Code Styling,G1,23,12,True,0.6615,0.7598
+browser-use/browser-use,508,845e83099b5364b6...,Type Checking,G1,23,12,True,0.6455,0.7103
+conan-io/conan,546,dcba90e30c60bdb7...,"Environment Error, Test Failure",G1,20,11,True,0.7225,0.9119
+agno-agi/agno,158,1d0fff71ae9ea258...,Code Styling,G1,83,11,True,0.682,0.8306
+agno-agi/agno,296,f6adbaa7d295c83c...,"Import Error, Code Styling",G1,83,11,True,0.6273,0.6851
+agno-agi/agno,198,9b52669238946cd0...,Code Styling,G1,83,10,True,0.6887,0.8019
+agno-agi/agno,169,3ab735577ed44888...,Code Styling,G1,83,10,True,0.6853,0.8203
+conan-io/conan,544,c69fd6009fd8b027...,"Environment Error, Test Failure",G1,20,10,True,0.6835,0.7793
+conan-io/conan,535,917c6c79402d6940...,Environment Error,G1,20,10,True,0.6798,0.762
+agno-agi/agno,188,7f4d750eaf81c6f8...,Type Checking,G1,83,10,True,0.6755,0.7949
+agno-agi/agno,81,dc63689a775dcb8f...,Type Checking,G1,83,10,True,0.6511,0.7208
+conan-io/conan,545,c6e622ac4765055b...,"Environment Error, Test Failure",G1,20,10,True,0.649,0.7418
+agno-agi/agno,182,754f4d3afe097bd3...,Test Failure,G1,83,10,True,0.6391,0.6975
+agno-agi/agno,170,4b5113e905468a87...,"Import Error, Type Checking",G1,83,10,True,0.6351,0.7005
+conan-io/conan,540,b41c3a617f8b67bd...,Environment,G1,20,9,True,0.7263,0.9119
+agno-agi/agno,208,b71bbb2badf2b10a...,Type Checking,G1,83,9,True,0.6897,0.7614
+agno-agi/agno,82,e22825fa77b3e549...,Code Styling,G1,83,9,True,0.6712,0.7212
+agno-agi/agno,180,6f19da809ef086ce...,Type Checking,G1,83,9,True,0.6645,0.7231
+browser-use/browser-use,517,a33b26d8520a396b...,"Code Styling, Type Checking",G1,23,9,True,0.6598,0.7851
+axolotl-ai-cloud/axolotl,464,770f97a0a0b3f9c8...,Code Styling,G1,32,9,True,0.6579,0.7271
+agno-agi/agno,75,ca75b3dc2cfaf4d6...,Type Checking,G1,83,9,True,0.6538,0.6863
+conan-io/conan,537,9dc2989bf314072d...,Test Failure,G1,20,8,True,0.7223,0.9045
+axolotl-ai-cloud/axolotl,490,c2b5e0bfc9cbe7e0...,Network,G2,12,8,True,0.7161,0.7677
+1panel-dev/maxkb,330,34d266419c7e9ea0...,Code Styling,G1,12,8,True,0.6813,0.8099
+agno-agi/agno,195,96cab6eebb5bd0c3...,Type Checking,G1,83,8,True,0.6759,0.7231
+agno-agi/agno,178,6ad4e8d6bb1ea167...,Type Checking,G1,83,8,True,0.6647,0.7949
+axolotl-ai-cloud/axolotl,445,02237e2a7e177390...,Code Formatting,G1,32,8,True,0.6564,0.7173
+browser-use/browser-use,504,7b5ea73b4d5ae96d...,"Code Styling, Type Checking",G1,23,8,True,0.6495,0.7226
+browser-use/browser-use,515,9f1e1bd929f24c15...,Type Checking,G1,23,8,True,0.6429,0.6756
+agno-agi/agno,166,37c595ac6f390dbc...,Import Error,G1,83,8,True,0.6396,0.7164
+adap/flower,116,a02c53a0eed80e73...,Code Styling,G1,24,7,True,0.7191,0.8086
+axolotl-ai-cloud/axolotl,475,9388a2af668cc9de...,Network,G2,12,7,True,0.7179,0.79
+axolotl-ai-cloud/axolotl,495,f20dec3285bbb187...,Network,G2,12,7,True,0.7178,0.7626
+1panel-dev/maxkb,333,95dd5bb1f7ae87cf...,Static Analysis,G1,12,7,True,0.7173,0.8134
+axolotl-ai-cloud/axolotl,459,6af171ff8190efbb...,Network,G2,12,7,True,0.7117,0.7871
+axolotl-ai-cloud/axolotl,482,a55d718a92a401e1...,Network,G2,12,7,True,0.7061,0.7576
+axolotl-ai-cloud/axolotl,473,926f6108861434b7...,Network,G2,12,7,True,0.6858,0.764
+axolotl-ai-cloud/axolotl,479,9df3e7857276b480...,Network,G2,12,7,True,0.6776,0.79
+adap/flower,126,ed13d89504c50a1b...,"Static Analysis, Type Checking",G1,24,7,True,0.6731,0.7728
+adap/flower,107,44cc14aa3f36dbd1...,Type Checking,G1,24,7,True,0.6687,0.7409
+axolotl-ai-cloud/axolotl,446,083b48256813564d...,Code Formatting,G1,32,7,True,0.6619,0.7267
+agno-agi/agno,201,a4f765fa10f55887...,"Import Error, Type Checking",G1,83,7,True,0.6571,0.6961
+agno-agi/agno,161,235e19d6998790dd...,"Test Failure, Type Checking",G1,83,7,True,0.6553,0.7558
+berriai/litellm,378,b80cb885466e25f0...,Test Failure,G1,21,7,True,0.6521,0.6834
+adap/flower,108,44eb41928c49ec04...,Code Styling,G1,24,7,True,0.6387,0.7172
+berriai/litellm,383,bbe646cb38f74b16...,Test Failure,G1,21,7,True,0.6309,0.6834
+1panel-dev/maxkb,332,8dc44333c309188f...,Static Analysis,G1,12,6,True,0.7329,0.8426
+axolotl-ai-cloud/axolotl,480,9f86e5eaae534089...,Network,G2,12,6,True,0.7064,0.764
+camel-ai/camel,418,ed81322247e526f8...,Dependency,G1,11,6,True,0.698,0.7919
+adap/flower,114,78131a4133836190...,"Dependency Error, Type Checking",G1,24,6,True,0.6846,0.7816
+axolotl-ai-cloud/axolotl,451,2e7fac1fa5dc8fc0...,Code Formatting,G1,32,6,True,0.6826,0.8038
+axolotl-ai-cloud/axolotl,486,b5b9507e0e063bd0...,Code Styling,G1,32,6,True,0.6822,0.8038
+1panel-dev/maxkb,339,e6d2dc68133f8000...,Static Analysis,G1,12,6,True,0.6816,0.8426
+1panel-dev/maxkb,334,a1741388832b295a...,Static Analysis,G1,12,6,True,0.6695,0.7432
+conan-io/conan,541,b83cb34fc3527b13...,"Environment Error, Test Failure",G1,20,6,True,0.6649,0.7256
+browser-use/browser-use,518,a45d6ed960156b41...,"Code Styling, Type Checking",G1,23,6,True,0.6585,0.679
+axolotl-ai-cloud/axolotl,493,e693b7399ee59117...,Code Styling,G1,32,6,True,0.6527,0.6819
+adap/flower,113,6aee1d58e8ce6402...,Type Checking,G1,24,6,True,0.6501,0.6847
+agno-agi/agno,173,5f24cca27fe01045...,Import Error,G1,83,6,True,0.6434,0.7164
+browser-use/browser-use,522,ab9c7f77e0f9f30d...,Code Styling,G1,23,6,True,0.6377,0.7298
+conan-io/conan,534,7e7ae9921daa1d1c...,"Import Error, Environment Error",G1,20,6,True,0.634,0.6605
+berriai/litellm,386,be303e1d1fbff72f...,Test Failure,G1,21,6,True,0.6283,0.6565
+camel-ai/camel,415,e1dbd83b5eccd0a5...,Dependency,G1,11,5,True,0.7164,0.7582
+adap/flower,112,6aec23d104a077af...,Code Styling,G1,24,5,True,0.6882,0.8086
+camel-ai/camel,419,f35834221f941592...,Dependency,G1,11,5,True,0.678,0.7582
+berriai/litellm,398,c2b2c04d2b5fdc54...,Type Checking,G1,21,5,True,0.6734,0.8334
+adap/flower,109,5f98672f68c7f4ac...,Code Formatting,G1,24,5,True,0.6618,0.758
+axolotl-ai-cloud/axolotl,491,c46ca36c8e3d00d7...,"Code Formatting, Network Error",G1,32,5,True,0.6609,0.701
+conan-io/conan,538,9fa5da63d346f105...,Environment Error,G1,20,5,True,0.6569,0.7093
+axolotl-ai-cloud/axolotl,447,091b008384f701ed...,Network Error,G2,12,5,True,0.6557,0.7544
+axolotl-ai-cloud/axolotl,452,35bcc1e64e7a71cd...,Code Formatting,G1,32,5,True,0.6481,0.7267
+adap/flower,118,a7a139ca8f5d0acd...,Type Checking,G1,24,5,True,0.6386,0.6847
+browser-use/browser-use,513,9bb69bd3d47cee27...,Type Checking,G1,23,5,True,0.6383,0.6776
+adap/flower,106,444017d8b29540c8...,"Test Failure, Type Checking",G1,24,5,True,0.6371,0.7159
+camel-ai/camel,413,dbe785e7397a3849...,Dependency,G1,11,5,True,0.635,0.6878
+agno-agi/agno,194,8c8e822266755d10...,Import Error,G1,83,5,True,0.6339,0.6895
+conan-io/conan,533,724d69aae2ea3141...,Test Failure,G1,20,5,True,0.6338,0.703
+adap/flower,103,1366645090f139b9...,Type Checking,G1,24,5,True,0.6305,0.709
+conan-io/conan,526,44cf736f9ad32392...,Environment Error,G1,20,5,True,0.6259,0.6548
+browser-use/browser-use,512,88c4f3ff12476357...,"Type Checking, Code Formatting",G1,23,5,True,0.6214,0.6451
+axolotl-ai-cloud/axolotl,462,74f293da0a4e2fbf...,Code Styling,G1,32,5,True,0.62,0.6254
+skypilot-org/skypilot,15,c3f4fe9eefdb2971...,Code Formatting,G1,5,4,True,0.7665,0.7852
+camel-ai/camel,414,e067bbd31dc6889b...,Dependency,G1,11,4,True,0.7653,0.8528
+conan-io/conan,528,4cb814c27dd37bbf...,Environment Error,G1,20,4,True,0.7581,0.835
+camel-ai/camel,412,d85d774b0920cc04...,Dependency,G1,11,4,True,0.738,0.8528
+avaiga/taipy,137,7c228365e8de18c4...,Type Checking,G1,5,4,True,0.709,0.7672
+axolotl-ai-cloud/axolotl,460,734baee3ea9e5918...,Code Styling,G1,32,4,True,0.704,0.7467
+agno-agi/agno,72,c0f40b6ac7f75f8a...,Code Styling,G1,83,4,True,0.7006,0.7394
+agno-agi/agno,164,33ed019c7f623b9f...,Type Checking,G1,83,4,True,0.6929,0.7398
+avaiga/taipy,132,1559358d5679d353...,Type Checking,G1,5,4,True,0.6859,0.7672
+adap/flower,119,af6a0b457a537777...,"Code Styling, Network Error",G1,24,4,True,0.6839,0.7392
+berriai/litellm,388,bee41c19610cd35c...,Type Checking,G1,21,4,True,0.6796,0.8334
+avaiga/taipy,140,c9766a5e3d0c982c...,Type Checking,G1,5,4,True,0.6785,0.7509
+axolotl-ai-cloud/axolotl,463,769e78aa95c081c9...,Code Formatting,G1,32,4,True,0.674,0.7007
+1panel-dev/maxkb,337,d1fc8665c79e298c...,Static Analysis,G1,12,4,True,0.6622,0.7432
+arc53/docsgpt,432,cec8c72b4609f69a...,Linting,G1,6,4,True,0.6574,0.7352
+browser-use/browser-use,510,8607b72d71832c85...,Code Styling,G1,23,4,True,0.6535,0.7598
+1panel-dev/maxkb,335,abc695c3074f1400...,Static Analysis,G1,12,4,True,0.6504,0.6776
+berriai/litellm,392,c058e355b7652337...,Import Error,G1,21,4,True,0.6429,0.7342
+browser-use/browser-use,502,76dde6d520faf6be...,Type Checking,G1,23,4,True,0.6425,0.6804
+adap/flower,122,cbb7561e4e0d81a0...,Type Checking,G1,24,4,True,0.6421,0.709
+axolotl-ai-cloud/axolotl,455,46e4e85039f556a4...,Code Formatting,G1,32,4,True,0.6388,0.6851
+browser-use/browser-use,500,6ddeb2324ee74fde...,"Code Styling, Type Checking",G1,23,4,True,0.6358,0.679
+adap/flower,121,c3a3944a6d50067a...,"Type Checking, Dependency Error",G1,24,4,True,0.6328,0.6574
+berriai/litellm,382,bb01eda695bcf0f7...,Type Checking,G1,21,4,True,0.6305,0.6405
+berriai/litellm,385,bdf0e8ccb9f8ba39...,Type Checking,G1,21,4,True,0.6252,0.6384
+browser-use/browser-use,505,7d72b013e4ef1716...,Type Checking,G1,23,4,True,0.6248,0.642
+conan-io/conan,523,2bc817d871c542da...,"Environment Error, Test Failure",G1,20,4,True,0.6242,0.6515
+berriai/litellm,381,ba48f0fe90578d84...,Test Failure,G1,21,4,True,0.6118,0.625
+skypilot-org/skypilot,12,edaf59b69f96acdf...,Code Formatting,G1,5,3,True,0.7887,0.8509
+skypilot-org/skypilot,14,d2f64daf7608d00c...,Code Formatting,G1,5,3,True,0.7817,0.8509
+skypilot-org/skypilot,11,cced5b5d68a3fe1a...,Code Formatting,G1,5,3,True,0.7488,0.7852
+avaiga/taipy,138,92f010054982b709...,Code Styling,G2,4,3,True,0.7143,0.8636
+crewaiinc/crewai,571,148c3bae1aa467fb...,Linting,G2,4,3,True,0.6955,0.7437
+crewaiinc/crewai,569,130a7fc1e0a80a2f...,Code Styling,G2,4,3,True,0.6953,0.7415
+berriai/litellm,400,c33c39fbc60b7b4c...,Test Failure,G1,21,3,True,0.683,0.7334
+axolotl-ai-cloud/axolotl,478,9cf62fab15cce046...,Code Styling,G1,32,3,True,0.6823,0.7467
+arc53/docsgpt,433,d461f312431b69d9...,Linting,G1,6,3,True,0.6792,0.7352
+axolotl-ai-cloud/axolotl,469,8c67faaa0010c3a9...,Static Analysis,G1,32,3,True,0.6724,0.7096
+1panel-dev/maxkb,331,6964fcd4152f54ef...,Static Analysis,G1,12,3,True,0.6719,0.6989
+camel-ai/camel,417,ec5fbc16becebb97...,Dependency Error,G1,11,3,True,0.6715,0.6988
+crewaiinc/crewai,567,0d95b133ddb0fa25...,Test Failure,G1,5,3,True,0.6693,0.6944
+adap/flower,123,d4593aedbc14dbd8...,"Test Failure, Type Checking",G1,24,3,True,0.6692,0.7685
+1panel-dev/maxkb,336,d01e72609895cf10...,Code Styling,G1,12,3,True,0.6686,0.6946
+axolotl-ai-cloud/axolotl,484,ae9efd4a08b94641...,Code Formatting,G1,32,3,True,0.6646,0.6931
+avaiga/taipy,133,166f99e7023eb1ab...,Type Checking,G1,5,3,True,0.6636,0.6821
+agno-agi/agno,171,557f5305cd8dc547...,Code Styling,G1,83,3,True,0.6622,0.6926
+axolotl-ai-cloud/axolotl,461,73be451c05da635a...,"Code Formatting, Code Styling",G1,32,3,True,0.6568,0.7204
+aider-ai/aider,96,803a8db60cb2ce21...,Test Failure,G1,4,3,True,0.6568,0.7209
+axolotl-ai-cloud/axolotl,488,bb1cae1a20dd10bc...,Network Error,G2,12,3,True,0.6566,0.6934
+django-import-export/django-import-export,32,2f0605c9ec79b7a6...,Code Styling,G1,6,3,True,0.6566,0.6851
+axolotl-ai-cloud/axolotl,483,a75910a20e55e344...,Code Formatting,G1,32,3,True,0.6522,0.7204
+beetbox/beets,20,537b57d99d10ecbc...,Code Formatting,G1,5,3,True,0.652,0.7233
+arc53/docsgpt,375,248a0b8e6a790d65...,Linting,G1,6,3,True,0.6519,0.6715
+camel-ai/camel,409,d1d58073979cfb6e...,Dependency Error,G1,11,3,True,0.6503,0.676
+conan-io/conan,539,af5fcb21859b6be4...,"Environment, Test Failure",G1,20,3,True,0.6495,0.6598
+avaiga/taipy,135,668b6127c95ae34b...,Type Checking,G1,5,3,True,0.6425,0.6762
+berriai/litellm,396,c18a9ef7091afb77...,Test Failure,G1,21,3,True,0.6415,0.6597
+berriai/litellm,380,b9f8134e8fde8560...,Test Failure,G1,21,3,True,0.6397,0.6776
+berriai/litellm,395,c1403f5eff1e82c7...,Type Checking,G1,21,3,True,0.6326,0.6676
+arc53/docsgpt,430,ab4ebf9a9dc3c4ee...,Test Failure,G2,4,3,True,0.6325,0.6472
+adap/flower,102,07c55e7c8bee5b60...,Code Styling,G1,24,3,True,0.6317,0.662
+browser-use/browser-use,511,87ef1325e80dbb82...,Type Checking,G1,23,3,True,0.6316,0.6433
+axolotl-ai-cloud/axolotl,465,78b289243ec6c116...,Code Formatting,G1,32,3,True,0.6315,0.6346
+browser-use/browser-use,514,9c2fddfc969337f2...,Code Formatting,G1,23,3,True,0.6289,0.6837
+axolotl-ai-cloud/axolotl,458,5b325d99df860774...,Static Analysis,G1,32,3,True,0.6284,0.6612
+axolotl-ai-cloud/axolotl,472,91a466d66855d312...,"Code Styling, Network Error",G1,32,3,True,0.6273,0.6594
+beetbox/beets,19,454164496177fd8b...,Code Formatting,G1,5,3,True,0.6258,0.632
+berriai/litellm,393,c07f0ba427e83c43...,Test Failure,G1,21,3,True,0.6257,0.6403
+berriai/litellm,406,c4b91c30a2238a1f...,Test Failure,G1,21,3,True,0.619,0.6289
+browser-use/browser-use,519,a6fe43891c18bd85...,Type Checking,G1,23,3,True,0.617,0.6259
+browser-use/browser-use,497,5da261310ba61373...,Code Styling,G1,23,3,True,0.6165,0.6481
+conan-io/conan,532,6bc48372692f87d8...,Test Failure,G1,20,3,True,0.6161,0.6243
+agno-agi/agno,185,7d51d48b09bbc5e6...,"Type Checking, Test Failure",G1,83,3,True,0.6071,0.6108
+berriai/litellm,390,c0170b76dce30f86...,Code Styling,G2,3,2,True,0.8174,0.8819
+berriai/litellm,389,c00dcda416ea1153...,Code Styling,G2,3,2,True,0.803,0.8819
+nicolargo/glances,315,48674ee71fd28378...,Code Formatting,G1,3,2,True,0.7797,0.9023
+nicolargo/glances,255,ce27d795db2ad56e...,Code Formatting,G1,3,2,True,0.7702,0.9023
+andrewyng/aisuite,372,96dafcc506deebe6...,Dependency Error,G1,3,2,True,0.7434,0.752
+crewaiinc/crewai,568,10a55bd2102c1f48...,Linting,G2,4,2,True,0.7426,0.7437
+berriai/litellm,405,c4ad9dac070fb520...,Code Styling,G2,3,2,True,0.7386,0.7529
+aider-ai/aider,98,852f8655c69f4704...,"Runtime Error, Test Failure",G2,3,2,True,0.737,0.8641
+adap/flower,124,da7ae359227a089c...,"Type Checking, Dependency Error",G1,24,2,True,0.7056,0.7685
+andrewyng/aisuite,374,ceac7609b4d07be6...,Dependency Error,G1,3,2,True,0.6991,0.752
+huggingface/accelerate,49,c9991372b81edabb...,Code Styling,G1,3,2,True,0.695,0.734
+berriai/litellm,387,beb9de2399518898...,Import Error,G1,21,2,True,0.6947,0.7342
+canonical/cloud-init,8,385c14d0ae500918...,"Code Styling, Code Formatting",G1,3,2,True,0.6934,0.7562
+conan-io/conan,525,33e5d459bac7a0bb...,Test Failure,G1,20,2,True,0.6933,0.703
+huggingface/accelerate,47,3dd8e4404a0ce2e2...,Code Styling,G1,3,2,True,0.6911,0.734
+avaiga/taipy,136,700c695eea898caa...,Code Styling,G2,4,2,True,0.6908,0.72
+andrewyng/aisuite,373,bad6b76af688c10e...,Dependency Error,G1,3,2,True,0.6904,0.7347
+hkuds/deepcode,309,064c3b62f835ae53...,Code Formatting,G1,3,2,True,0.6898,0.6955
+django-import-export/django-import-export,30,d4ca3713b196de2a...,Code Styling,G1,6,2,True,0.6894,0.7344
+1panel-dev/maxkb,329,2c5abd2cb0b8434b...,Code Styling,G1,12,2,True,0.6866,0.7179
+axolotl-ai-cloud/axolotl,494,ee19007ba4a51af4...,Network Error,G2,12,2,True,0.6838,0.7544
+camel-ai/camel,410,d2fc7ed0a8fbbc65...,Dependency Error,G1,11,2,True,0.681,0.6988
+django-import-export/django-import-export,31,2a59b55e6124b33d...,Code Styling,G1,6,2,True,0.6768,0.6851
+berriai/litellm,384,bd65f8074258cddb...,Test Failure,G1,21,2,True,0.6755,0.7334
+beetbox/beets,17,7440ca51fb0ff3fb...,Code Formatting,G1,5,2,True,0.6734,0.7233
+aider-ai/aider,94,5548acee0b31576c...,Test Failure,G1,4,2,True,0.672,0.7209
+axolotl-ai-cloud/axolotl,466,7c3b428f2344da78...,Network Error,G2,12,2,True,0.6715,0.6934
+avaiga/taipy,436,0f47a35383b9379d...,Code Styling,G2,4,2,True,0.6688,0.72
+axolotl-ai-cloud/axolotl,471,8fd7325232883e14...,Code Styling,G1,32,2,True,0.6678,0.6685
+arc53/docsgpt,423,487e1157df0cb267...,Test Failure,G2,4,2,True,0.6603,0.6944
+arc53/docsgpt,422,39b871ce5e33ecaa...,Test Failure,G2,4,2,True,0.6592,0.6944
+axolotl-ai-cloud/axolotl,474,92c4ad86527a2bae...,Code Formatting,G1,32,2,True,0.6537,0.6964
+huggingface/accelerate,48,028ad1efee2c4169...,Code Formatting,G1,3,2,True,0.6521,0.656
+crewaiinc/crewai,565,0bef3aba9a6f8b20...,Test Failure,G1,5,2,True,0.6513,0.6944
+crewaiinc/crewai,566,0ca45f6bc5636846...,Test Failure,G1,5,2,True,0.6503,0.6724
+nicolargo/glances,254,11bab0fb5ed6c9b6...,Code Formatting,G1,3,2,True,0.6476,0.6571
+conan-io/conan,531,6bba89ef571ce4e6...,Test Failure,G1,20,2,True,0.6472,0.6836
+hacs/integration,25,5b9b7a0f0f73cc02...,Code Formatting,G1,3,2,True,0.6454,0.6584
+adap/flower,111,66718a2530fcc65c...,"Test Failure, Type Checking",G1,24,2,True,0.6429,0.6633
+1panel-dev/maxkb,338,e2105a08c4f170a1...,Code Styling,G1,12,2,True,0.6394,0.6655
+arc53/docsgpt,427,946865a335e58efd...,Linting,G1,6,2,True,0.6339,0.6609
+axolotl-ai-cloud/axolotl,485,b3662574643c396d...,"Network Error, Code Styling",G1,32,2,True,0.6316,0.6346
+agno-agi/agno,71,bd46af653e25571f...,Code Styling,G1,83,2,True,0.6297,0.64
+agentscope-ai/agentscope,346,db36ac2d272850e6...,Code Styling,G1,3,2,True,0.6269,0.6335
+crewaiinc/crewai,562,06e2683fd889129c...,Code Styling,G2,4,2,True,0.6247,0.6254
+crewaiinc/crewai,560,033df9f74d897a25...,Import Error,G1,5,2,True,0.6246,0.6411
+adap/flower,105,424e2bec03558962...,Code Formatting,G1,24,2,True,0.6242,0.6391
+browser-use/browser-use,516,a0e2fac3caab48e0...,Type Checking,G1,23,2,True,0.6234,0.6433
+camel-ai/camel,421,f4ed7a6f985ea813...,Dependency Error,G1,11,2,True,0.6194,0.6376
+aider-ai/aider,92,48376e59c2d51260...,Test Failure,G1,4,2,True,0.6193,0.6232
+axolotl-ai-cloud/axolotl,487,b5bb4c11018952a0...,Linting,G1,32,2,True,0.6124,0.6232
+hkuds/lightrag,236,331dcf050910618b...,Code Formatting,G1,3,2,True,0.6116,0.6222
+axolotl-ai-cloud/axolotl,481,a04519a24a8f6e55...,Static Analysis,G1,32,2,True,0.6103,0.6135
+berriai/litellm,379,b98eccc009b47575...,Type Checking,G1,21,2,True,0.6102,0.6192
+aio-libs/aiohttp,359,f0b242b6794352fc...,"Static Analysis, Test Failure",G1,3,2,True,0.6045,0.606
+django-import-export/django-import-export,302,3fecab1b8e5668d6...,Test Failure,G2,2,1,True,0.9987,0.9987
+django-import-export/django-import-export,303,dadeba110a5a98db...,Test Failure,G2,2,1,True,0.9987,0.9987
+HKUDS/LightRAG,293,a0593ec1c9613ae8...,Code Formatting,G1,2,1,True,0.979,0.979
+HKUDS/LightRAG,294,60564cf453626802...,Code Formatting,G1,2,1,True,0.979,0.979
+sqlmapproject/sqlmap,221,e87521de11a3590c...,Test Failure,G1,2,1,True,0.9673,0.9673
+sqlmapproject/sqlmap,222,86e4cd55fa5e00e9...,Test Failure,G1,2,1,True,0.9673,0.9673
+encode/uvicorn,307,1635d1811c3630bf...,"Tooling Error, Workflow Error",G1,2,1,True,0.9081,0.9081
+encode/uvicorn,306,c4330a42492e0135...,"Tooling Error, Workflow Error",G1,2,1,True,0.9081,0.9081
+aio-libs/aiohttp,348,3a7e3367046eb228...,"Code Styling, Test Failure",G2,2,1,True,0.8982,0.8982
+aio-libs/aiohttp,354,95daf0c88c0124cf...,"Code Styling, Test Failure",G2,2,1,True,0.8982,0.8982
+aider-ai/aider,99,b79f8486bf206365...,Test Failure,G2,3,1,True,0.8641,0.8641
+avaiga/taipy,440,7939c1ba9f52be99...,Code Styling,G2,4,1,True,0.8636,0.8636
+canonical/cloud-init,9,4d5898b8a73c93e1...,Code Styling,G1,3,1,True,0.7562,0.7562
+python/cpython,214,d76dc85f4b7ccf18...,Type Checking,G1,2,1,True,0.741,0.741
+python/cpython,215,6045a677ac736652...,Type Checking,G1,2,1,True,0.741,0.741
+aws/aws-cli,143,076846e0a5144086...,Test Failure,G1,2,1,True,0.7381,0.7381
+aws/aws-cli,444,2d3846f9b793ef48...,"Configuration Error, Dependency Error",G1,2,1,True,0.7381,0.7381
+django-import-export/django-import-export,33,c359d794dd0e4baf...,Code Styling,G1,6,1,True,0.7344,0.7344
+skypilot-org/skypilot,13,b639adb71066410b...,Code Styling,G1,5,1,True,0.7326,0.7326
+agno-agi/agno,196,978b0f29982c558b...,Code Styling,G1,83,1,True,0.7234,0.7234
+axolotl-ai-cloud/axolotl,489,bfa16fa84a9e18c1...,Code Formatting,G1,32,1,True,0.7173,0.7173
+kovidgoyal/calibre,232,0c72143691d2bd88...,Security,G1,2,1,True,0.7163,0.7163
+kovidgoyal/calibre,234,44464700849670ae...,Security,G1,2,1,True,0.7163,0.7163
+berriai/litellm,402,c3fd068216752158...,Test Failure,G1,21,1,True,0.7145,0.7145
+aio-libs/aiohttp,356,b1bd65dbd191b318...,"Test Failure, Workflow",G4,2,1,True,0.7104,0.7104
+aio-libs/aiohttp,347,03cacd5d36463c63...,"Code Styling, Test Failure",G4,2,1,True,0.7104,0.7104
+encode/httpx,39,83b5e4bf130d204f...,Linting,G1,2,1,True,0.7093,0.7093
+encode/httpx,42,897a5deb406b53ea...,Code Styling,G1,2,1,True,0.7093,0.7093
+openai/openai-python,240,ed370d805e4d5d1e...,Type Checking,G1,2,1,True,0.7047,0.7047
+openai/openai-python,228,b0ad27a67681f1b6...,"Type Checking, Import Error",G1,2,1,True,0.7047,0.7047
+pallets-eco/flask-admin,287,73dfb313ca4efa46...,Test Failure,G1,2,1,True,0.7024,0.7024
+pallets-eco/flask-admin,288,4846dead90a34de7...,Test Failure,G1,2,1,True,0.7024,0.7024
+axolotl-ai-cloud/axolotl,457,4b5b93503e92fd89...,"Code Styling, Network Error",G1,32,1,True,0.701,0.701
+aio-libs/aiohttp,351,4c8a64962e9e5ed2...,"Test Failure, Workflow",G3,2,1,True,0.701,0.701
+aio-libs/aiohttp,352,6775f4c2839c9d52...,"Test Failure, Workflow Error",G3,2,1,True,0.701,0.701
+berriai/litellm,394,c0e7057231ad7ef5...,Code Styling,G3,2,1,True,0.7006,0.7006
+berriai/litellm,403,c413feb604bbcf54...,Code Styling,G3,2,1,True,0.7006,0.7006
+axolotl-ai-cloud/axolotl,450,256be889efa8d176...,Code Formatting,G1,32,1,True,0.6974,0.6974
+hkuds/deepcode,278,daad35b9c60770a6...,Code Styling,G1,3,1,True,0.6955,0.6955
+agno-agi/agno,129,0309bd9e095b3da3...,Type Checking,G1,83,1,True,0.6928,0.6928
+hkuds/deepcode,280,219bc58c7f1bfe42...,Code Formatting,G1,3,1,True,0.6842,0.6842
+django-import-export/django-import-export,29,616eb3b10db94cf4...,Code Formatting,G1,6,1,True,0.6684,0.6684
+systran/faster-whisper,257,bbfcebbc60b0bc5d...,"Code Styling, Dependency Error",G1,2,1,True,0.6682,0.6682
+systran/faster-whisper,258,0b806e8ab76c7c89...,"Code Formatting, Dependency Error",G1,2,1,True,0.6682,0.6682
+axolotl-ai-cloud/axolotl,476,99d0e8fb13e8389c...,Linting,G1,32,1,True,0.6594,0.6594
+hacs/integration,24,d985231d83ec0cb5...,Linting,G1,3,1,True,0.6584,0.6584
+secdev/scapy,265,261adce4ce40a3fb...,"Code Styling, Build",G1,2,1,True,0.6503,0.6503
+secdev/scapy,266,4e9d6740404d5413...,"Build, Code Styling",G1,2,1,True,0.6503,0.6503
+arc53/docsgpt,426,8efb5578f2c0b9ad...,Dependency,G2,4,1,True,0.6472,0.6472
+browser-use/browser-use,509,851f22cb8db8b8a4...,Code Styling,G1,23,1,True,0.6431,0.6431
+1panel-dev/maxkb,328,285c5e3cc5594117...,Code Styling,G1,12,1,True,0.6428,0.6428
+arc53/docsgpt,429,a1890457665c07d1...,Linting,G1,6,1,True,0.6425,0.6425
+django-import-export/django-import-export,34,cfbbed910a5d84c0...,Code Formatting,G1,6,1,True,0.6401,0.6401
+encode/starlette,53,58c7cde15084b1c0...,Test Failure,G1,2,1,True,0.6396,0.6396
+encode/starlette,304,16c48e2d1190bbc6...,"Type Checking, Workflow Error",G1,2,1,True,0.6396,0.6396
+adap/flower,128,f539ef9be2b510a9...,Code Styling,G1,24,1,True,0.6389,0.6389
+huggingface/diffusers,2,db6550a228941b53...,Code Styling,G1,2,1,True,0.6363,0.6363
+huggingface/diffusers,21,68ddb2559e616656...,Code Styling,G1,2,1,True,0.6363,0.6363
+browser-use/browser-use,503,79d3e3ca7de6cb8b...,Type Checking,G1,23,1,True,0.6346,0.6346
+aider-ai/aider,97,82f33c12206d1ab7...,Test Failure,G1,4,1,True,0.634,0.634
+agentscope-ai/agentscope,340,1269df3cb05ca13f...,Type Checking,G1,3,1,True,0.6335,0.6335
+hacs/integration,26,5fea24b4a3fc4952...,Code Formatting,G1,3,1,True,0.6324,0.6324
+canonical/cloud-init,10,ecb486addc70aecc...,"Type Checking, Code Styling",G1,3,1,True,0.6307,0.6307
+crewaiinc/crewai,574,18ec9967ccaf8921...,Import Error,G1,5,1,True,0.6283,0.6283
+hkuds/lightrag,238,5f349d507ced55bb...,Code Formatting,G1,3,1,True,0.6222,0.6222
+beetbox/beets,16,0d26cc1482ff5080...,Code Formatting,G1,5,1,True,0.6218,0.6218
+agentscope-ai/agentscope,345,cc56de1de82a4b19...,Code Formatting,G1,3,1,True,0.6203,0.6203
+camel-ai/camel,408,d172aa270f1f8e46...,Dependency Error,G2,2,1,True,0.6197,0.6197
+camel-ai/camel,420,f37e7e5966a4009e...,Dependency Error,G2,2,1,True,0.6197,0.6197
+berriai/litellm,391,c043aa7250bd524f...,Type Checking,G1,21,1,True,0.6192,0.6192
+axolotl-ai-cloud/axolotl,470,8f6f89ef939a8a2f...,Code Styling,G1,32,1,True,0.6189,0.6189
+arc53/docsgpt,431,ccd70011ea8680e3...,Code Styling,G1,6,1,True,0.6161,0.6161
+agno-agi/agno,174,601a9c6986f1659f...,"Import Error, Type Checking",G1,83,1,True,0.6159,0.6159
+browser-use/browser-use,499,6bdb4d59201c468b...,Type Checking,G1,23,1,True,0.6111,0.6111
+axolotl-ai-cloud/axolotl,456,4a8ff81c3d4fa26b...,Type Checking,G1,32,1,True,0.611,0.611
+locustio/locust,248,fdf5d0ecff09bdd7...,Test Failure,G1,2,1,True,0.6103,0.6103
+locustio/locust,314,61b034a122453c56...,"Code Formatting, Test Failure",G1,2,1,True,0.6103,0.6103
+aider-ai/aider,69,d85078a610cbad69...,Test Failure,G2,3,1,True,0.6098,0.6098
+adap/flower,110,63b90b943bab2b78...,Code Styling,G1,24,1,True,0.6082,0.6082
+eleutherai/lm-evaluation-harness,273,49fc1f68d7b34a8c...,Code Formatting,G1,2,1,True,0.6065,0.6065
+eleutherai/lm-evaluation-harness,274,76de63fdc2facad2...,Code Styling,G1,2,1,True,0.6065,0.6065
+aio-libs/aiohttp,360,fcb5b3b5b2febd0e...,"Type Checking, Test Failure",G1,3,1,True,0.606,0.606
+conan-io/conan,524,2dc8938083a1e6e9...,Test Failure,G1,20,1,True,0.6037,0.6037
+aio-libs/aiohttp,353,8b959a5c872c8ee6...,"Type Checking, Runtime Error",G1,3,1,True,0.603,0.603
+browser-use/browser-use,520,a91c98ced7914988...,Code Styling,G1,23,1,True,0.6029,0.6029
+axolotl-ai-cloud/axolotl,449,255a10c026e18476...,Linting,G1,32,1,True,0.6016,0.6016
+allenai/olmocr,367,359abef6547dec81...,"Code Formatting, Test Failure",G1,2,1,True,0.6013,0.6013
+allenai/olmocr,366,261c722f561e06f1...,"Code Formatting, Test Failure",G1,2,1,True,0.6013,0.6013
+camel-ai/camel,416,e9c4ddd5f996b5a4...,Dependency Error,G1,11,1,True,0.6012,0.6012
+hkuds/lightrag,237,b860ffe5103cf9bc...,Code Formatting,G1,3,1,True,0.6011,0.6011
+adap/flower,104,14df8e5918cb5d6c...,Code Styling,G1,24,1,True,0.6006,0.6006
+berriai/litellm,377,b75eeee81e1a99e3...,Type Checking,G1,21,1,True,0.6005,0.6005
+beetbox/beets,18,b94b7e71f74eb6e8...,Code Formatting,G1,5,1,True,0.6005,0.6005
+agno-agi/agno,190,82bdfed0cf9ff575...,Type Checking,G2,1,0,False,0.0,0.0
+axolotl-ai-cloud/axolotl,448,0b595dbf31b9d086...,Static Analysis,G3,1,0,False,0.0,0.0
+axolotl-ai-cloud/axolotl,454,439519c9d5848fa0...,Type Checking,G4,1,0,False,0.0,0.0
+axolotl-ai-cloud/axolotl,467,7f12bde31f3a8dbc...,Type Checking,G5,1,0,False,0.0,0.0
+axolotl-ai-cloud/axolotl,468,899c6bc86d519a45...,"Type Checking, Network Error",G6,1,0,False,0.0,0.0
+axolotl-ai-cloud/axolotl,477,9cb48ac877ae3037...,Type Checking,G7,1,0,False,0.0,0.0
+axolotl-ai-cloud/axolotl,492,c5f6c8039c85e1c8...,Code Styling,G8,1,0,False,0.0,0.0
+axolotl-ai-cloud/axolotl,453,3b35eb6545a900f5...,Linting,G9,1,0,False,0.0,0.0
+berriai/litellm,397,c1ea39ffad1daa6e...,Type Checking,G4,1,0,False,0.0,0.0
+berriai/litellm,399,c31ad73351935548...,Test Failure,G5,1,0,False,0.0,0.0
+berriai/litellm,401,c37621bad3137cea...,Code Formatting,G6,1,0,False,0.0,0.0
+berriai/litellm,404,c433503f211cd2a1...,Type Checking,G7,1,0,False,0.0,0.0
+adap/flower,120,b2a09db583937f76...,Code Formatting,G2,1,0,False,0.0,0.0
+adap/flower,125,df0344c9bd80f87f...,"Code Styling, Type Checking",G3,1,0,False,0.0,0.0
+adap/flower,127,f231d50356ccfb76...,"Type Checking, Code Styling",G4,1,0,False,0.0,0.0
+browser-use/browser-use,496,58c3b25cfd4d29bb...,Type Checking,G2,1,0,False,0.0,0.0
+browser-use/browser-use,498,5e1a5d6eae3111d8...,Code Styling,G3,1,0,False,0.0,0.0
+browser-use/browser-use,501,6e17756e76d2a4c4...,Dependency Error,G4,1,0,False,0.0,0.0
+browser-use/browser-use,521,aa26ac1850194e02...,Test Failure,G5,1,0,False,0.0,0.0
+conan-io/conan,530,57bfb66d105860c5...,Test Failure,G2,1,0,False,0.0,0.0
+conan-io/conan,536,9dba1fe9efb5435e...,"Environment Error, Test Failure",G3,1,0,False,0.0,0.0
+conan-io/conan,542,b96e8f58cf2f208b...,Syntax,G4,1,0,False,0.0,0.0
+conan-io/conan,543,c55db1c25856c6c8...,Test Failure,G5,1,0,False,0.0,0.0
+conan-io/conan,549,eb4acbc53a79e274...,Test Failure,G6,1,0,False,0.0,0.0
+arc53/docsgpt,376,36b5f53637cf5d45...,Code Styling,G3,1,0,False,0.0,0.0
+arc53/docsgpt,424,50f5e8a9558dfa36...,Code Styling,G4,1,0,False,0.0,0.0
+arc53/docsgpt,425,7e2cbdd88c51c352...,Code Styling,G5,1,0,False,0.0,0.0
+arc53/docsgpt,428,9aa7f22fa67f08ff...,Dependency Error,G6,1,0,False,0.0,0.0
+arc53/docsgpt,434,f36e8e3db8d679b4...,Test Failure,G7,1,0,False,0.0,0.0
+camel-ai/camel,407,d060bc14f131099c...,Configuration Error,G3,1,0,False,0.0,0.0
+camel-ai/camel,411,d31c3cbffdc728c5...,Import Error,G4,1,0,False,0.0,0.0
+aio-libs/aiohttp,349,3fc1ead04551db56...,"Code Styling, Test Failure",G5,1,0,False,0.0,0.0
+aio-libs/aiohttp,350,4c387d563a3466ee...,"Type Checking, Dependency Error",G6,1,0,False,0.0,0.0
+aio-libs/aiohttp,355,adafb54171401363...,"Type Checking, Test Failure",G7,1,0,False,0.0,0.0
+aio-libs/aiohttp,357,d004843873a1eaf2...,Test Failure,G8,1,0,False,0.0,0.0
+aio-libs/aiohttp,358,e1f83f4e100052b2...,"Type Checking, Test Failure",G9,1,0,False,0.0,0.0
+crewaiinc/crewai,563,09e5a829f92d1f0c...,Type Checking,G3,1,0,False,0.0,0.0
+crewaiinc/crewai,564,0b704756f6d392dc...,Type Checking,G4,1,0,False,0.0,0.0
+crewaiinc/crewai,570,14579a7861ec02a3...,Linting,G5,1,0,False,0.0,0.0
+crewaiinc/crewai,572,166bfec208af6891...,Code Styling,G6,1,0,False,0.0,0.0
+avaiga/taipy,139,bbe7b82b778adbaf...,Type Checking,G3,1,0,False,0.0,0.0
+avaiga/taipy,141,e5031012aded0867...,Type Checking,G4,1,0,False,0.0,0.0
+avaiga/taipy,142,e56badcacbfa6003...,"Dependency Error, Import Error",G5,1,0,False,0.0,0.0
+aider-ai/aider,93,4ab8faf21e04489c...,Test Failure,G3,1,0,False,0.0,0.0
+aider-ai/aider,95,73f1acb9539c928b...,Test Failure,G4,1,0,False,0.0,0.0
+agentscope-ai/agentscope,341,8c1154c05bc26ae0...,Test Failure,G2,1,0,False,0.0,0.0
+agentscope-ai/agentscope,342,a5c10b0775fa7cf2...,Test Failure,G3,1,0,False,0.0,0.0
+agentscope-ai/agentscope,343,bc00327a9a8a8af7...,Code Styling,G4,1,0,False,0.0,0.0
+agentscope-ai/agentscope,344,c178f4b30cd2b0be...,Test Failure,G5,1,0,False,0.0,0.0
+andrewyng/aisuite,368,22825e3fd71bb273...,Code Formatting,G2,1,0,False,0.0,0.0
+andrewyng/aisuite,369,2c0067cc759603ef...,Code Formatting,G3,1,0,False,0.0,0.0
+andrewyng/aisuite,371,903b9c80d03035f4...,Code Formatting,G4,1,0,False,0.0,0.0
+andrewyng/aisuite,370,83d739495ef5a0fd...,Test Failure,G5,1,0,False,0.0,0.0
+canonical/cloud-init,6,f18f82de3e0270f6...,Code Styling,G2,1,0,False,0.0,0.0
+canonical/cloud-init,7,55d2e8d4abb02499...,Static Analysis,G3,1,0,False,0.0,0.0
+canonical/cloud-init,298,6f27d0e8dbbb74ef...,"Test Failure, Code Styling",G4,1,0,False,0.0,0.0
+beetbox/beets,297,1ab3bc774b390a52...,Code Formatting,G2,1,0,False,0.0,0.0
+kovidgoyal/calibre,310,c9c582cbef0e49bb...,Build,G2,1,0,False,0.0,0.0
+kovidgoyal/calibre,312,5fd445c656b53712...,Build Error,G3,1,0,False,0.0,0.0
+kovidgoyal/calibre,233,5e68d7e73930685c...,Dependency Error,G4,1,0,False,0.0,0.0
+kovidgoyal/calibre,311,496bc88f08677236...,Build Error,G5,1,0,False,0.0,0.0
+encode/httpx,38,aa8a42bcf03f3b89...,Test Failure,G2,1,0,False,0.0,0.0
+encode/httpx,40,1afe2c9cb192d376...,Type Checking,G3,1,0,False,0.0,0.0
+encode/httpx,41,7f351340260c165e...,Tooling Error,G4,1,0,False,0.0,0.0
+aws/aws-cli,144,0e6f97d05d68c3d6...,Test Failure,G2,1,0,False,0.0,0.0
+aws/aws-cli,145,4a32a9357914d448...,Build Error,G3,1,0,False,0.0,0.0
+aws/aws-cli,146,6daeaefa76ab8bfe...,Test Failure,G4,1,0,False,0.0,0.0
+tobymao/sqlglot,276,2ee00eddc1bebd2f...,Code Formatting,G1,1,0,False,0.0,0.0
+tobymao/sqlglot,277,bddc230cc11627fd...,Test Failure,G2,1,0,False,0.0,0.0
+tobymao/sqlglot,324,a7b902770d8b2769...,Test Failure,G3,1,0,False,0.0,0.0
+tobymao/sqlglot,325,5df3ea92f5912595...,Test Failure,G4,1,0,False,0.0,0.0
+tobymao/sqlglot,275,16f544dc25d5d612...,Type Checking,G5,1,0,False,0.0,0.0
+huggingface/diffusers,1,2c06ffa4c9d2c378...,Code Formatting,G2,1,0,False,0.0,0.0
+huggingface/diffusers,22,ba66fb81a0c8db48...,Import Error,G3,1,0,False,0.0,0.0
+huggingface/accelerate,46,44b56e01683771fb...,Code Styling,G2,1,0,False,0.0,0.0
+encode/starlette,51,e21f666b44b5c2dd...,Type Checking,G2,1,0,False,0.0,0.0
+encode/starlette,52,cc0b066c05947c2a...,Test Failure,G3,1,0,False,0.0,0.0
+encode/uvicorn,54,0b93d2da3b721c80...,Test Failure,G2,1,0,False,0.0,0.0
+encode/uvicorn,305,207b861fbc10acc8...,"Tooling Error, Test Failure",G3,1,0,False,0.0,0.0
+hkuds/deepcode,279,238a409674f14733...,Linting,G2,1,0,False,0.0,0.0
+kovidgoyal/kitty,313,4ffacbbe801b90aa...,Dependency Error,G1,1,0,False,0.0,0.0
+kovidgoyal/kitty,224,b94d6dc7134d3bf6...,"Test Failure, Type Checking",G2,1,0,False,0.0,0.0
+kovidgoyal/kitty,225,34ae42cf302d34e4...,"Type Checking, Test Failure",G3,1,0,False,0.0,0.0
+kovidgoyal/kitty,223,e6f35571a577e5f0...,"Test Failure, Code Styling",G4,1,0,False,0.0,0.0
+python/cpython,320,6066f06de3275801...,Code Formatting,G2,1,0,False,0.0,0.0
+python/cpython,213,7ab76a8fcbc8388a...,Test Failure,G3,1,0,False,0.0,0.0
+openai/openai-python,229,b7c2ddc5e5dedda0...,Code Styling,G2,1,0,False,0.0,0.0
+openai/openai-python,230,03f8b88a0d428b74...,Test Failure,G3,1,0,False,0.0,0.0
+airbytehq/airbyte,361,1b0318d0f4d5b14f...,Code Formatting,G1,1,0,False,0.0,0.0
+airbytehq/airbyte,362,5457d8f7169d6a18...,Code Formatting,G2,1,0,False,0.0,0.0
+airbytehq/airbyte,363,e3b35e51ceb12ec2...,Code Formatting,G3,1,0,False,0.0,0.0
+airbytehq/airbyte,364,eff8e29d670e06a4...,Code Formatting,G4,1,0,False,0.0,0.0
+mwaskom/seaborn,56,6cbb12e47665eda2...,Test Failure,G1,1,0,False,0.0,0.0
+mwaskom/seaborn,57,2201be21886bb822...,"Runtime Error, Code Styling",G2,1,0,False,0.0,0.0
+mwaskom/seaborn,58,785242b646b54a33...,Test Failure,G3,1,0,False,0.0,0.0
+pygithub/pygithub,281,9ecbaeeb4d8db618...,Dependency,G1,1,0,False,0.0,0.0
+pygithub/pygithub,282,20a0e348143cc9f4...,Dependency Error,G2,1,0,False,0.0,0.0
+pygithub/pygithub,283,6033729f8ed6df96...,"Dependency Error, Type Checking",G3,1,0,False,0.0,0.0
+pallets-eco/flask-admin,316,026bbd5ffd139433...,Code Formatting,G2,1,0,False,0.0,0.0
+HKUDS/LightRAG,292,ce28f30ca68a2e04...,Code Formatting,G2,1,0,False,0.0,0.0
+facefusion/facefusion,308,df5e9e422993a051...,Test Failure,G1,1,0,False,0.0,0.0
+facefusion/facefusion,239,a206d0817acd2948...,Linting,G2,1,0,False,0.0,0.0
+facefusion/facefusion,249,43e32d5cecf8a694...,Test Failure,G3,1,0,False,0.0,0.0
+sqlmapproject/sqlmap,322,d01a6ec49f1aac93...,Dependency Error,G2,1,0,False,0.0,0.0
+stanfordnlp/dspy,323,71b7fd4a926acb2c...,Code Styling,G1,1,0,False,0.0,0.0
+stanfordnlp/dspy,227,d2a7890921a90179...,Code Styling,G2,1,0,False,0.0,0.0
+stanfordnlp/dspy,226,0276b7a794ed6215...,Test Failure,G3,1,0,False,0.0,0.0
+locustio/locust,247,efe1611a385c2853...,Test Failure,G2,1,0,False,0.0,0.0
+systran/faster-whisper,259,9090997d2545e86d...,Dependency,G2,1,0,False,0.0,0.0
+allenai/olmocr,365,210389f0f1f96259...,Code Styling,G2,1,0,False,0.0,0.0
+secdev/scapy,267,4b39624a941b0c6f...,"Code Styling, Build Error",G2,1,0,False,0.0,0.0
+eleutherai/lm-evaluation-harness,272,938a4fb3f5dbe7e6...,Code Formatting,G2,1,0,False,0.0,0.0
