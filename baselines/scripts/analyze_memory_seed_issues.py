@@ -58,6 +58,11 @@ def _load_existing(path: Path) -> List[Dict[str, Any]]:
         return []
 
 
+def _analysis_has_error(entry: Dict[str, Any]) -> bool:
+    analysis = entry.get("analysis")
+    return not isinstance(analysis, dict) or bool(analysis.get("error"))
+
+
 def _safe_scalar(value: Any, default: Any = "") -> Any:
     if value is None:
         return default
@@ -108,7 +113,16 @@ def main() -> int:
 
     out_path   = args.output_dir / "seed_log_details.json"
     analyzed: List[Dict[str, Any]] = _load_existing(out_path)
-    done_shas  = {str(r.get("sha_fail") or "") for r in analyzed}
+    analyzed_by_sha = {
+        str(entry.get("sha_fail") or ""): entry
+        for entry in analyzed
+        if str(entry.get("sha_fail") or "")
+    }
+    done_shas = {
+        sha_fail
+        for sha_fail, entry in analyzed_by_sha.items()
+        if not _analysis_has_error(entry)
+    }
     failures:  List[Dict[str, Any]] = []
 
     benchmark_owner    = str(config.get("benchmark_owner", ""))
@@ -138,9 +152,18 @@ def main() -> int:
             failures.append({"sha_fail": sha_fail, "id": task_id, "error": f"clone_failed: {clone_err}"})
             continue
 
-        analyzer = CILogAnalyzerLLM(
+        ci_logs = _safe_logs(dataset_row.get("logs"))
+        if not ci_logs:
+            result = {
+                "error": "missing_logs",
+                "message": "Dataset row does not contain CI logs for this sha_fail.",
+                "sha_fail": sha_fail,
+                "id": str(_safe_scalar(dataset_row.get("id"), default=task_id) or task_id),
+            }
+        else:
+            analyzer = CILogAnalyzerLLM(
             repo_path    = repo_path,
-            ci_log       = _safe_logs(dataset_row.get("logs")),
+            ci_log       = ci_logs,
             sha_fail     = sha_fail,
             workflow     = str(_safe_scalar(dataset_row.get("workflow"), default="") or ""),
             workflow_path= str(_safe_scalar(dataset_row.get("workflow_path"), default="") or ""),
@@ -150,7 +173,8 @@ def main() -> int:
         )
 
         try:
-            result = analyzer.run()
+            if ci_logs:
+                result = analyzer.run()
             entry = {
                 "id":            str(dataset_row.get("id") or task_id),
                 "sha_fail":      sha_fail,
@@ -161,9 +185,11 @@ def main() -> int:
                 "workflow":      str(_safe_scalar(dataset_row.get("workflow"), default="") or ""),
                 "analysis":      result,
             }
-            analyzed.append(entry)
-            done_shas.add(sha_fail)
+            analyzed_by_sha[sha_fail] = entry
+            if not _analysis_has_error(entry):
+                done_shas.add(sha_fail)
             # Flush after each issue so a crash doesn't lose work
+            analyzed = list(analyzed_by_sha.values())
             _write_json(out_path, analyzed)
             print(f"[done] {sha_fail} ({repo_name})")
         except Exception as exc:
@@ -174,7 +200,7 @@ def main() -> int:
         "seed_file":  str(args.seed_file),
         "dataset":    str(args.dataset),
         "requested":  len(seed_rows),
-        "analyzed":   len(analyzed),
+        "analyzed":   len([entry for entry in analyzed_by_sha.values() if not _analysis_has_error(entry)]),
         "failed":     len(failures),
         "failures":   failures,
         "output":     str(out_path),

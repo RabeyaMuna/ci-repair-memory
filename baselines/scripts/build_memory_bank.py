@@ -93,6 +93,19 @@ def _clip(text: str, limit: int = 600) -> str:
     return text if len(text) <= limit else text[: limit - 3] + "..."
 
 
+def _humanize_pattern(pattern: str) -> str:
+    """Convert kebab-case or snake_case pattern to a human-readable sentence.
+
+    'undefined-name-typing-imports' → 'Undefined name typing imports'
+    'package_version_constraint'    → 'Package version constraint'
+    Already human-readable strings are returned with just the first letter in upper case.
+    """
+    if not pattern:
+        return ""
+    words = re.sub(r"[-_]+", " ", pattern.strip())
+    return words[0].upper() + words[1:] if words else ""
+
+
 def _dedupe(items) -> List[str]:
     seen: set = set()
     out: List[str] = []
@@ -182,7 +195,7 @@ _L1_SCHEMA = """\
   "file":            "path to this specific file, relative to repo root",
   "workflow_path":   "path to the CI workflow file",
   "error_type":      "high-level failure category, e.g. 'Type Checking', 'Dependency Error', 'Code Formatting', 'Test Failure'",
-  "failure_pattern": "specific short pattern name, e.g. 'nullable-kwargs-unpack', 'package-version-constraint', 'unused-import'",
+  "failure_pattern": "short human-readable description of the specific failure pattern, e.g. 'Nullable kwargs unpack', 'Package version constraint', 'Unused import'",
   "failure_reason":  "2-3 sentences: WHY this specific file caused the CI failure — grounded in the diff and log evidence. Be precise about what line or construct triggered the error.",
   "fix_strategy":    "1-2 sentences: what the ground-truth diff actually did to fix this file specifically.",
   "fix_pattern":     ["keyword1", "keyword2"],
@@ -360,9 +373,8 @@ def extract_l1_for_issue(
             "file":            resolved_file,
             "line_number":     None,
             "error_type":      str(record.get("error_type")      or ""),
-            "failure_pattern": str(record.get("failure_pattern") or ""),
+            "failure_pattern": _humanize_pattern(str(record.get("failure_pattern") or "")),
             "failure_reason":  failure_reason,
-            "reason":          failure_reason,   # alias for retrieval compat
             "fix_strategy":    fix_strategy,
             "fix_pattern":     [str(x) for x in (record.get("fix_pattern") or [])],
             "failed_tool":     _dedupe([str(x) for x in (record.get("failed_tool") or [])]),
@@ -465,7 +477,7 @@ _L2_ENRICH_SCHEMA = """\
 {
   "issue_type":      "one of: formatting | test_failure | type_checking | dependency_or_env | workflow_config | import_or_module | other",
   "error_type":      "high-level category, e.g. 'Dependency Error', 'Type Checking', 'Code Formatting'",
-  "failure_pattern": "short pattern name, e.g. 'pip-pep440-violation', 'mypy-strict-optional'",
+  "failure_pattern": "short human-readable description of the failure pattern, e.g. 'Pip pep440 violation', 'Mypy strict optional'",
   "failure_reason":  "2-3 sentences: root cause of THIS specific CI job/check failing — grounded in L1 evidence",
   "failed_tool":     ["tools that failed for this specific CI failure"],
   "failed_cmd":      ["exact CI commands that failed, e.g. 'pip install -e .[all]', 'mypy camel/ --strict'"],
@@ -817,7 +829,7 @@ def extract_l2_sub_issues(
             "issue_type":       str(rec.get("issue_type") or issue_type),
             "error_type":       str(rec.get("error_type") or ""),
             # Failure details
-            "failure_pattern":  str(rec.get("failure_pattern") or ""),
+            "failure_pattern":  _humanize_pattern(str(rec.get("failure_pattern") or "")),
             "failure_reason":   _clip(str(rec.get("failure_reason") or ""), 500),
             "failed_tool":      all_tools,
             "failed_cmd":       _dedupe([str(x) for x in (rec.get("failed_cmd") or [])]),
@@ -912,7 +924,7 @@ root_cause_pattern : What class of root cause triggers this failure? (abstract, 
 cascade_pattern    : How do downstream failures propagate from the root cause?
 principle          : The key insight a developer needs to understand and prevent this failure.
 fix_strategy       : Ordered, universal fix steps for this failure class.
-failure_patterns   : Distinct pattern names observed (keep them generic, e.g. "nullable-kwargs-unpack").
+failure_patterns   : Distinct pattern names observed — use human-readable words (e.g. "Nullable kwargs unpack", "Unused import").
 failure_reasons    : 1-2 abstracted root-cause descriptions with no file/repo specifics.
 
 Return ONLY valid JSON matching this schema exactly (no markdown fences, no extra keys):
@@ -947,15 +959,10 @@ def extract_l3_for_issue(
         + [str(r.get("issue_type") or "") for r in l2_records]
     )
 
-    # Build principle — must NOT include repo name or sha
     raw_principle = str(record.get("principle") or "").strip()
     primary_l2    = l2_records[0] if l2_records else {}
     primary_et    = str(record.get("error_type") or primary_l2.get("error_type") or "")
-    principle     = (
-        f"error_type={primary_et}: {_clip(raw_principle, 450)}"
-        if raw_principle else
-        f"error_type={primary_et}: (no principle extracted)"
-    )
+    principle     = _clip(raw_principle, 500) if raw_principle else "(no principle extracted)"
 
     fix_strategy = _clip(
         str(record.get("fix_strategy") or primary_l2.get("fix_strategy") or ""), 600
@@ -968,10 +975,8 @@ def extract_l3_for_issue(
     )
 
     return {
-        # Identity (for traceability only — not used in retrieval scoring)
+        # Traceability only — NOT used in retrieval or injected into any prompt
         "sha_fail":           sha_fail,
-        "repo":               repo_name,
-        "repos":              [repo_name],
         # Classification
         "error_type":         primary_et,
         "sub_issue_types":    sub_issue_types,
@@ -983,7 +988,7 @@ def extract_l3_for_issue(
         "principle":          _clip(principle, 600),
         "fix_strategy":       fix_strategy,
         "fix_strategies":     [fix_strategy] if fix_strategy else [],
-        "failure_patterns":   [str(x) for x in (record.get("failure_patterns") or [])],
+        "failure_patterns":   [_humanize_pattern(str(x)) for x in (record.get("failure_patterns") or [])],
         "failure_reasons":    [_clip(str(x), 300) for x in (record.get("failure_reasons") or [])[:3]],
     }
 

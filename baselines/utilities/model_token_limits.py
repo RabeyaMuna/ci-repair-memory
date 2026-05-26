@@ -25,19 +25,28 @@ class ModelLimits:
         return remaining
 
 MODEL_LIMITS: Dict[str, ModelLimits] = {
-    # OpenAI
-    "gpt-4o-mini": ModelLimits(context_window=128_000, reserved_output=8_000, max_output=16_384),
-    "gpt-4o":      ModelLimits(context_window=128_000, reserved_output=8_000, max_output=16_384),
-    "gpt-4.1":     ModelLimits(context_window=1_000_000, reserved_output=16_000, max_output=32_768),
-    "gpt-5-mini":  ModelLimits(context_window=400_000, reserved_output=16_000, max_output=128_000),
-    "gpt-5.1":     ModelLimits(context_window=400_000, reserved_output=16_000, max_output=128_000),
-    "minimax/minimax-m2.5": ModelLimits(context_window=196_608, reserved_output=16_000, max_output=32_768),
-    "MiniMax-M2.5": ModelLimits(context_window=196_608, reserved_output=16_000, max_output=32_768),
-    "minimax-m2.5": ModelLimits(context_window=196_608, reserved_output=16_000, max_output=32_768),
+    # ── OpenAI ──────────────────────────────────────────────────────────
+    "gpt-4o-mini":       ModelLimits(context_window=128_000,   reserved_output=8_000,  max_output=16_384),
+    "gpt-4o":            ModelLimits(context_window=128_000,   reserved_output=8_000,  max_output=16_384),
+    # GPT-4.1 family
+    "gpt-4.1":           ModelLimits(context_window=1_000_000, reserved_output=16_000, max_output=32_768),
+    "gpt-4.1-mini":      ModelLimits(context_window=1_000_000, reserved_output=16_000, max_output=32_768),
+    "gpt-4.1-nano":      ModelLimits(context_window=1_000_000, reserved_output=16_000, max_output=32_768),
+    # GPT-5 family
+    "gpt-5":             ModelLimits(context_window=1_000_000, reserved_output=32_000, max_output=32_768),
+    "gpt-5-mini":        ModelLimits(context_window=400_000,   reserved_output=16_000, max_output=128_000),
+    "gpt-5.1":           ModelLimits(context_window=400_000,   reserved_output=16_000, max_output=128_000),
 
-    # DeepSeek (adjust if needed)
-    "deepseek-chat":  ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
-    "deepseek-coder": ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
+    # ── MiniMax ─────────────────────────────────────────────────────────
+    "minimax/minimax-m2.5": ModelLimits(context_window=196_608, reserved_output=16_000, max_output=32_768),
+    "MiniMax-M2.5":         ModelLimits(context_window=196_608, reserved_output=16_000, max_output=32_768),
+    "minimax-m2.5":         ModelLimits(context_window=196_608, reserved_output=16_000, max_output=32_768),
+    "minimax-text-01":      ModelLimits(context_window=1_000_000, reserved_output=16_000, max_output=32_768),
+
+    # ── DeepSeek ────────────────────────────────────────────────────────
+    "deepseek-chat":         ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
+    "deepseek-coder":        ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
+    "deepseek-reasoner":     ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
 }
 
 def get_model_limits(model_name: Optional[str]) -> ModelLimits:

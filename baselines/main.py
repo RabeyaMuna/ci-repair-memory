@@ -49,6 +49,46 @@ def _load_json_list(path):
     return []
 
 
+def _safe_logs(value):
+    """
+    Coerce the ``logs`` column from a parquet row into a plain Python list
+    of normalized dicts containing only the two fields we actually use:
+      - "step_name"  (the CI step name)
+      - "log"        (the raw log text for that step)
+
+    Parquet + pandas returns numpy arrays for list-typed columns, which
+    raises ``ValueError: The truth value of an array with more than one
+    element is ambiguous`` when a truthiness check is applied later.
+    """
+    if value is None:
+        return []
+    try:
+        import numpy as np
+        if isinstance(value, np.ndarray):
+            entries = value.tolist() if value.size > 0 else []
+        elif isinstance(value, np.generic):
+            entries = [value.item()]
+        else:
+            entries = value
+    except Exception:
+        entries = value
+
+    if isinstance(entries, dict):
+        entries = [entries]
+    elif not isinstance(entries, list):
+        return []
+
+    normalized = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        normalized.append({
+            "step_name": entry.get("step_name") or "",
+            "log":       entry.get("log") or "",
+        })
+    return normalized
+
+
 def _merge_by_key(existing: list, new_item: dict, key: str) -> list:
     """
     Return a new list where any entry whose ``key`` matches ``new_item[key]``
@@ -114,7 +154,7 @@ def process_entire_dataset(
         sha_fail = datapoint["sha_fail"]
         benchmark_owner = config.benchmark_owner
         repo_url = f"https://github.com/{benchmark_owner}/{repo_name}.git"
-        logs = datapoint["logs"]
+        logs = _safe_logs(datapoint["logs"])
         workflow = datapoint["workflow"]
         workflow_path = datapoint["workflow_path"]
         sha_success = datapoint["sha_success"]
@@ -174,26 +214,40 @@ def process_entire_dataset(
                 print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
                 continue
 
-            try:
-                changed_files_info = collect_changed_files_for_fail_and_parent(
-                    owner=benchmark_owner,
-                    repo=repo_name,
-                    repo_path=repo_path,
-                    sha_fail=sha_fail,
-                    workflow_rel_path=workflow_path,
-                    workflow_yaml_from_dataset=workflow
-                )
+            # ------------------------------------------------------------------
+            # 2) CHANGED FILES — cache-first, GitHub fallback
+            #    Load from disk if already fetched; only hit GitHub on miss.
+            #    If GitHub fetch also fails, proceed with empty info so FL
+            #    can still run (it will rely on log analysis alone).
+            # ------------------------------------------------------------------
+            changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
+            if os.path.exists(changed_files_path):
+                try:
+                    with open(changed_files_path, "r", encoding="utf-8") as f:
+                        changed_files_info = json.load(f)
+                    print(f"[MAIN] Loaded changed files from cache: {changed_files_path}")
+                except Exception as e:
+                    print(f"[WARN] Cache read failed for {sha_fail} ({e}), fetching from GitHub.")
+                    changed_files_info = None
+            else:
+                changed_files_info = None
 
-                # Save to per-commit JSON file in baselines/changed_files/{sha_fail}.json
-                changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
-                with open(changed_files_path, "w", encoding="utf-8") as f:
-                    json.dump(changed_files_info, f, indent=4)
-
-                print(f"[MAIN] Saved changed files info to {changed_files_path}")
-
-            except Exception as e:
-                print(f"[ERROR] Failed to collect/save changed files for {sha_fail}: {e}")
-                continue
+            if changed_files_info is None:
+                try:
+                    changed_files_info = collect_changed_files_for_fail_and_parent(
+                        owner=benchmark_owner,
+                        repo=repo_name,
+                        repo_path=repo_path,
+                        sha_fail=sha_fail,
+                        workflow_rel_path=workflow_path,
+                        workflow_yaml_from_dataset=workflow,
+                    )
+                    with open(changed_files_path, "w", encoding="utf-8") as f:
+                        json.dump(changed_files_info, f, indent=4)
+                    print(f"[MAIN] Fetched and cached changed files: {changed_files_path}")
+                except Exception as e:
+                    print(f"[WARN] Could not fetch changed files for {sha_fail} ({e}). Proceeding with empty info.")
+                    changed_files_info = {"sha_fail": sha_fail, "changed_files": []}
 
             # ------------------------------------------------------------------
             # 3) FAULT LOCALIZATION (later we can inject changed_files_info)
@@ -248,7 +302,11 @@ def process_entire_dataset(
                     json.dump(fault_localization, f, indent=4)
 
                 if not fault_localizer.get("fault_localization_data"):
-                    print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
+                    if bool(config.get("memory_enabled", False)):
+                        print(f"[MAIN] Memory mode: no suspicious files found for {sha_fail} "
+                              f"(error-context fallback also empty) — skipping patch gen.")
+                    else:
+                        print(f"[MAIN] Baseline: no suspicious files found for {sha_fail} — skipping.")
                     continue
 
             except Exception as e:
