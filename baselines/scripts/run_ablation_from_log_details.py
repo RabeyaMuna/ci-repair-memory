@@ -13,18 +13,20 @@ Usage
 -----
 # L1 only
 baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \\
-  --ablation-levels L1 \\
-  --source-log-details baselines/results/MiniMax-M2.5_llm_memory/log_details.json
+  --ablation-levels L1
 
 # L1+L2
 baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \\
-  --ablation-levels L1+L2 \\
-  --source-log-details baselines/results/MiniMax-M2.5_llm_memory/log_details.json
+  --ablation-levels L1+L2
+
+# L1+L2+L3
+baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \\
+  --ablation-levels L1+L2+L3
 
 # With a specific model and issue limit
 baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \\
   --ablation-levels L1 \\
-  --source-log-details baselines/results/MiniMax-M2.5_llm_memory/log_details.json \\
+  --source-log-details baselines/results/MiniMax-M2.5_llm_baseline/log_details.json \\
   --model-key MiniMax-M2.5 \\
   --max-issues 5
 """
@@ -41,7 +43,6 @@ from typing import Any, Dict, List
 import pandas as pd
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download
-from omegaconf import OmegaConf
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASELINES_ROOT = PROJECT_ROOT / "baselines"
@@ -59,6 +60,7 @@ from utilities.token_tracker import TokenTracker  # noqa: E402
 from utilities.fl_evaluator import evaluate_fl  # noqa: E402
 from utilities.memory_plugin import MemoryPlugin  # noqa: E402
 from utilities.ensure_repo import ensure_repo_at_commit  # noqa: E402
+from utilities.load_config import load_config  # noqa: E402
 from ci_repair.fault_localization import FaultLocalization  # noqa: E402
 from ci_repair.patch_generation import PatchGeneration  # noqa: E402
 
@@ -66,6 +68,9 @@ load_dotenv()
 
 DEFAULT_DATASET = PROJECT_ROOT / "dataset" / "lca_dataset.parquet"
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
+DEFAULT_SOURCE_LOG_DETAILS = (
+    PROJECT_ROOT / "baselines" / "results" / "MiniMax-M2.5_llm_baseline" / "log_details.json"
+)
 
 
 def _load_dataset(local_dataset: Path, config) -> List[Dict[str, Any]]:
@@ -99,8 +104,11 @@ def main() -> int:
     parser.add_argument(
         "--source-log-details",
         type=Path,
-        required=True,
-        help="Path to the log_details.json to reuse (e.g. baselines/results/MiniMax-M2.5_llm_memory/log_details.json).",
+        default=DEFAULT_SOURCE_LOG_DETAILS,
+        help=(
+            "Path to the log_details.json to reuse. Defaults to the repo-relative "
+            "MiniMax-M2.5 baseline log_details.json."
+        ),
     )
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
@@ -114,7 +122,7 @@ def main() -> int:
     args = parser.parse_args()
 
     # --- Config -----------------------------------------------------------------
-    config = OmegaConf.load(str(args.config))
+    config = load_config(args.config)
     config.memory_enabled = True
     config.memory_writeback_enabled = False
     config.memory_ablation_levels = args.ablation_levels

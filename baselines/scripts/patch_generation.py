@@ -38,8 +38,8 @@ ID_RANGE = None  # e.g., (159, 301), or None
 MODEL_KEY = "gpt-4o-mini"  # must match keys in llm_provider and model_token_limits
 LOG_ANALYZER_TYPE = "llm"  # "llm" or "bm25"
 
-# --- absolute base path (used for file paths) ---
-PROJECT_ROOT = "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH"
+# --- project base path (resolved from this file) ---
+PROJECT_ROOT = REPO_ROOT
 
 CONFIG_PATH = os.path.join(PROJECT_ROOT, "config.yaml")
 DATASET_PATH = os.path.join(PROJECT_ROOT, "dataset", "lca_dataset.parquet")

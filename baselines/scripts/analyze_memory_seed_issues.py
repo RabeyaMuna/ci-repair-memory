@@ -5,7 +5,7 @@ Phase 2 of the memory bank pipeline:
 
 Inputs:
   --seed-file    trs_memory_seed_issues.json  (from the enriched TRS memory split)
-  --dataset      lca_dataset.parquet
+  --dataset      optional local parquet override; defaults to Hugging Face
   --config       config.yaml
 
 Outputs (in --output-dir):
@@ -25,21 +25,24 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pandas as pd
-from omegaconf import OmegaConf
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASELINES_ROOT = PROJECT_ROOT / "baselines"
-if str(BASELINES_ROOT) not in sys.path:
-    sys.path.insert(0, str(BASELINES_ROOT))
+SCRIPTS_ROOT = PROJECT_ROOT / "scripts"
+for p in (BASELINES_ROOT, SCRIPTS_ROOT):
+    if str(p) in sys.path:
+        continue
+    sys.path.insert(0, str(p))
 
+from dataset_source import get_ci_repair_dataset_path
 from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
 from utilities.ensure_repo import ensure_repo_at_commit
+from utilities.load_config import load_config
 from utilities.llm_provider import get_default_model_key, get_llm
 
 
 DEFAULT_SEED_FILE = PROJECT_ROOT / "baselines" / "results" / "trs" / "trs_memory_seed_issues.json"
-DEFAULT_DATASET   = PROJECT_ROOT / "dataset" / "lca_dataset.parquet"
 DEFAULT_CONFIG    = PROJECT_ROOT / "config.yaml"
 DEFAULT_OUTPUT    = PROJECT_ROOT / "baselines" / "results" / "trs"
 
@@ -96,15 +99,16 @@ def main() -> int:
         description="Analyze selected memory seed issues with CILogAnalyzerLLM."
     )
     parser.add_argument("--seed-file", type=Path, default=DEFAULT_SEED_FILE)
-    parser.add_argument("--dataset",   type=Path, default=DEFAULT_DATASET)
+    parser.add_argument("--dataset",   type=Path, default=None)
     parser.add_argument("--config",    type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output-dir",type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--model-key", default=get_default_model_key())
     args = parser.parse_args()
 
-    config     = OmegaConf.load(str(args.config))
+    config     = load_config(args.config)
     seed_rows  = json.loads(args.seed_file.read_text(encoding="utf-8"))
-    df         = pd.read_parquet(args.dataset)
+    dataset_path = str(args.dataset) if args.dataset else get_ci_repair_dataset_path(PROJECT_ROOT)
+    df         = pd.read_parquet(dataset_path)
     dataset_rows = df.to_dict(orient="records")
     row_by_sha = {str(row.get("sha_fail") or ""): row for row in dataset_rows}
 

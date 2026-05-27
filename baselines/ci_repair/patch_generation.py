@@ -1196,7 +1196,9 @@ Rules:
     # 2) ADD these methods inside PatchGeneration (e.g., under CORE METHODS)
 
     def _interrupted_dir(self) -> str:
-        base = "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/exceptions/interrupted_patches"
+        base = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "exceptions", "interrupted_patches")
+        )
         os.makedirs(base, exist_ok=True)
         return base
 

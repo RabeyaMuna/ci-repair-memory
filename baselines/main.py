@@ -5,7 +5,6 @@ import os
 import pandas as pd
 import json
 import subprocess
-from omegaconf import OmegaConf
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download
 from datasets import load_dataset  # (unused right now but kept)
@@ -13,6 +12,7 @@ from datasets import load_dataset  # (unused right now but kept)
 from utilities.fetch_failed_commit_changed_files import (
     collect_changed_files_for_fail_and_parent,
 )
+from utilities.load_config import load_config
 from utilities.llm_provider import filesystem_safe_model_key, get_default_model_key, get_llm, get_tracked_llm
 from utilities.token_tracker import TokenTracker
 from utilities.fl_evaluator import evaluate_fl
@@ -302,11 +302,8 @@ def process_entire_dataset(
                     json.dump(fault_localization, f, indent=4)
 
                 if not fault_localizer.get("fault_localization_data"):
-                    if bool(config.get("memory_enabled", False)):
-                        print(f"[MAIN] Memory mode: no suspicious files found for {sha_fail} "
-                              f"(error-context fallback also empty) — skipping patch gen.")
-                    else:
-                        print(f"[MAIN] Baseline: no suspicious files found for {sha_fail} — skipping.")
+                    mode = "memory" if bool(config.get("memory_enabled", False)) else "baseline"
+                    print(f"[MAIN] No suspicious files found for {sha_fail} ({mode}) — skipping patch gen.")
                     continue
 
             except Exception as e:
@@ -384,8 +381,7 @@ def process_entire_dataset(
 
 if __name__ == "__main__":
     # Load config
-    config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
-    config = OmegaConf.load(config_path)
+    config = load_config()
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

@@ -11,18 +11,15 @@ tables    Load pre-computed reports and print RQ1 / RQ2 / efficiency tables
 Example — evaluate each strategy (auto-discover all files from the results dir):
   python scripts/overall_fl_evaluator.py eval \\
     --results-dir baselines/results/gpt-5-mini_llm \\
-    --parquet     dataset/lca_dataset.parquet \\
     --label       "GPT-5-mini" --strategy LLM
 
   python scripts/overall_fl_evaluator.py eval \\
     --results-dir baselines/results/gpt-5-mini_bm25 \\
-    --parquet     dataset/lca_dataset.parquet \\
     --label       "GPT-5-mini" --strategy BM25
 
 Or pass individual files explicitly:
   python scripts/overall_fl_evaluator.py eval \\
     --fl      baselines/results/gpt-5-mini_llm/fault_localization.json \\
-    --parquet dataset/lca_dataset.parquet \\
     --out     baselines/results/gpt-5-mini_llm/fl_full_report.json
 
 Then print paper tables:
@@ -42,6 +39,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
+
+from dataset_source import get_ci_repair_dataset_path
 
 
 # ─────────────────────────────────────────────
@@ -688,6 +687,10 @@ def generate_latex(reports: List[Dict]) -> str:
 # CLI
 # ─────────────────────────────────────────────
 def cmd_eval(args: argparse.Namespace) -> None:
+    parquet_path = Path(args.parquet) if args.parquet else Path(
+        get_ci_repair_dataset_path(Path(__file__).resolve().parents[1])
+    )
+
     # --results-dir: auto-discover all files from the strategy directory
     if args.results_dir:
         results_dir = Path(args.results_dir)
@@ -717,7 +720,7 @@ def cmd_eval(args: argparse.Namespace) -> None:
 
     report = run_eval(
         fl_path           = fl_path,
-        parquet           = Path(args.parquet),
+        parquet           = parquet_path,
         patches_path      = patches_path,
         token_report_path = tok_path,
         label             = label,
@@ -766,8 +769,8 @@ def main() -> None:
                     help="Strategy results directory (auto-discovers all files)")
     ev.add_argument("--fl",           default=None,
                     help="fault_localization.json (ignored when --results-dir is set)")
-    ev.add_argument("--parquet",      required=True,
-                    help="dataset/lca_dataset.parquet (ground truth)")
+    ev.add_argument("--parquet",      default=None,
+                    help="Optional local parquet override. Defaults to the Hugging Face dataset.")
     ev.add_argument("--patches",      default=None,
                     help="generated_patches.json (optional)")
     ev.add_argument("--token-report", default=None,

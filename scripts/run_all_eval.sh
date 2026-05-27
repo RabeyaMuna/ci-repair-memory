@@ -2,7 +2,7 @@
 # Run FL evaluation for all strategies and print combined tables.
 set -e
 
-PARQUET="dataset/lca_dataset.parquet"
+PARQUET="$(python scripts/dataset_source.py)"
 RESULTS="baselines/results"
 SCRIPT="scripts/overall_fl_evaluator.py"
 

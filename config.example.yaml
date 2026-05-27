@@ -6,17 +6,17 @@
 # -------------------------
 # Core benchmark directories
 # -------------------------
-repos_folder: "<PATH_TO_CLONED_REPOS>"
-out_folder: "<PATH_TO_BENCHMARK_RESULTS>"
-data_cache_dir: "<PATH_TO_DATASET_CACHE>"
+repos_folder: "repo"
+out_folder: "results"
+data_cache_dir: "dataset"
 
 # -------------------------
 # Baseline directories
 # -------------------------
-baseline_repo_folder: "<PATH_TO_BASELINE_CLONED_REPOS>"
-baseline_output_folder: "<PATH_TO_BASELINE_RESULTS>"
-exception_dir: "<PATH_TO_BASELINE_EXCEPTION_LOGS>"
-changed_files_folder: "<PATH_TO_BASELINE_CHANGED_FILES>"
+baseline_repo_folder: "baselines/repo_cloned"
+baseline_output_folder: "baselines/results"
+exception_dir: "baselines/exceptions"
+changed_files_folder: "baselines/changed_files"
 
 # -------------------------
 # Benchmark identity
@@ -28,8 +28,8 @@ language: "Python"   # Currently only Python is supported
 # -------------------------
 # Project paths (optional)
 # -------------------------
-base_dir: "<BASE_PROJECT_DIRECTORY>"
-project_result_dir: "<PROJECT_RESULTS_DIRECTORY>"
+base_dir: "."
+project_result_dir: "baselines/results"
 
 # -------------------------
 # Memory plugin (optional)
@@ -39,8 +39,8 @@ memory_writeback_enabled: false
 memory_backend: "json"   # "json" or "chroma"
 memory_top_k: 3
 memory_similarity_threshold: 0.55
-memory_retrieval_log_path: "<PROJECT_RESULTS_DIRECTORY>/memory_retrieval_log.jsonl"
-memory_chroma_dir: "<PROJECT_RESULTS_DIRECTORY>/chroma_memory"
+memory_retrieval_log_path: "baselines/results/memory_retrieval_log.jsonl"
+memory_chroma_dir: "baselines/results/chroma_memory"
 
 # -------------------------
 # Authentication

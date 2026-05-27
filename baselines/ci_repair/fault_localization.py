@@ -447,15 +447,6 @@ CHANGED FILES WITH DIFFS:
             print("[Step 1] Running File Selection...")
             suspecious_files = self.select_suspecious_files()
             suspecious_files = self._apply_memory_to_suspicious_files(suspecious_files)
-
-            # Memory-mode fallback: if both selection steps found nothing,
-            # try to derive candidate files directly from error_context so
-            # fault localization can still run rather than produce empty results.
-            if not suspecious_files and self.memory_plugin.is_enabled():
-                print("[FL] No suspicious files after selection + memory augmentation. "
-                      "Memory mode — falling back to error-context file extraction.")
-                suspecious_files = self._fallback_files_from_error_context()
-
             print("[Step 2] Running final fault localization...")
             result = self._final_fault_localization(suspecious_files)
             result["id"] = self.id 
@@ -683,9 +674,20 @@ CHANGED FILES WITH DIFFS:
         suspicious_files: List[Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
         matches = self.memory_context.get("matches", []) or []
-        if not matches or self.memory_plugin is None:
+        if self.memory_plugin is None or not self.memory_plugin.is_enabled():
             return self._dedupe_file_entries(suspicious_files)
 
+        # ── FALLBACK: no suspicious files from diff/log selection ──────────
+        # Use error details + L1/L2/L3 memory to ask the LLM which files to
+        # inspect. This replaces per-file augmentation when there is nothing
+        # to augment.
+        if not suspicious_files:
+            if not matches:
+                print("[Memory] No suspicious files and no memory matches — nothing to work with.")
+                return []
+            return self._derive_files_from_memory_and_error_context()
+
+        # ── NORMAL PATH: augment the existing suspicious files ──────────────
         augmented = self.memory_plugin.augment_suspicious_files(
             suspicious_files=suspicious_files,
             changed_files_info=self.changed_files_info,
@@ -707,7 +709,7 @@ CHANGED FILES WITH DIFFS:
                 self._build_memory_entry_for_file(
                     file_path=file_path,
                     reason="Retrieved from similar prior failures for the current repository and CI context.",
-                    issue_type="other",
+                    issue_type="",
                     retrieval_result=self.memory_context,
                 )
             )
@@ -734,7 +736,7 @@ CHANGED FILES WITH DIFFS:
                     self._build_memory_entry_for_file(
                         file_path=dep_file,
                         reason=str(ref.get("reason") or "Related file suggested by previous similar failures.").strip(),
-                        issue_type="other",
+                        issue_type="",
                         retrieval_result=self.memory_context,
                     )
                 )
@@ -748,75 +750,116 @@ CHANGED FILES WITH DIFFS:
         )
         return self._dedupe_file_entries(ranked)
 
-    def _fallback_files_from_error_context(self) -> List[Dict[str, Any]]:
+    def _derive_files_from_memory_and_error_context(self) -> List[Dict[str, Any]]:
         """
-        Memory-mode fallback when both select_suspecious_files() and
-        _apply_memory_to_suspicious_files() return nothing.
+        Called when suspicious_files is empty in memory mode.
 
-        Strategy (no extra LLM call):
-        1. Collect explicit "file" fields from error_context entries.
-        2. Collect file paths from relevant_files (may have been filtered
-           earlier by extension rules).
-        3. Scan the serialised error_context text for any *.py path-like
-           strings (e.g. from traceback lines).
-        4. Verify each candidate actually exists in the repo and return
-           only real files.
+        Sends the current error details (error_context, error_types, failed_jobs)
+        together with the retrieved L1 / L2 / L3 memory matches to the LLM and
+        asks it to identify which files in this repository are likely faulty.
+        Returns those files as suspicious_files for the normal FL pipeline.
         """
-        candidates: List[str] = []
+        l1_matches       = self.memory_context.get("l1_matches", []) or []
+        l2_matches       = self.memory_context.get("l2_matches", []) or []
+        l3_matches       = self.memory_context.get("l3_matches", []) or []
+        high_level_hints = self.memory_context.get("high_level_hints", []) or []
 
-        # 1) Explicit file fields in error_context
-        for entry in (self.error_context or []):
-            if not isinstance(entry, dict):
-                continue
-            for key in ("file", "file_path", "files"):
-                val = entry.get(key)
-                if isinstance(val, str) and val.strip():
-                    candidates.append(val.strip())
-                elif isinstance(val, list):
-                    candidates.extend(str(v).strip() for v in val if v)
-
-        # 2) relevant_files from log analysis (may have been excluded by
-        #    extension filter in select_suspecious_files)
-        for item in (self.relevant_files or []):
-            if isinstance(item, dict):
-                fp = (item.get("file") or item.get("path") or "").strip()
-                if fp:
-                    candidates.append(fp)
-
-        # 3) Regex scan of the serialised error_context for .py paths
-        ctx_text = json.dumps(self.error_context or [], ensure_ascii=False)
-        for m in re.finditer(r'[\w./\\-]+\.py', ctx_text):
-            candidates.append(m.group(0))
-
-        # Primary error type for the issue_type field
         primary_issue = (
             self.error_types[0].get("error_type", "")
             if self.error_types and isinstance(self.error_types[0], dict)
             else ""
         )
 
-        seen: set = set()
+        prompt = f"""You are a CI fault localization agent.
+
+No suspicious files were found by static diff analysis for the current failing commit.
+Using the CI failure details and retrieved memory from previous similar failures,
+identify which source files in this repository are most likely faulty and should be inspected.
+
+Return ONLY a JSON array. No markdown, no prose.
+
+Schema for each element:
+{{
+  "file": "relative/path/to/file.py",
+  "reason": "why this file is likely responsible for the CI failure",
+  "inspection_hint": "what specifically to look for in this file",
+  "issue_type": "short description of the issue type"
+}}
+
+Return [] if you cannot identify any file with reasonable confidence.
+
+==============================================================================
+CURRENT CI FAILURE DETAILS
+------------------------------------------------------------------------------
+Error types:
+{json.dumps(self.error_types, indent=2, ensure_ascii=False)}
+
+Failed jobs:
+{json.dumps(self.failed_jobs, indent=2, ensure_ascii=False)}
+
+Error context from logs:
+{json.dumps(self.error_context, indent=2, ensure_ascii=False)}
+
+==============================================================================
+RETRIEVED MEMORY — PREVIOUS SIMILAR FAILURES
+------------------------------------------------------------------------------
+L1 (per-file failures from same repo / same error type):
+{json.dumps(l1_matches, indent=2, ensure_ascii=False)}
+
+L2 (issue-level failures — overall reason + modified files):
+{json.dumps(l2_matches, indent=2, ensure_ascii=False)}
+
+L3 (universal cross-repo patterns and principles):
+{json.dumps(l3_matches, indent=2, ensure_ascii=False)}
+
+High-level hints:
+{json.dumps(high_level_hints, indent=2, ensure_ascii=False)}
+==============================================================================
+
+Return only the JSON array.
+""".strip()
+
+        print("[Memory Fallback] Asking LLM to derive suspicious files from error context + memory.")
+        try:
+            raw = self.llm.invoke([HumanMessage(content=prompt)]).content.strip()
+            # Strip markdown fences if present
+            if raw.startswith("```"):
+                raw = re.sub(r"^```[a-zA-Z]*\n?", "", raw)
+                raw = re.sub(r"\n?```$", "", raw).strip()
+            try:
+                candidates = json.loads(raw)
+            except json.JSONDecodeError:
+                candidates = demjson3.decode(raw)
+            if not isinstance(candidates, list):
+                candidates = []
+        except Exception as exc:
+            print(f"[Memory Fallback] LLM call failed: {exc}")
+            return []
+
         result: List[Dict[str, Any]] = []
-        for fp in candidates:
-            fp = fp.strip().lstrip("/").replace("\\", "/")
-            if not fp or fp in seen:
+        for item in candidates:
+            if not isinstance(item, dict):
                 continue
-            seen.add(fp)
-            full_path = os.path.join(self.repo_path, fp)
-            if os.path.isfile(full_path):
-                result.append(self._normalize_file_entry({
-                    "file": fp,
-                    "reason": (
-                        "Derived from error context — no diff-based or memory-augmented "
-                        "suspicious files were found; using error log file references as fallback."
-                    ),
-                    "issue_type": primary_issue,
-                    "previous_experiences": [],
-                }))
-                print(f"[FL Fallback] Added '{fp}' from error context.")
+            fp = (item.get("file") or "").strip().lstrip("/").replace("\\", "/")
+            if not fp:
+                continue
+            # Only include files that actually exist in the repo at this commit
+            if not os.path.isfile(os.path.join(self.repo_path, fp)):
+                print(f"[Memory Fallback] '{fp}' not found in repo — skipping.")
+                continue
+
+            result.append(self._normalize_file_entry({
+                "file":       fp,
+                "reason":     str(item.get("reason") or "Identified by memory-guided LLM analysis.").strip(),
+                "issue_type": str(item.get("issue_type") or primary_issue).strip(),
+                "previous_experiences": [],
+            }))
+            print(f"[Memory Fallback] Added '{fp}' from LLM memory analysis.")
 
         if not result:
-            print("[FL Fallback] No verifiable files found from error context either.")
+            print("[Memory Fallback] LLM found no verifiable files in this repo.")
+        else:
+            print(f"[Memory Fallback] {len(result)} candidate file(s) derived from memory + error context.")
         return result
 
 

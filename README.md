@@ -199,7 +199,8 @@ baselines/.venv/bin/python setup/repo_setup.py
 
 ## Dataset
 
-The main dataset is `dataset/lca_dataset.parquet`:
+The main dataset is loaded from Hugging Face Hub:
+`ci-benchmark-user/ci-repair-bench/ci_repair_dataset.parquet`.
 
 | Field | Description |
 |-------|-------------|
@@ -264,7 +265,6 @@ venv/bin/python3 scripts/enrich_split_for_pipeline.py \
   --output baselines/results/trs/trs_eval_issues.json
 baselines/.venv/bin/python baselines/scripts/analyze_memory_seed_issues.py \
   --seed-file baselines/results/trs/trs_memory_seed_issues.json \
-  --dataset dataset/lca_dataset.parquet \
   --model-key MiniMax-M2.5 \
   --output-dir baselines/results/trs
 baselines/.venv/bin/python baselines/scripts/build_memory_bank.py \
@@ -417,7 +417,6 @@ Runs the LLM CI log analyser on each memory issue. Automatically clones each rep
 ```bash
 baselines/.venv/bin/python baselines/scripts/analyze_memory_seed_issues.py \
   --seed-file  baselines/results/trs/trs_memory_seed_issues.json \
-  --dataset    dataset/lca_dataset.parquet \
   --model-key  MiniMax-M2.5 \
   --output-dir baselines/results/trs
 ```
@@ -616,21 +615,32 @@ Measure the contribution of each memory level by running the eval three times:
 | L1+L2 | File + repo-level | `<model>_llm_memory_L1L2/` |
 | L1+L2+L3 | Full memory | `<model>_llm_memory/` |
 
-If L1+L2+L3 (Step 6) already ran, reuse its `log_details.json` to avoid re-running CI log analysis:
+Reuse the baseline `log_details.json` to avoid re-running CI log analysis. By default the ablation script reads:
+`baselines/results/MiniMax-M2.5_llm_baseline/log_details.json`
 
 ```bash
 # L1 only
 baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \
-  --ablation-levels L1 \
-  --source-log-details baselines/results/trs/MiniMax-M2.5_llm_memory/log_details.json
+  --ablation-levels L1
 
 # L1+L2
 baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \
-  --ablation-levels L1+L2 \
-  --source-log-details baselines/results/trs/MiniMax-M2.5_llm_memory/log_details.json
+  --ablation-levels L1+L2
+
+# L1+L2+L3
+baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \
+  --ablation-levels L1+L2+L3
 ```
 
-Or run from scratch:
+If you want to use another existing analysis file, pass it explicitly:
+
+```bash
+baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \
+  --ablation-levels L1 \
+  --source-log-details baselines/results/MiniMax-M2.5_llm_baseline/log_details.json
+```
+
+Or run from scratch, which will run CI log analysis again:
 ```bash
 baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
   --split-file baselines/results/trs/trs_eval_issues.json \

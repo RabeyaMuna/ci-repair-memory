@@ -38,17 +38,14 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 
+from dataset_source import get_ci_repair_dataset_path
+
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
-ERROR_DETAILS_PATH = (
-    "/Users/rabeyakhatunmuna/Documents/mem-ci-repair-agent/results/error_details.json"
-)
-PARQUET_PATH = (
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/lca_dataset.parquet"
-)
-OUTPUT_DIR = (
-    "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/results/rcss_split"
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+ERROR_DETAILS_PATH = os.getenv("ERROR_DETAILS_PATH", str(PROJECT_ROOT / "results" / "error_details.json"))
+PARQUET_PATH = get_ci_repair_dataset_path(PROJECT_ROOT)
+OUTPUT_DIR = str(PROJECT_ROOT / "results" / "rcss_split")
 
 # ── Algorithm parameters ───────────────────────────────────────────────────────
 

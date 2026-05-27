@@ -9,7 +9,7 @@ Goal:
   from within the same dataset and print it.
 
 Default dataset path:
-    dataset/lca_dataset.parquet
+    Hugging Face Hub: ci-benchmark-user/ci-repair-bench/ci_repair_dataset.parquet
 """
 
 import logging
@@ -20,8 +20,9 @@ from datetime import datetime, date
 
 import pandas as pd
 
+from dataset_source import get_ci_repair_dataset_path
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_DATASET_PATH = REPO_ROOT / "dataset" / "lca_dataset.parquet"
 
 # ========= CONFIG / HEURISTICS =========
 
@@ -168,18 +169,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dataset-path",
         type=Path,
-        default=DEFAULT_DATASET_PATH,
-        help=f"Path to lca_dataset.parquet (default: {DEFAULT_DATASET_PATH})",
+        default=None,
+        help="Optional local parquet override. Defaults to the Hugging Face dataset.",
     )
     return parser.parse_args()
 
 def main() -> None:
     args = parse_args()
-    dataset_path = args.dataset_path
+    dataset_path = Path(args.dataset_path) if args.dataset_path else Path(get_ci_repair_dataset_path(REPO_ROOT))
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-
-    if not dataset_path.exists():
-        raise SystemExit(f"Dataset not found: {dataset_path}")
 
     logging.info("Loading dataset from %s", dataset_path)
     df = pd.read_parquet(dataset_path)
