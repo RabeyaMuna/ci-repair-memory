@@ -83,43 +83,11 @@ automated_commands_available = [
     "file_pattern": "*.py"
   },
   {
-    "tool": "yapf",
-    "purpose": "Code formatter (alternative to black/autopep8)",
-    "install_command": "pip install yapf",
-    "check_command": "yapf --diff {{file_or_dir}}",
-    "fix_command": "yapf -i {{file_or_dir}}",
-    "file_pattern": "*.py"
-  },
-  {
     "tool": "pylint",
     "purpose": "Comprehensive linter for detecting code smells and logical issues",
     "install_command": "pip install pylint",
     "check_command": "pylint {{file_or_dir}}",
     "fix_command": "ruff check --fix {{file_or_dir}}",  # fixes delegated to Ruff
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "mypy",
-    "purpose": "Static type checker for Python",
-    "install_command": "pip install mypy",
-    "check_command": "mypy {{file_or_dir}}",
-    "fix_command": "",
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "pytest",
-    "purpose": "Run unit and integration tests",
-    "install_command": "pip install pytest",
-    "check_command": "pytest {{file_or_dir}}",
-    "fix_command": "",
-    "file_pattern": "tests/*.py"
-  },
-  {
-    "tool": "bandit",
-    "purpose": "Security linter (checks for hardcoded secrets, dangerous calls, etc.)",
-    "install_command": "pip install bandit",
-    "check_command": "bandit -r {{file_or_dir}}",
-    "fix_command": "",
     "file_pattern": "*.py"
   },
   {
