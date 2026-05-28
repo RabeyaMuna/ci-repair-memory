@@ -13,8 +13,6 @@ from typing import Any, Dict, List
 import pandas as pd
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download
-from omegaconf import OmegaConf
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASELINES_ROOT = PROJECT_ROOT / "baselines"
@@ -22,6 +20,7 @@ if str(BASELINES_ROOT) not in sys.path:
     sys.path.insert(0, str(BASELINES_ROOT))
 
 from main import process_entire_dataset, _make_run_suffix  # noqa: E402
+from utilities.load_config import load_config  # noqa: E402
 from utilities.llm_provider import filesystem_safe_model_key, get_default_model_key, get_llm  # noqa: E402
 from utilities.token_tracker import TokenTracker  # noqa: E402
 from utilities.fl_evaluator import evaluate_fl  # noqa: E402
@@ -85,10 +84,12 @@ def main() -> int:
         help="Memory ablation: which levels to activate. Only applies with --memory-mode memory.",
     )
     parser.add_argument("--model-key", default=get_default_model_key())
-    parser.add_argument("--log-analyzer-type", choices=("llm", "bm25"), default="llm")
     args = parser.parse_args()
 
-    config = OmegaConf.load(str(args.config))
+    # load_config() normalises all paths to absolute (resolves relative paths
+    # from the project root), so repo_path and other dirs are unambiguous when
+    # passed to subprocesses that run in a different cwd.
+    config = load_config(args.config)
     config.memory_enabled = args.memory_mode == "memory"
     config.memory_writeback_enabled = False
     config.resume_skip_generated_patches = True
@@ -108,18 +109,17 @@ def main() -> int:
 
     model_key = args.model_key
     llm = get_llm(model_key)
-    tracker = TokenTracker(model_name=model_key, log_analyzer_type=args.log_analyzer_type)
+    tracker = TokenTracker(model_name=model_key)
 
     result = process_entire_dataset(
         subset,
         config,
         llm,
         model_key,
-        log_analyzer_type=args.log_analyzer_type,
         tracker=tracker,
     )
 
-    result_dir = Path(str(config.project_result_dir)) / f"{filesystem_safe_model_key(model_key)}_{args.log_analyzer_type}{_make_run_suffix(config)}"
+    result_dir = Path(str(config.project_result_dir)) / f"{filesystem_safe_model_key(model_key)}{_make_run_suffix(config)}"
     result_dir.mkdir(parents=True, exist_ok=True)
 
     tracker.save_json(str(result_dir / "token_report.json"))

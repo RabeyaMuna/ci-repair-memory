@@ -26,7 +26,7 @@ for p in (REPO_ROOT, BASELINES_DIR):
 from utilities.fetch_failed_commit_changed_files import collect_changed_files_for_fail_and_parent
 from utilities.llm_provider import get_llm
 from ci_repair.ci_log_analyzer_bm25 import CILogAnalyzerBM25
-from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
+from baselines.ci_repair.ci_log_analyzer import CILogAnalyzerLLM
 from ci_repair.fault_localization import FaultLocalization
 from ci_repair.patch_generation import PatchGeneration
 from utilities.ensure_repo import ensure_repo_at_commit

@@ -36,7 +36,7 @@ for p in (BASELINES_ROOT, SCRIPTS_ROOT):
     sys.path.insert(0, str(p))
 
 from dataset_source import get_ci_repair_dataset_path
-from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
+from baselines.ci_repair.ci_log_analyzer import CILogAnalyzerLLM
 from utilities.ensure_repo import ensure_repo_at_commit
 from utilities.load_config import load_config
 from utilities.llm_provider import get_default_model_key, get_llm

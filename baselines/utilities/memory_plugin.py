@@ -449,9 +449,16 @@ class MemoryPlugin:
             self.similarity_threshold = float(self._cfg("memory_similarity_threshold", 0.45))
 
         project_result_dir = str(self._cfg("project_result_dir", result_dir))
-        self.failure_memory_path = os.path.join(project_result_dir, "failure_memory.json")
-        self.repo_memory_path = os.path.join(project_result_dir, "repo_memory.json")
-        self.cross_memory_path = os.path.join(project_result_dir, "cross_memory.json")
+
+        # memory_bank_dir: directory that contains the pre-built memory JSON files
+        # (failure_memory.json / repo_memory.json / cross_memory.json).
+        # Defaults to project_result_dir so existing setups without this key
+        # keep working unchanged.
+        memory_bank_dir = str(self._cfg("memory_bank_dir", project_result_dir))
+
+        self.failure_memory_path = os.path.join(memory_bank_dir, "failure_memory.json")
+        self.repo_memory_path = os.path.join(memory_bank_dir, "repo_memory.json")
+        self.cross_memory_path = os.path.join(memory_bank_dir, "cross_memory.json")
         self.chroma_dir = str(
             self._cfg("memory_chroma_dir", os.path.join(project_result_dir, "chroma_memory"))
         )

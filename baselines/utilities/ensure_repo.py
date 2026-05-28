@@ -81,6 +81,10 @@ def ensure_repo_at_commit(repo_url: str, repo_path: str, commit_sha: str) -> Non
     - Only reset once per commit.
     - Skip reset if already at commit.
     """
+    # Normalise to absolute so os.path.exists and subprocess cwd agree on the
+    # same directory even when repo_path was given as a relative string.
+    repo_path = os.path.abspath(repo_path)
+
     # 1) Clone if missing
     if not os.path.exists(repo_path):
         parent = os.path.dirname(repo_path)

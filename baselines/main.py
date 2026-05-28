@@ -17,8 +17,7 @@ from utilities.llm_provider import filesystem_safe_model_key, get_default_model_
 from utilities.token_tracker import TokenTracker
 from utilities.fl_evaluator import evaluate_fl
 from utilities.memory_plugin import MemoryPlugin
-from ci_repair.ci_log_analyzer_bm25 import CILogAnalyzerBM25
-from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
+from ci_repair.ci_log_analyzer import CILogAnalyzerLLM
 from ci_repair.fault_localization import FaultLocalization
 from ci_repair.patch_generation import PatchGeneration
 from utilities.ensure_repo import ensure_repo_at_commit
@@ -47,6 +46,14 @@ def _load_json_list(path):
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
+
+
+def _find_log_entry(sha_fail: str, log_list: list) -> dict | None:
+    """Return the log_details entry for sha_fail, or None if not found."""
+    for entry in log_list:
+        if str(entry.get("sha_fail") or "") == str(sha_fail):
+            return entry
+    return None
 
 
 def _safe_logs(value):
@@ -104,27 +111,37 @@ def process_entire_dataset(
     config,
     llm,
     model_key,
-    log_analyzer_type="llm",
     tracker: TokenTracker = None,
 ):
     model_dir_key = filesystem_safe_model_key(model_key)
     result_dir = os.path.join(
-        config.project_result_dir, f"{model_dir_key}_{log_analyzer_type}{_make_run_suffix(config)}"
+        config.project_result_dir, f"{model_dir_key}{_make_run_suffix(config)}"
     )
     os.makedirs(result_dir, exist_ok=True)
     token_report_path = os.path.join(result_dir, "token_report.json")
     memory_plugin = MemoryPlugin(config=config, result_dir=result_dir, llm=llm)
 
     # ------------------------------------------------------------------
-    # Always load whatever already exists on disk so every run accumulates
-    # on top of prior work.  New issues are appended; re-processed issues
-    # replace the old entry (keyed by sha_fail / task_id).
-    # Token counts, API calls, cost, and tool-call stats are accumulated
-    # from the saved token_report.json so the final report covers ALL runs.
+    # Shared log_details — ONE file for all runs of the same model.
+    # Baseline, L1, L1+L2 and L1+L2+L3 all read from and write to the
+    # same path so CI log analysis is never repeated for the same sha_fail.
     # ------------------------------------------------------------------
-    error_details      = _load_json_list(os.path.join(result_dir, "log_details.json"))
+    shared_log_dir  = os.path.join(config.project_result_dir, model_dir_key)
+    os.makedirs(shared_log_dir, exist_ok=True)
+    shared_log_path = os.path.join(shared_log_dir, "log_details.json")
+
+    _initial_log_count = len(_load_json_list(shared_log_path))
+    print(f"[MAIN] Shared log_details: {shared_log_path} ({_initial_log_count} entries cached)")
+
+    # Per-run outputs — FL and patches are still mode-specific.
     fault_localization = _load_json_list(os.path.join(result_dir, "fault_localization.json"))
     generated_patches  = _load_json_list(os.path.join(result_dir, "generated_patches.json"))
+    # O(1) lookup sets — updated in-place as new results are produced this run.
+    existing_fl_shas = {
+        str(item.get("sha_fail") or "")
+        for item in fault_localization
+        if str(item.get("sha_fail") or "")
+    }
     existing_generated_patch_shas = {
         str(item.get("sha_fail") or "")
         for item in generated_patches
@@ -135,8 +152,7 @@ def process_entire_dataset(
         tracker.load_prior_report(token_report_path)
 
     print(
-        f"loaded {len(error_details)} log entries, "
-        f"{len(fault_localization)} FL entries, "
+        f"loaded {len(fault_localization)} FL entries, "
         f"{len(generated_patches)} patches from prior run."
     )
 
@@ -161,8 +177,21 @@ def process_entire_dataset(
 
         print(f"\n[MAIN] Proceeding with failed commit: {sha_fail}")
 
-        if bool(config.get("resume_skip_generated_patches", False)) and sha_fail in existing_generated_patch_shas:
-            print(f"[MAIN] Skipping {sha_fail}: patch already generated in existing results.")
+        # ------------------------------------------------------------------
+        # 3-TIER RESUME — evaluated before any expensive work (repo clone etc.)
+        #
+        #  Tier 1: FL + patch both present → fully done, skip everything.
+        #  Tier 2: FL present, patch missing → clone, skip log+FL, run patch gen.
+        #  Tier 3: Log present, FL missing → clone, skip log step, run FL+patch.
+        #  Tier 4: Nothing cached → clone and run all three steps.
+        #
+        # Tier 1 is the only one resolved before the repo clone.
+        # ------------------------------------------------------------------
+        _has_fl    = sha_fail in existing_fl_shas
+        _has_patch = sha_fail in existing_generated_patch_shas
+
+        if _has_fl and _has_patch:
+            print(f"[MAIN] Fully cached {sha_fail} (FL + patch found in prior results) — skipping.")
             continue
 
         if tracker:
@@ -174,9 +203,21 @@ def process_entire_dataset(
 
             # ------------------------------------------------------------------
             # 1) CI LOG ANALYSIS
+            #    Always reload the shared log_details from disk first so we
+            #    pick up entries written by any previous issue in this run
+            #    (or a previous run of any mode for the same model).
+            #    If sha_fail is already there → reuse, no LLM call.
+            #    Otherwise → run the log analyzer and save the result.
             # ------------------------------------------------------------------
             try:
-                if log_analyzer_type == "llm":
+                log_details = _load_json_list(shared_log_path)
+                cached_entry = _find_log_entry(sha_fail, log_details)
+
+                if cached_entry is not None:
+                    log_analysis_result = cached_entry
+                    print(f"[MAIN] Reusing CI log analysis for {sha_fail} (found in shared log_details).")
+                else:
+                    print(f"[MAIN] Running CI log analyzer for {sha_fail}...")
                     _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerLLM") if tracker else llm
                     log_analysis_result = CILogAnalyzerLLM(
                         repo_path,
@@ -188,27 +229,16 @@ def process_entire_dataset(
                         model_name=model_key,
                         task_id=task_id,
                     ).run()
-                else:
-                    _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerBM25") if tracker else llm
-                    log_analysis_result = CILogAnalyzerBM25(
-                        repo_path,
-                        logs,
-                        sha_fail,
-                        workflow,
-                        workflow_path,
-                        llm=_llm_log,
-                        model_name=model_key,
-                        task_id=task_id,
-                    ).run()
 
-                if log_analysis_result.get("error"):
-                    print(f"[MAIN] Log analysis failed for {sha_fail}: {log_analysis_result['error']} — skipping FL/patch")
-                    continue
+                    if log_analysis_result.get("error"):
+                        print(f"[MAIN] Log analysis failed for {sha_fail}: {log_analysis_result['error']} — skipping FL/patch")
+                        continue
 
-                error_details = _merge_by_key(error_details, log_analysis_result, "sha_fail")
-
-                with open(os.path.join(result_dir, "log_details.json"), "w") as f:
-                    json.dump(error_details, f, indent=4)
+                    # Save to the shared log so the next issue (and every future
+                    # run of any mode) can reuse this result immediately.
+                    log_details = _merge_by_key(log_details, log_analysis_result, "sha_fail")
+                    with open(shared_log_path, "w", encoding="utf-8") as f:
+                        json.dump(log_details, f, indent=4)
 
             except Exception as e:
                 print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
@@ -250,56 +280,66 @@ def process_entire_dataset(
                     changed_files_info = {"sha_fail": sha_fail, "changed_files": []}
 
             # ------------------------------------------------------------------
-            # 3) FAULT LOCALIZATION (later we can inject changed_files_info)
+            # 3) FAULT LOCALIZATION
+            #    Resume (Tier 2): if FL is already in the per-mode file from a
+            #    prior interrupted run, reuse it — FL is mode-specific (memory
+            #    level affects its output, so it is NOT shared across modes).
             # ------------------------------------------------------------------
             try:
-                memory_context = {"enabled": False, "matches": []}
-                if memory_plugin.is_enabled():
-                    memory_query = memory_plugin.build_query(
-                        task_id=task_id,
-                        sha_fail=sha_fail,
-                        repo_name=repo_name,
-                        workflow_path=workflow_path,
-                        workflow=workflow,
-                        log_analysis_result=log_analysis_result,
-                        changed_files_info=changed_files_info,
+                if _has_fl:
+                    fault_localizer = next(
+                        e for e in fault_localization
+                        if str(e.get("sha_fail") or "") == str(sha_fail)
                     )
-                    memory_context = memory_plugin.retrieve(memory_query)
+                    print(f"[MAIN] Reusing FL result for {sha_fail} (found in prior results).")
+                else:
+                    memory_context = {"enabled": False, "matches": []}
+                    if memory_plugin.is_enabled():
+                        memory_query = memory_plugin.build_query(
+                            task_id=task_id,
+                            sha_fail=sha_fail,
+                            repo_name=repo_name,
+                            workflow_path=workflow_path,
+                            workflow=workflow,
+                            log_analysis_result=log_analysis_result,
+                            changed_files_info=changed_files_info,
+                        )
+                        memory_context = memory_plugin.retrieve(memory_query)
 
-                _llm_fl = get_tracked_llm(model_key, tracker, "FaultLocalization") if tracker else llm
-                fault_localizer = FaultLocalization(
-                    sha_fail=sha_fail,
-                    repo_path=repo_path,
-                    error_logs=log_analysis_result,
-                    workflow=workflow,
-                    llm=_llm_fl,
-                    model_name=model_key,
-                    changed_files_info=changed_files_info,
-                    memory_plugin=memory_plugin,
-                    memory_context=memory_context,
-                ).run()
+                    _llm_fl = get_tracked_llm(model_key, tracker, "FaultLocalization") if tracker else llm
+                    fault_localizer = FaultLocalization(
+                        sha_fail=sha_fail,
+                        repo_path=repo_path,
+                        error_logs=log_analysis_result,
+                        workflow=workflow,
+                        llm=_llm_fl,
+                        model_name=model_key,
+                        changed_files_info=changed_files_info,
+                        memory_plugin=memory_plugin,
+                        memory_context=memory_context,
+                    ).run()
 
-                # Embed full memory context so each FL entry is self-contained
-                # for ablation analysis (no need to join memory_retrieval_log.jsonl).
-                fault_localizer["memory_summary"] = {
-                    "ablation_levels": str(config.get("memory_ablation_levels", "L1+L2+L3")),
-                    "memory_enabled": memory_context.get("enabled", False),
-                    "level_scores": memory_context.get("level_scores", {"L1": 0.0, "L2": 0.0, "L3": 0.0}),
-                    "weighted_similarity": memory_context.get("weighted_similarity", 0.0),
-                    "selected_memory_levels": memory_context.get("selected_memory_levels", []),
-                    "memory_injected": bool(memory_context.get("matches")),
-                    "suppressed_reason": memory_context.get("reason"),
-                    "candidate_files": memory_context.get("candidate_files", []),
-                    "high_level_hints": memory_context.get("high_level_hints", []),
-                    "l1_matches": memory_context.get("l1_matches", []),
-                    "l2_matches": memory_context.get("l2_matches", []),
-                    "l3_matches": memory_context.get("l3_matches", []),
-                }
+                    # Embed full memory context so each FL entry is self-contained
+                    # for ablation analysis (no need to join memory_retrieval_log.jsonl).
+                    fault_localizer["memory_summary"] = {
+                        "ablation_levels": str(config.get("memory_ablation_levels", "L1+L2+L3")),
+                        "memory_enabled": memory_context.get("enabled", False),
+                        "level_scores": memory_context.get("level_scores", {"L1": 0.0, "L2": 0.0, "L3": 0.0}),
+                        "weighted_similarity": memory_context.get("weighted_similarity", 0.0),
+                        "selected_memory_levels": memory_context.get("selected_memory_levels", []),
+                        "memory_injected": bool(memory_context.get("matches")),
+                        "suppressed_reason": memory_context.get("reason"),
+                        "candidate_files": memory_context.get("candidate_files", []),
+                        "high_level_hints": memory_context.get("high_level_hints", []),
+                        "l1_matches": memory_context.get("l1_matches", []),
+                        "l2_matches": memory_context.get("l2_matches", []),
+                        "l3_matches": memory_context.get("l3_matches", []),
+                    }
 
-                fault_localization = _merge_by_key(fault_localization, fault_localizer, "sha_fail")
-
-                with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
-                    json.dump(fault_localization, f, indent=4)
+                    fault_localization = _merge_by_key(fault_localization, fault_localizer, "sha_fail")
+                    existing_fl_shas.add(str(sha_fail))
+                    with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
+                        json.dump(fault_localization, f, indent=4)
 
                 if not fault_localizer.get("fault_localization_data"):
                     mode = "memory" if bool(config.get("memory_enabled", False)) else "baseline"
@@ -312,8 +352,15 @@ def process_entire_dataset(
 
             # ------------------------------------------------------------------
             # 4) PATCH GENERATION
+            #    Normal path: we reach here only when _has_patch is False.
+            #    Safety guard: if patch somehow exists without FL (data mismatch),
+            #    skip rather than duplicate.
             # ------------------------------------------------------------------
             try:
+                if _has_patch:
+                    print(f"[MAIN] Skipping patch generation for {sha_fail} (patch found in prior results).")
+                    continue
+
                 _llm_pg = get_tracked_llm(model_key, tracker, "PatchGeneration") if tracker else llm
                 patch_generator = PatchGeneration(
                     bug_report=fault_localizer,
@@ -386,13 +433,12 @@ if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     model_key = get_default_model_key()  # or "gpt4o", "deepseek-chat", etc.
-    log_analyzer_type = "llm"  # "llm" or "bm25"
     llm = get_llm(model_key)
 
     # ------------------------------------------------------------------
     # Token / cost tracker — shared across the entire run
     # ------------------------------------------------------------------
-    tracker = TokenTracker(model_name=model_key, log_analyzer_type=log_analyzer_type)
+    tracker = TokenTracker(model_name=model_key)
 
     hf_token = os.getenv("HF_TOKEN") or config.get("HUGGINGFACE_TOKEN")
 
@@ -411,7 +457,6 @@ if __name__ == "__main__":
     try:
         results = process_entire_dataset(
             dataset, config, llm, model_key,
-            log_analyzer_type=log_analyzer_type,
             tracker=tracker
         )
     finally:
@@ -421,7 +466,7 @@ if __name__ == "__main__":
         tracker.print_summary()
         result_dir = os.path.join(
             config.project_result_dir,
-            f"{filesystem_safe_model_key(model_key)}_{log_analyzer_type}{_make_run_suffix(config)}",
+            f"{filesystem_safe_model_key(model_key)}{_make_run_suffix(config)}",
         )
         os.makedirs(result_dir, exist_ok=True)
 
