@@ -69,7 +69,7 @@ load_dotenv()
 DEFAULT_DATASET = PROJECT_ROOT / "dataset" / "lca_dataset.parquet"
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
 DEFAULT_SOURCE_LOG_DETAILS = (
-    PROJECT_ROOT / "baselines" / "results" / "MiniMax-M2.5_llm_baseline" / "log_details.json"
+    PROJECT_ROOT / "baselines" / "results" / "MiniMax-M2.5" / "log_details.json"
 )
 
 

@@ -24,8 +24,7 @@ The system supports a **hierarchical-memory-augmented** repair pipeline where pa
 CI-REPAIR-BENCH/
 ├── baselines/                        # Memory-augmented repair pipeline
 │   ├── ci_repair/                    # Core repair modules
-│   │   ├── ci_log_analyzer_llm.py    # LLM-based CI log analyzer
-│   │   ├── ci_log_analyzer_bm25.py   # BM25-based CI log analyzer
+│   │   ├── ci_log_analyzer.py        # LLM-based CI log analyzer
 │   │   ├── fault_localization.py     # Fault localization with memory
 │   │   └── patch_generation.py       # Patch generation
 │   ├── utilities/                    # Shared utilities
@@ -255,31 +254,36 @@ The pipeline has two phases of data preparation (Steps 0–2) followed by the LL
 
 **Minimal command sequence:**
 ```bash
+# Steps 0-2: split preparation (one-time, already done for TRS)
 venv/bin/python3 scripts/analyze_repo_similarity.py
 venv/bin/python3 scripts/temporal_recurrence_split.py
 venv/bin/python3 scripts/enrich_split_for_pipeline.py \
-  --split results/trs_split/memory_issues.json \
+  --split  results/trs_split/memory_issues.json \
   --output baselines/results/trs/trs_memory_seed_issues.json
 venv/bin/python3 scripts/enrich_split_for_pipeline.py \
-  --split results/trs_split/eval_issues.json \
+  --split  results/trs_split/eval_issues.json \
   --output baselines/results/trs/trs_eval_issues.json
+
+# Steps 3-4: build memory bank (one-time per model)
 baselines/.venv/bin/python baselines/scripts/analyze_memory_seed_issues.py \
-  --seed-file baselines/results/trs/trs_memory_seed_issues.json \
-  --model-key MiniMax-M2.5 \
+  --seed-file  baselines/results/trs/trs_memory_seed_issues.json \
+  --model-key  MiniMax-M2.5 \
   --output-dir baselines/results/trs
 baselines/.venv/bin/python baselines/scripts/build_memory_bank.py \
-  --seed-file baselines/results/trs/trs_memory_seed_issues.json \
+  --seed-file     baselines/results/trs/trs_memory_seed_issues.json \
   --analysis-file baselines/results/trs/seed_log_details.json \
-  --model-key MiniMax-M2.5 \
-  --output-dir baselines/results/trs
+  --model-key     MiniMax-M2.5 \
+  --output-dir    baselines/results/trs
+
+# Steps 5-6: eval (repeatable per model)
 baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
-  --split-file baselines/results/trs/trs_eval_issues.json \
+  --split-file  baselines/results/trs/trs_eval_issues.json \
   --memory-mode baseline \
-  --model-key MiniMax-M2.5
+  --model-key   MiniMax-M2.5
 baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
-  --split-file baselines/results/trs/trs_eval_issues.json \
+  --split-file  baselines/results/trs/trs_eval_issues.json \
   --memory-mode memory \
-  --model-key MiniMax-M2.5
+  --model-key   MiniMax-M2.5
 ```
 
 ---
@@ -455,13 +459,6 @@ memory_bank_summary.json ← record counts
 
 ### Step 5 — Run Eval WITHOUT Memory (Baseline)
 
-Set in `config.yaml`:
-```yaml
-memory_enabled: false
-memory_writeback_enabled: false
-project_result_dir: "/full/path/to/CI-REPAIR-BENCH/baselines/results/trs"
-```
-
 ```bash
 baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
   --split-file  baselines/results/trs/trs_eval_issues.json \
@@ -474,34 +471,32 @@ By default this runs all repositories present in `trs_eval_issues.json`.
 Quick test (5 issues per repo for a few repos):
 ```bash
 baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
-  --split-file  baselines/results/trs/trs_eval_issues.json \
-  --repos       agno axolotl litellm flower \
-  --memory-mode baseline \
+  --split-file   baselines/results/trs/trs_eval_issues.json \
+  --repos        agno axolotl litellm flower \
+  --memory-mode  baseline \
   --max-per-repo 5
 ```
 
-**Results → `baselines/results/trs/MiniMax-M2.5_llm_baseline/`:**
+**Results → `baselines/results/MiniMax-M2.5_baseline/`:**
 
 ```text
-log_details.json          ← CI log analysis per eval issue
 fault_localization.json   ← suspected files per issue
 generated_patches.json    ← generated fix patches
 fl_evaluation.json        ← fault localization evaluation scores
 token_report.json         ← LLM token usage and cost
+step_trace.json           ← per-step timing and token breakdown
+```
+
+**Shared CI log cache → `baselines/results/MiniMax-M2.5/`:**
+
+```text
+log_details.json          ← CI log analysis — shared across all modes (baseline + memory)
+                             never regenerated if the entry already exists
 ```
 
 ---
 
 ### Step 6 — Run Eval WITH Memory
-
-Update `config.yaml`:
-```yaml
-memory_enabled: true
-memory_writeback_enabled: false   # must stay false — prevents eval leaking into memory
-project_result_dir: "/full/path/to/CI-REPAIR-BENCH/baselines/results/trs"
-memory_top_k: 3
-memory_similarity_threshold: 0.55  # fallback only; standard ablations use built-in thresholds
-```
 
 ```bash
 baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
@@ -510,16 +505,17 @@ baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
   --model-key   MiniMax-M2.5
 ```
 
-**Results → `baselines/results/trs/MiniMax-M2.5_llm_memory/`:**
+**Results → `baselines/results/MiniMax-M2.5_memory/`:**
 
 ```text
-log_details.json
 fault_localization.json
 generated_patches.json
 fl_evaluation.json
 token_report.json
-memory_retrieval_log.jsonl   ← per-issue memory retrieval log (what was injected)
+step_trace.json
 ```
+
+> `memory_writeback_enabled` must stay `false` in `config.yaml` — prevents eval issues from writing back into the memory bank (data leakage).
 
 ---
 
@@ -527,15 +523,15 @@ memory_retrieval_log.jsonl   ← per-issue memory retrieval log (what was inject
 
 ```bash
 baselines/.venv/bin/python baselines/scripts/compare_memory_runs.py \
-  baselines/results/trs/MiniMax-M2.5_llm_baseline \
-  baselines/results/trs/MiniMax-M2.5_llm_memory
+  baselines/results/MiniMax-M2.5_baseline \
+  baselines/results/MiniMax-M2.5_memory
 ```
 
 For other models (replace `MiniMax-M2.5`):
 ```bash
 baselines/.venv/bin/python baselines/scripts/compare_memory_runs.py \
-  baselines/results/trs/gpt-4o-mini_llm_baseline \
-  baselines/results/trs/gpt-4o-mini_llm_memory
+  baselines/results/gpt-4o-mini_baseline \
+  baselines/results/gpt-4o-mini_memory
 ```
 
 ---
@@ -572,10 +568,10 @@ Step 4  baselines/.venv/bin/python baselines/scripts/build_memory_bank.py \
                     baselines/results/trs/cross_memory.json
 
 Step 5  run_repo_eval_subset.py --memory-mode baseline    ← eval without memory
-          ↳ output: baselines/results/trs/MiniMax-M2.5_llm_baseline/
+          ↳ output: baselines/results/MiniMax-M2.5_baseline/
 
 Step 6  run_repo_eval_subset.py --memory-mode memory      ← eval with memory
-          ↳ output: baselines/results/trs/MiniMax-M2.5_llm_memory/
+          ↳ output: baselines/results/MiniMax-M2.5_memory/
 
 Step 7  compare_memory_runs.py baseline_dir memory_dir    ← compare results
 ```
@@ -591,8 +587,8 @@ Step 7  compare_memory_runs.py baseline_dir memory_dir    ← compare results
 | 2 | `enrich_split_for_pipeline.py` | Join splits with parquet fields | split JSONs + parquet | `baselines/results/trs/*.json` |
 | 3 | `analyze_memory_seed_issues.py` | CILogAnalyzerLLM on memory issues | enriched memory JSON + parquet | `seed_log_details.json` |
 | 4 | `build_memory_bank.py` | Extract L1/L2/L3 records | seed JSON + log details | `failure/repo/cross_memory.json` |
-| 5 | `run_repo_eval_subset.py --memory-mode baseline` | Repair pipeline without memory | eval JSON + parquet | `<model>_llm_baseline/` |
-| 6 | `run_repo_eval_subset.py --memory-mode memory` | Repair pipeline with memory | eval JSON + memory bank | `<model>_llm_memory/` |
+| 5 | `run_repo_eval_subset.py --memory-mode baseline` | Repair pipeline without memory | eval JSON + parquet | `<model>_baseline/` |
+| 6 | `run_repo_eval_subset.py --memory-mode memory` | Repair pipeline with memory | eval JSON + memory bank | `<model>_memory/` |
 | 7 | `compare_memory_runs.py` | Compare baseline vs memory | both result dirs | comparison report |
 
 ### Important Notes
@@ -611,12 +607,12 @@ Measure the contribution of each memory level by running the eval three times:
 
 | Ablation | Active levels | Output dir |
 |----------|--------------|------------|
-| L1 only | File-level memory | `<model>_llm_memory_L1/` |
-| L1+L2 | File + repo-level | `<model>_llm_memory_L1L2/` |
-| L1+L2+L3 | Full memory | `<model>_llm_memory/` |
+| L1 only | File-level memory | `<model>_memory_L1/` |
+| L1+L2 | File + repo-level | `<model>_memory_L1L2/` |
+| L1+L2+L3 | Full memory | `<model>_memory/` |
 
-Reuse the baseline `log_details.json` to avoid re-running CI log analysis. By default the ablation script reads:
-`baselines/results/MiniMax-M2.5_llm_baseline/log_details.json`
+Reuse the shared `log_details.json` to avoid re-running CI log analysis. By default the ablation script reads:
+`baselines/results/MiniMax-M2.5/log_details.json`
 
 ```bash
 # L1 only
@@ -627,28 +623,31 @@ baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \
 baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \
   --ablation-levels L1+L2
 
-# L1+L2+L3
+# L1+L2+L3 (full memory)
 baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \
   --ablation-levels L1+L2+L3
 ```
 
-If you want to use another existing analysis file, pass it explicitly:
+To use a different model's log cache:
 
 ```bash
 baselines/.venv/bin/python baselines/scripts/run_ablation_from_log_details.py \
   --ablation-levels L1 \
-  --source-log-details baselines/results/MiniMax-M2.5_llm_baseline/log_details.json
+  --model-key gpt-4o-mini \
+  --source-log-details baselines/results/gpt-4o-mini/log_details.json
 ```
 
-Or run from scratch, which will run CI log analysis again:
+Or run from scratch (re-runs CI log analysis):
 ```bash
 baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
-  --split-file baselines/results/trs/trs_eval_issues.json \
-  --memory-mode memory --ablation-levels L1
+  --split-file      baselines/results/trs/trs_eval_issues.json \
+  --memory-mode     memory \
+  --ablation-levels L1
 
 baselines/.venv/bin/python baselines/scripts/run_repo_eval_subset.py \
-  --split-file baselines/results/trs/trs_eval_issues.json \
-  --memory-mode memory --ablation-levels L1+L2
+  --split-file      baselines/results/trs/trs_eval_issues.json \
+  --memory-mode     memory \
+  --ablation-levels L1+L2
 ```
 
 ---
@@ -663,7 +662,7 @@ Make sure `config.yaml` has `memory_enabled: false`, then:
 baselines/.venv/bin/python baselines/main.py
 ```
 
-Results written to `baselines/results/<model>_llm_baseline/`.
+Results written to `baselines/results/<model>_baseline/`.
 
 ---
 
