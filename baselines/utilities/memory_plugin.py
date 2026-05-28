@@ -6,6 +6,8 @@ import re
 from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+
 try:
     import numpy as np
     _NUMPY_AVAILABLE = True
