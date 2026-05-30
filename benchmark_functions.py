@@ -156,7 +156,7 @@ def get_repo(datapoint, repos_folder, test_username, benchmark_owner, credential
     clones repo and switches it to the required commit
     creates branch with username
     """
-     
+    repos_folder = os.path.abspath(repos_folder)
     id = datapoint["id"]
     username = credentials["username"]
     token = credentials["token"]
@@ -243,10 +243,11 @@ def fix_none(datapoint, repo_path, repo=None, out_folder=None):
 
 def fix_apply_diff(datapoint, repo_path, repo, out_folder):
     commit_sha = datapoint["sha_fail"][:7]
-    diff_path = os.path.join(out_folder, f"{commit_sha}.diff")
+    # Absolute path so repo.git.apply (cwd=repo dir) can find the file.
+    diff_path = os.path.abspath(os.path.join(out_folder, f"{commit_sha}.diff"))
     with open(diff_path, "w") as f:
         f.write(datapoint["diff"])
-    
+
     try:
         repo.git.apply(diff_path)
     except GitCommandError as err:
@@ -307,42 +308,101 @@ def dataset_to_json(dataset):
     
     return json_list
 
-def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
-    patch_file = os.path.join(out_folder, "generated_patches.json")
 
-    if not os.path.exists(patch_file):
-        raise FileNotFoundError(f"[ERROR] Patch file not found: {patch_file}")
+def _load_patch_records(out_folder):
+    out_folder = os.path.abspath(out_folder)
+    env_patch_file = os.environ.get("CIBENCH_PATCH_FILE") or os.environ.get("GENERATED_PATCHES_PATH")
+    patch_candidates = [
+        os.path.join(out_folder, "generated_patches.json"),
+        os.path.join(out_folder, "preds.json"),
+    ]
+    if env_patch_file:
+        patch_candidates.append(os.path.abspath(env_patch_file))
 
-    # Load all patches
+    existing_patch_files = [path for path in patch_candidates if os.path.exists(path)]
+    if not existing_patch_files:
+        raise FileNotFoundError(
+            "[ERROR] Patch file not found. Checked: " + ", ".join(patch_candidates)
+        )
+
+    patch_records = []
+    for patch_file in existing_patch_files:
+        patch_records.extend(_read_patch_records_from_file(patch_file))
+    return patch_records
+
+
+def _read_patch_records_from_file(patch_file):
     with open(patch_file, "r", encoding="utf-8") as f:
         try:
-            patches = json.load(f)
+            raw_patches = json.load(f)
         except json.JSONDecodeError:
             print(f"[WARN] Patch file empty or invalid, using empty list: {patch_file}")
-            patches = []
+            return []
 
-    current_id = datapoint["id"]
+    if isinstance(raw_patches, list):
+        return [patch for patch in raw_patches if isinstance(patch, dict)]
+
+    if isinstance(raw_patches, dict):
+        patch_records = []
+        for key, value in raw_patches.items():
+            if isinstance(value, dict):
+                patch = dict(value)
+                patch.setdefault("id", key)
+                patch.setdefault("sha_fail", key)
+            else:
+                patch = {"id": key, "sha_fail": key, "diff": str(value or "")}
+            patch_records.append(patch)
+        return patch_records
+
+    print(f"[WARN] Unsupported patch file format in {patch_file}: {type(raw_patches).__name__}")
+    return []
+
+
+def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
+    out_folder = os.path.abspath(out_folder)
+    patches = _load_patch_records(out_folder)
+
+    current_id  = datapoint["id"]
+    sha_fail    = datapoint.get("sha_fail", "")
     patch_data = next(
         (
             p
             for p in patches
-            if ids_match(p.get("id"), current_id)
+            if (
+                ids_match(p.get("id"), current_id)
+                or ids_match(p.get("sha_fail"), sha_fail)
+            )
             and p.get("diff", "").strip()
         ),
         None,
     )
 
     if not patch_data:
-        print(f"[SKIP] No patch found for ID {current_id}")
+        print(f"[SKIP] No patch found for ID {current_id} / sha_fail {sha_fail[:12]}")
+        return
+
+    # Sanity check: the patch must have been generated for the same sha_fail
+    # that the repo is currently at. If they differ, the diff will not apply.
+    patch_sha = patch_data.get("sha_fail", "")
+    if patch_sha and sha_fail and patch_sha != sha_fail:
+        print(
+            f"[SKIP] ID {current_id}: patch sha_fail {patch_sha[:12]} does not match "
+            f"datapoint sha_fail {sha_fail[:12]} — skipping."
+        )
         return
 
     temp_diff_path = os.path.join(out_folder, f"temp_{current_id}.diff")
 
     # Write patch to temp file
-    with open(temp_diff_path, "w", encoding="utf-8") as f:
-        f.write(patch_data["diff"])
+    # Ensure trailing newline — git apply requires it; missing \n → "corrupt patch"
+    diff_content = patch_data["diff"]
+    if not diff_content.endswith("\n"):
+        diff_content += "\n"
 
-    # Pre-check patch validity using --3way
+    with open(temp_diff_path, "w", encoding="utf-8") as f:
+        f.write(diff_content)
+
+    # Pre-check patch validity using the same 3-way mode used for apply.
     check = subprocess.run(
         ["git", "apply", "--check", "--3way", temp_diff_path],
         cwd=repo_path,
@@ -352,8 +412,12 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
 
     if check.returncode != 0:
         print(f"[SKIP] Patch for ID {current_id} failed `git apply --check --3way`")
-        print(f"[DEBUG] Patch Content:\n{patch_data['diff']}")
         print(f"[DEBUG] Git Error:\n{check.stderr.strip()}")
+        # Numbered lines so "corrupt patch at line N" can be pinpointed
+        diff_lines = patch_data["diff"].splitlines()
+        print(f"[DEBUG] Patch ({len(diff_lines)} lines):")
+        for lineno, line in enumerate(diff_lines, 1):
+            print(f"  {lineno:4d} | {line}")
         os.remove(temp_diff_path)
         return
 

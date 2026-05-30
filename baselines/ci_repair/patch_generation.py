@@ -132,6 +132,7 @@ class PatchGeneration:
         llm: ChatOpenAI = None,
         model_name: str = None,
         tracker=None,           # utilities.token_tracker.TokenTracker | None
+        changed_files_info: Optional[Dict] = None,
     ):
         self.config = load_config()
         self.bug_report = bug_report
@@ -141,6 +142,9 @@ class PatchGeneration:
         self.sha_fail = bug_report.get("sha_fail")
         self.workflow_path = workflow_path
         self.workflow = workflow
+        # Diff of what the developer changed in the failing commit — crucial context
+        # for understanding WHY the CI broke and generating a targeted fix.
+        self.changed_files_info = changed_files_info or {}
         self.llm = llm
         self.parser = JsonOutputParser()
         self.patch_results: List[Dict[str, Any]] = []
@@ -407,7 +411,7 @@ Rules:
             return ""
 
 
-    def _try_automated_fix(self, faults: List[Dict[str, Any]], full_path: str) -> bool:
+    def _try_automated_fix(self, faults: List[Dict[str, Any]], full_path: str) -> tuple:
         """Try to fix the file automatically using appropriate tools (ruff, black, isort, etc.)"""
         pyproject_cfg = self._load_pyproject()
         TOKEN_LIMIT = get_prompt_token_budget(self.model_name)
@@ -470,7 +474,7 @@ Rules:
 
         if not results["installation_commands"] and not results["fix_commands"]:
             logger.warning(f"No automated commands returned for automated fix in {full_path}")
-            return False
+            return False, []
         
         # ---- Execute install commands (with trusted-host fallback) ----
                 # ---- Execute install commands (no sys.executable; trusted-host fallback) ----
@@ -559,6 +563,7 @@ Rules:
 
         # ---- Execute fix commands ----
         any_success = False
+        tool_errors: list = []   # errors from each failed command; passed to LLM on fallback
         for cmd in results["fix_commands"]:
             try:
                 logger.info(f"Running automated fix command: {cmd}")
@@ -577,15 +582,47 @@ Rules:
                     any_success = True
                 else:
                     logger.warning(f"Command failed: {cmd}\n{fix_proc.stderr}")
+                    tool_errors.append({
+                        "cmd": cmd,
+                        "returncode": fix_proc.returncode,
+                        "output": (fix_proc.stdout or "") + (fix_proc.stderr or ""),
+                    })
             except Exception as e:
                 self._save_interrupted_patch_error("_try_automated_fix:fix", full_path, e, extra={"cmd": cmd})
                 logger.error(f"Failed running command {cmd}: {e}")
+                tool_errors.append({"cmd": cmd, "returncode": -1, "output": str(e)})
 
-        # If automated fix succeeded, return True so caller skips LLM fallback
-        return any_success
+        # Return (success_flag, error_details) so caller can pass errors to LLM
+        return any_success, tool_errors
 
 
-    def _llm_patch_prompt(self, *, full_path: str, faults_payload: Any, outline: str) -> str:
+    def _llm_patch_prompt(
+        self,
+        *,
+        full_path: str,
+        faults_payload: Any,
+        outline: str,
+        tool_errors: list | None = None,
+    ) -> str:
+        tool_errors_section = ""
+        if tool_errors:
+            lines = []
+            for e in tool_errors:
+                lines.append(f"  Command : {e['cmd']}")
+                lines.append(f"  Exit code: {e['returncode']}")
+                output = (e.get("output") or "").strip()
+                if output:
+                    lines.append(f"  Output:\n{output}")
+                lines.append("")
+            tool_errors_section = f"""
+    ### AUTOMATED FIX FAILED — use this output as extra context for the real fix
+    The automated tool was tried first but could not fix the problem.
+    Understand WHY it failed and generate a correct patch that addresses the root cause:
+
+{chr(10).join(lines)}
+    ---
+"""
+
         return f"""
     You are a Senior Software Engineer responsible for repairing code faults by fixing any kind of issues in the code.
     Each fault entry describes a specific issue detected by CI validation tools.
@@ -604,6 +641,11 @@ Rules:
     ### Failed Job
     {json.dumps(self.error_details.get("failed_job", {}), indent=2)}
 
+    ### COMMIT DIFF — what the developer changed in this failing commit
+    These are the exact file changes that introduced the CI failure.
+    Use them to understand the root cause and generate a fix that addresses it:
+    {json.dumps(self.changed_files_info.get("changed_files", []), indent=2)}
+{tool_errors_section}
     ---
 
     ### INSTRUCTIONS
@@ -644,6 +686,7 @@ Rules:
     file_path: str,
     full_path: str,
     original_content: str,
+    tool_errors: list | None = None,
     ) -> bool:
         """
         Generate snippet-level patches using LLM and apply them to the file.
@@ -661,7 +704,8 @@ Rules:
         # 1) Combined faults prompt
         # --------------------------
         full_prompt = self._llm_patch_prompt(
-            full_path=full_path, faults_payload=faults, outline=outline
+            full_path=full_path, faults_payload=faults, outline=outline,
+            tool_errors=tool_errors,
         )
 
         try:
@@ -689,7 +733,8 @@ Rules:
                 # --------------------------
                 for i, fault in enumerate(faults):
                     fault_prompt = self._llm_patch_prompt(
-                        full_path=full_path, faults_payload=fault, outline=outline
+                        full_path=full_path, faults_payload=fault, outline=outline,
+                        tool_errors=tool_errors,
                     )
 
                     fault_tokens = self._estimate_tokens(fault_prompt)
@@ -872,17 +917,37 @@ Rules:
                 continue
 
             # 1) Try automated fix first
-            automated_ok = self._try_automated_fix(faults, full_path)
+            automated_ok, tool_errors = self._try_automated_fix(faults, full_path)
 
             if not automated_ok:
-                logger.info(f"Falling back to LLM patch for {file_path}")
+                # Revert any partial changes the automated tool wrote before failing,
+                # so the LLM always patches a clean copy of the original file.
+                post_auto = self._read_file(full_path)
+                if post_auto != original:
+                    logger.info(
+                        f"Reverting partial automated-fix changes for {file_path} "
+                        "before LLM fallback."
+                    )
+                    self._write_updated_file(full_path, original)
+
+                if tool_errors:
+                    logger.info(
+                        f"Passing {len(tool_errors)} automated-fix error(s) to LLM "
+                        f"as extra context for {file_path}."
+                    )
+
                 patched_applied = self._generate_llm_patch(
-                    faults, file_path, full_path, original
+                    faults, file_path, full_path, original,
+                    tool_errors=tool_errors or None,
                 )
 
-                # Only if LLM actually changed the file do we consider running Ruff
                 if patched_applied:
-                    self._safe_format_python(full_path)
+                    # Format; capture errors ruff --fix could not auto-resolve
+                    remaining_ruff_errors = self._safe_format_python(full_path)
+                    if remaining_ruff_errors:
+                        self._apply_ruff_error_correction(
+                            file_path, full_path, remaining_ruff_errors, max_passes=2
+                        )
 
             modified_content = self._read_file(full_path)
 

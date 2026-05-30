@@ -103,7 +103,7 @@ def chunk_log_by_tokens(
 
 def chunk_lines_with_overlap(
     content: str,
-    lines_per_chunk: int = 250,
+    lines_per_chunk: int = 350,
     overlap: int = 50,
 ) -> List[Tuple[int, int, str]]:
     """

@@ -343,8 +343,23 @@ def process_entire_dataset(
 
                 if not fault_localizer.get("fault_localization_data"):
                     mode = "memory" if bool(config.get("memory_enabled", False)) else "baseline"
-                    print(f"[MAIN] No suspicious files found for {sha_fail} ({mode}) — skipping patch gen.")
-                    continue
+                    # FL found nothing — fall back to changed_files from the commit diff.
+                    # The developer changed these files; one of them likely contains the fix.
+                    changed = (changed_files_info or {}).get("changed_files", [])
+                    if changed:
+                        print(f"[MAIN] FL empty for {sha_fail} ({mode}) — injecting {len(changed)} changed file(s) as fallback targets.")
+                        fault_localizer["fault_localization_data"] = [
+                            {
+                                "file_path": cf["file_path"],
+                                "full_file_path": os.path.join(repo_path, cf["file_path"]),
+                                "faults": [{"description": "FL found no suspicious files; using commit-changed file as fallback target.", "line_range": []}],
+                            }
+                            for cf in changed
+                            if cf.get("file_path", "").endswith((".py", ".toml", ".yml", ".yaml", ".txt"))
+                        ]
+                    if not fault_localizer.get("fault_localization_data"):
+                        print(f"[MAIN] No suspicious files found for {sha_fail} ({mode}) — skipping patch gen.")
+                        continue
 
             except Exception as e:
                 print(f"[ERROR] Failed processing {sha_fail} during fault localization: {e}")
@@ -372,6 +387,7 @@ def process_entire_dataset(
                     llm=_llm_pg,
                     model_name=model_key,
                     tracker=tracker,
+                    changed_files_info=changed_files_info,
                 ).run()
 
                 if not patch_generator.get("diff"):
