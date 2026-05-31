@@ -358,6 +358,101 @@ def _read_patch_records_from_file(patch_file):
     return []
 
 
+def _is_corrupt_patch_error(stderr):
+    msg = (stderr or "").lower()
+    return "corrupt patch" in msg or "no valid patches in input" in msg
+
+
+def _default_corrupted_patch_results():
+    return {
+        "definition": {
+            "unable_to_apply": (
+                "Patch failed `git apply --check --3way` before the benchmark push."
+            ),
+            "corrupted_patch": (
+                "Unable-to-apply patch whose git error contains `corrupt patch` "
+                "or `No valid patches in input`."
+            ),
+        },
+        "summary": {
+            "unable_to_apply_count": 0,
+            "corrupted_patch_count": 0,
+        },
+        "unable_to_apply": [],
+        "corrupted_patches": [],
+    }
+
+
+def _load_corrupted_patch_results(path):
+    if not os.path.exists(path):
+        return _default_corrupted_patch_results()
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return _default_corrupted_patch_results()
+
+    if not isinstance(data, dict):
+        return _default_corrupted_patch_results()
+
+    default = _default_corrupted_patch_results()
+    data.setdefault("definition", default["definition"])
+    data.setdefault("summary", {})
+    data.setdefault("unable_to_apply", [])
+    data.setdefault("corrupted_patches", [])
+    return data
+
+
+def _upsert_patch_record(records, record):
+    key = (str(record.get("id")), str(record.get("sha_fail")))
+    for idx, existing in enumerate(records):
+        existing_key = (str(existing.get("id")), str(existing.get("sha_fail")))
+        if existing_key == key:
+            records[idx] = record
+            return
+    records.append(record)
+
+
+def _write_json_atomic(path, data):
+    temp_path = f"{path}.tmp"
+    with open(temp_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+    os.replace(temp_path, path)
+
+
+def _record_unapplyable_patch(datapoint, patch_data, check, out_folder):
+    stderr = (check.stderr or "").strip()
+    record = {
+        "id": str(datapoint.get("id", "")),
+        "repo_owner": datapoint.get("repo_owner", ""),
+        "repo_name": datapoint.get("repo_name", ""),
+        "sha_fail": datapoint.get("sha_fail", ""),
+        "patch_record_id": str(patch_data.get("id", "")),
+        "diff_lines": len((patch_data.get("diff") or "").splitlines()),
+        "returncode": check.returncode,
+        "git_error": stderr,
+        "is_corrupt_patch_error": _is_corrupt_patch_error(stderr),
+    }
+
+    out_folder = os.path.abspath(out_folder)
+    preferred_path = os.path.join(out_folder, "corruped_patches.json")
+    alias_path = os.path.join(out_folder, "corrupted_patches.json")
+
+    data = _load_corrupted_patch_results(preferred_path)
+    _upsert_patch_record(data["unable_to_apply"], record)
+    if record["is_corrupt_patch_error"]:
+        _upsert_patch_record(data["corrupted_patches"], record)
+
+    data["summary"]["unable_to_apply_count"] = len(data["unable_to_apply"])
+    data["summary"]["corrupted_patch_count"] = len(data["corrupted_patches"])
+
+    _write_json_atomic(preferred_path, data)
+    _write_json_atomic(alias_path, data)
+    print(f"[RECORDED] Corrupted/unapplyable patch details saved to {preferred_path}")
+
+
 def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
     out_folder = os.path.abspath(out_folder)
     patches = _load_patch_records(out_folder)
@@ -413,6 +508,7 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
     if check.returncode != 0:
         print(f"[SKIP] Patch for ID {current_id} failed `git apply --check --3way`")
         print(f"[DEBUG] Git Error:\n{check.stderr.strip()}")
+        _record_unapplyable_patch(datapoint, patch_data, check, out_folder)
         # Numbered lines so "corrupt patch at line N" can be pinpointed
         diff_lines = patch_data["diff"].splitlines()
         print(f"[DEBUG] Patch ({len(diff_lines)} lines):")

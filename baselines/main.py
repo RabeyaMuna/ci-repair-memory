@@ -387,7 +387,6 @@ def process_entire_dataset(
                     llm=_llm_pg,
                     model_name=model_key,
                     tracker=tracker,
-                    changed_files_info=changed_files_info,
                 ).run()
 
                 if not patch_generator.get("diff"):
