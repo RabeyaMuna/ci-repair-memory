@@ -3,8 +3,12 @@ from __future__ import annotations
 import json
 import os
 import re
+import hashlib
 from collections import Counter
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+from utilities.chunking_logic import estimate_tokens
+from utilities.model_token_limits import get_prompt_token_budget
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 
@@ -754,9 +758,12 @@ class MemoryPlugin:
         if query_embedding is None:
             return []
         try:
+            n_results = int(collection.count())
+            if n_results <= 0:
+                return []
             result = collection.query(
                 query_embeddings=[query_embedding.tolist()],
-                n_results=self.top_k,
+                n_results=n_results,
                 include=["metadatas", "documents", "distances"],
             )
         except Exception as exc:
@@ -778,7 +785,7 @@ class MemoryPlugin:
             }
             rows.append(row)
         rows.sort(key=lambda item: float(item.get("similarity_score", 0.0)), reverse=True)
-        return rows[: self.top_k]
+        return [row for row in rows if float(row.get("similarity_score", 0.0) or 0.0) > 0.0]
 
     def _upsert_chroma_record(self, level: str, record: Dict[str, Any]) -> None:
         collection = self._collection_for_level(level)
@@ -929,8 +936,8 @@ class MemoryPlugin:
             "selected_memory_levels": [
                 lvl for lvl, rows in (("L1", l1), ("L2", l2), ("L3", l3)) if rows
             ],
-            "candidate_files": candidate_files[:10],
-            "high_level_hints": high_level_hints[:6],
+            "candidate_files": candidate_files,
+            "high_level_hints": high_level_hints,
             "l1_matches": l1,
             "l2_matches": l2,
             "l3_matches": l3,
@@ -1093,7 +1100,7 @@ class MemoryPlugin:
             )
 
         scored.sort(key=lambda item: item.get("similarity_score", 0.0), reverse=True)
-        return scored[: self.top_k]
+        return [row for row in scored if float(row.get("similarity_score", 0.0) or 0.0) > 0.0]
 
     def _retrieve_l2(self, query: Dict[str, Any]) -> List[Dict[str, Any]]:
         repo = str(query.get("repo") or "")
@@ -1201,7 +1208,7 @@ class MemoryPlugin:
             )
 
         scored.sort(key=lambda item: item.get("similarity_score", 0.0), reverse=True)
-        return scored[: self.top_k]
+        return [row for row in scored if float(row.get("similarity_score", 0.0) or 0.0) > 0.0]
 
     def _retrieve_l3(self, query: Dict[str, Any]) -> List[Dict[str, Any]]:
         error_type = str(query.get("error_type") or "").lower()
@@ -1313,7 +1320,7 @@ class MemoryPlugin:
             )
 
         scored.sort(key=lambda item: item.get("similarity_score", 0.0), reverse=True)
-        return scored[: self.top_k]
+        return [row for row in scored if float(row.get("similarity_score", 0.0) or 0.0) > 0.0]
 
     def retrieve_for_file(
         self,
@@ -1331,9 +1338,9 @@ class MemoryPlugin:
           Step 3  — retrieves similar entries from L1 / L2 / L3 via cosine similarity
           Step 4  — computes weighted similarity score across levels
           Step 5  — ranks retrieved entries highest → lowest similarity
-          Steps 6–8 — (lazy) the result is passed to format_for_file_prompt() /
-                      analyze_relevance_for_file() which call the LLM to select
-                      only the memories relevant to this specific file and failure.
+          Steps 6–8 — callers pass the result to analyze_relevance_for_file(),
+                      which asks the LLM to select only the memories relevant to
+                      this specific file and failure.
         """
         if not self.enabled:
             return self._empty_result(issue_query, "memory_disabled")
@@ -1378,7 +1385,7 @@ class MemoryPlugin:
         # Further enrich failure_reason with file-level semantic context (code snippet)
         # so the embedding captures both issue and file content signals.
         existing_reason = file_query.get("failure_reason", "")
-        file_snippet = _clip(file_context, 800)
+        file_snippet = str(file_context or "").strip()
         file_query["failure_reason"] = (
             f"{existing_reason} | file: {norm_file_path} | {file_snippet}"
             if file_snippet else existing_reason
@@ -1451,8 +1458,8 @@ class MemoryPlugin:
             "selected_memory_levels": [
                 lvl for lvl, rows in (("L1", l1), ("L2", l2), ("L3", l3)) if rows
             ],
-            "candidate_files": candidate_files[:10],
-            "high_level_hints": high_level_hints[:6],
+            "candidate_files": candidate_files,
+            "high_level_hints": high_level_hints,
             "l1_matches": l1,
             "l2_matches": l2,
             "l3_matches": l3,
@@ -1522,21 +1529,11 @@ class MemoryPlugin:
         file_path: str,
         retrieval_result: Dict[str, Any],
     ) -> Dict[str, List[Dict[str, Any]]]:
-        normalized = _normalize_path(file_path)
-        base = _basename(normalized)
-        l1_rows = [
-            row for row in (retrieval_result.get("l1_matches", []) or [])
-            if _normalize_path(row.get("file", "")) == normalized or _basename(row.get("file", "")) == base
-        ]
-        l2_rows = []
-        for row in (retrieval_result.get("l2_matches", []) or []):
-            files = row.get("modified_files", []) or row.get("files", []) or []
-            if any(_normalize_path(item.get("file", "")) == normalized or _basename(item.get("file", "")) == base for item in files):
-                l2_rows.append(row)
-        if not l2_rows:
-            l2_rows = (retrieval_result.get("l2_matches", []) or [])[:2]
-        l3_rows = (retrieval_result.get("l3_matches", []) or [])[:2]
-        return {"l1": l1_rows[:3], "l2": l2_rows[:2], "l3": l3_rows[:2]}
+        return {
+            "l1": retrieval_result.get("l1_matches", []) or [],
+            "l2": retrieval_result.get("l2_matches", []) or [],
+            "l3": retrieval_result.get("l3_matches", []) or [],
+        }
 
     def _build_file_level_analysis_prompt(
         self,
@@ -1563,13 +1560,14 @@ class MemoryPlugin:
         }
 
         def _summarize_row(level: str, idx: int, row: Dict[str, Any]) -> str:
+            candidate_key = str(row.get("_candidate_key") or f"{level}-{idx}")
             row_file = row.get("file", "")
             files = row.get("modified_files", []) or row.get("files", []) or []
             files_text = ", ".join(str(item.get("file", "")) for item in files[:4] if isinstance(item, dict))
             reason = row.get("failure_reason") or row.get("reason") or row.get("principle") or ""
             fix = row.get("fix_pattern") or row.get("fix_strategies") or row.get("fix_strategy") or ""
             return (
-                f"  [{level}-{idx}] score={row.get('similarity_score', 0.0):.2f} "
+                f"  [{candidate_key}] score={row.get('similarity_score', 0.0):.2f} "
                 f"record_id={row.get('record_id', '')} "
                 f"error_type={row.get('error_type', '')} "
                 f"failure_pattern={row.get('failure_pattern') or row.get('issue_type') or row.get('pattern_name', '')}\n"
@@ -1682,18 +1680,8 @@ Rules:
 - Prefer L1 over L2 over L3 when multiple candidates are compatible.
 - No markdown fences. No extra keys."""
 
-    def analyze_relevance_for_file(
-        self,
-        *,
-        file_path: str,
-        file_context: str,
-        retrieval_result: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        cache_key = (_normalize_path(file_path), _clip(file_context, 800))
-        if cache_key in self._per_file_analysis_cache:
-            return self._per_file_analysis_cache[cache_key]
-
-        empty = {
+    def _empty_file_level_analysis(self) -> Dict[str, Any]:
+        return {
             "use_memory": False,
             "similarity_score": 0.0,
             "similarity_reason": "",
@@ -1704,15 +1692,230 @@ Rules:
             "selected_items": [],
             "diagnostic_summary": "",
         }
+
+    def _memory_selector_model_name(self) -> str:
+        return str(
+            self._cfg(
+                "memory_selector_model",
+                self._cfg("model_name", self._cfg("model", "gpt-4o-mini")),
+            )
+        )
+
+    def _parse_file_level_analysis_response(self, raw: str) -> Dict[str, Any]:
+        raw = (raw or "").strip()
+        if raw.startswith("```"):
+            lines = raw.splitlines()
+            lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            raw = "\n".join(lines).strip()
+        parsed = json.loads(raw)
+        if not isinstance(parsed, dict):
+            return self._empty_file_level_analysis()
+        return parsed
+
+    def _invoke_file_level_analysis(
+        self,
+        *,
+        file_path: str,
+        file_context: str,
+        retrieval_result: Dict[str, Any],
+        candidates: Dict[str, List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        prompt = self._build_file_level_analysis_prompt(
+            file_path=file_path,
+            file_context=file_context,
+            retrieval_result=retrieval_result,
+            candidates=candidates,
+        )
+        raw = self.llm.invoke(prompt).content.strip()
+        parsed = self._parse_file_level_analysis_response(raw)
+        parsed.setdefault("selected_context", [])
+        parsed.setdefault("dependent_files", [])
+        parsed.setdefault("additional_files_to_inspect", [])
+        parsed.setdefault("selected_items", [])
+        parsed.setdefault("selected_memory_levels", [])
+        return parsed
+
+    def _tag_candidates(
+        self,
+        candidates: Dict[str, List[Dict[str, Any]]],
+    ) -> Tuple[Dict[str, List[Dict[str, Any]]], Dict[str, Dict[str, Any]]]:
+        tagged: Dict[str, List[Dict[str, Any]]] = {"l1": [], "l2": [], "l3": []}
+        candidate_map: Dict[str, Dict[str, Any]] = {}
+        for level_key, level_name in (("l1", "L1"), ("l2", "L2"), ("l3", "L3")):
+            for idx, row in enumerate(candidates.get(level_key, []) or []):
+                key = f"{level_name}-{idx}"
+                tagged_row = dict(row)
+                tagged_row["_candidate_key"] = key
+                tagged[level_key].append(tagged_row)
+                candidate_map[key] = tagged_row
+        return tagged, candidate_map
+
+    def _chunk_candidates_for_file_prompt(
+        self,
+        *,
+        file_path: str,
+        file_context: str,
+        retrieval_result: Dict[str, Any],
+        candidates: Dict[str, List[Dict[str, Any]]],
+        token_budget: int,
+        model_name: str,
+    ) -> List[Dict[str, List[Dict[str, Any]]]]:
+        chunks: List[Dict[str, List[Dict[str, Any]]]] = []
+        current: Dict[str, List[Dict[str, Any]]] = {"l1": [], "l2": [], "l3": []}
+
+        def _fits(candidate_set: Dict[str, List[Dict[str, Any]]]) -> bool:
+            prompt = self._build_file_level_analysis_prompt(
+                file_path=file_path,
+                file_context=file_context,
+                retrieval_result=retrieval_result,
+                candidates=candidate_set,
+            )
+            return estimate_tokens(prompt, model=model_name) <= token_budget
+
+        for level_key in ("l1", "l2", "l3"):
+            for row in candidates.get(level_key, []) or []:
+                trial = {key: list(value) for key, value in current.items()}
+                trial[level_key].append(row)
+                if any(current.values()) and not _fits(trial):
+                    chunks.append(current)
+                    current = {"l1": [], "l2": [], "l3": []}
+                    trial = {key: list(value) for key, value in current.items()}
+                    trial[level_key].append(row)
+                current = trial
+
+        if any(current.values()):
+            chunks.append(current)
+        return chunks
+
+    def _merge_file_level_analyses(
+        self,
+        analyses: List[Dict[str, Any]],
+        candidate_map: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        merged = self._empty_file_level_analysis()
+        reasons: List[str] = []
+        summaries: List[str] = []
+        selected_context: Dict[Tuple[str, str, str, str], Dict[str, Any]] = {}
+        selected_items: Dict[Tuple[str, str, str, str], Dict[str, Any]] = {}
+        dependent_files: Dict[Tuple[str, str], Dict[str, Any]] = {}
+        additional_files: Dict[Tuple[str, str], Dict[str, Any]] = {}
+
+        def _append_unique(target: List[str], value: Any, limit: int = 1200) -> None:
+            text = _clip(str(value or "").strip(), limit)
+            if text and text not in target:
+                target.append(text)
+
+        def _score(item: Dict[str, Any], key: str = "similarity_score") -> float:
+            try:
+                return float(item.get(key, 0.0) or 0.0)
+            except Exception:
+                return 0.0
+
+        for analysis in analyses:
+            if not isinstance(analysis, dict):
+                continue
+            merged["use_memory"] = bool(merged["use_memory"] or analysis.get("use_memory"))
+            merged["similarity_score"] = max(
+                float(merged.get("similarity_score", 0.0) or 0.0),
+                _score(analysis),
+            )
+            _append_unique(reasons, analysis.get("similarity_reason"), limit=500)
+            _append_unique(summaries, analysis.get("diagnostic_summary"), limit=500)
+
+            for level in _safe_list(analysis.get("selected_memory_levels", [])):
+                level_text = str(level or "").strip()
+                if level_text and level_text not in merged["selected_memory_levels"]:
+                    merged["selected_memory_levels"].append(level_text)
+
+            for item in _safe_list(analysis.get("selected_context", [])):
+                if not isinstance(item, dict):
+                    continue
+                key = (
+                    str(item.get("memory_level", "")),
+                    str(item.get("matched_memory_file", "")),
+                    str(item.get("failure_pattern", "")),
+                    str(item.get("fl_guidance", "")),
+                )
+                current = selected_context.get(key)
+                if current is None or _score(item, "score") > _score(current, "score"):
+                    selected_context[key] = item
+
+            for item in _safe_list(analysis.get("selected_items", [])):
+                if not isinstance(item, dict):
+                    continue
+                candidate_key = str(item.get("candidate_key", "")).strip()
+                key = (
+                    candidate_key,
+                    str(item.get("memory_level", "")),
+                    str(item.get("failure_pattern", "")),
+                    str(item.get("localization_hint", "")),
+                )
+                current = selected_items.get(key)
+                if current is None or _score(item) > _score(current):
+                    selected_items[key] = item
+
+            for item in _safe_list(analysis.get("dependent_files", [])):
+                if not isinstance(item, dict):
+                    continue
+                file_key = _normalize_path(str(item.get("file", "")))
+                if file_key:
+                    dependent_files[(file_key, str(item.get("reason", "")))] = item
+
+            for item in _safe_list(analysis.get("additional_files_to_inspect", [])):
+                if not isinstance(item, dict):
+                    continue
+                file_key = _normalize_path(str(item.get("file", "")))
+                if file_key:
+                    additional_files[(file_key, str(item.get("reason", "")))] = item
+
+        ordered_levels = [level for level in ("L1", "L2", "L3") if level in merged["selected_memory_levels"]]
+        merged["selected_memory_levels"] = ordered_levels
+        merged["selected_context"] = sorted(
+            selected_context.values(),
+            key=lambda item: _score(item, "score"),
+            reverse=True,
+        )
+        merged["selected_items"] = sorted(
+            selected_items.values(),
+            key=lambda item: _score(item),
+            reverse=True,
+        )
+        merged["dependent_files"] = list(dependent_files.values())
+        merged["additional_files_to_inspect"] = list(additional_files.values())
+        merged["similarity_reason"] = " | ".join(reasons)
+        merged["diagnostic_summary"] = " | ".join(summaries)
+        merged["use_memory"] = bool(
+            merged["use_memory"]
+            or merged["selected_context"]
+            or merged["selected_items"]
+            or merged["dependent_files"]
+            or merged["additional_files_to_inspect"]
+        )
+        merged["_candidate_map"] = candidate_map
+        return merged
+
+    def analyze_relevance_for_file(
+        self,
+        *,
+        file_path: str,
+        file_context: str,
+        retrieval_result: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        context_hash = hashlib.sha256(str(file_context or "").encode("utf-8", errors="ignore")).hexdigest()
+        cache_key = (_normalize_path(file_path), context_hash)
+        if cache_key in self._per_file_analysis_cache:
+            return self._per_file_analysis_cache[cache_key]
+
+        empty = self._empty_file_level_analysis()
         if not self.llm:
             self._per_file_analysis_cache[cache_key] = empty
             return empty
 
-        candidates = self._filter_candidates_for_file(file_path, retrieval_result)
-        candidate_map: Dict[str, Dict[str, Any]] = {}
-        for level_name, rows in (("L1", candidates["l1"]), ("L2", candidates["l2"]), ("L3", candidates["l3"])):
-            for idx, row in enumerate(rows):
-                candidate_map[f"{level_name}-{idx}"] = row
+        candidates, candidate_map = self._tag_candidates(
+            self._filter_candidates_for_file(file_path, retrieval_result)
+        )
         if not (candidates["l1"] or candidates["l2"] or candidates["l3"]):
             self._per_file_analysis_cache[cache_key] = empty
             return empty
@@ -1723,17 +1926,45 @@ Rules:
             retrieval_result=retrieval_result,
             candidates=candidates,
         )
+        model_name = self._memory_selector_model_name()
+        token_budget = int(get_prompt_token_budget(model_name) * 0.80)
         try:
-            raw = self.llm.invoke(prompt).content.strip()
-            if raw.startswith("```"):
-                lines = raw.splitlines()
-                lines = lines[1:]
-                if lines and lines[-1].strip() == "```":
-                    lines = lines[:-1]
-                raw = "\n".join(lines).strip()
-            parsed = json.loads(raw)
-            if not isinstance(parsed, dict):
-                parsed = empty
+            if estimate_tokens(prompt, model=model_name) <= token_budget:
+                parsed = self._invoke_file_level_analysis(
+                    file_path=file_path,
+                    file_context=file_context,
+                    retrieval_result=retrieval_result,
+                    candidates=candidates,
+                )
+                parsed["_candidate_map"] = candidate_map
+            else:
+                chunks = self._chunk_candidates_for_file_prompt(
+                    file_path=file_path,
+                    file_context=file_context,
+                    retrieval_result=retrieval_result,
+                    candidates=candidates,
+                    token_budget=token_budget,
+                    model_name=model_name,
+                )
+                print(
+                    f"[Memory] Selector prompt too large for {file_path}; "
+                    f"processing {len(chunks)} memory chunk(s)."
+                )
+                analyses: List[Dict[str, Any]] = []
+                for idx, chunk in enumerate(chunks, start=1):
+                    try:
+                        analyses.append(
+                            self._invoke_file_level_analysis(
+                                file_path=file_path,
+                                file_context=file_context,
+                                retrieval_result=retrieval_result,
+                                candidates=chunk,
+                            )
+                        )
+                    except Exception as exc:
+                        print(f"[Memory] Chunked relevance analysis failed for {file_path} chunk {idx}: {exc}")
+                parsed = self._merge_file_level_analyses(analyses, candidate_map) if analyses else empty
+                parsed["_candidate_map"] = candidate_map
         except Exception as exc:
             print(f"[Memory] File-level LLM relevance analysis failed for {file_path}: {exc}")
             parsed = empty
@@ -1747,6 +1978,19 @@ Rules:
 
         self._per_file_analysis_cache[cache_key] = parsed
         return parsed
+
+    def select_relevant_memory_for_file(
+        self,
+        *,
+        file_path: str,
+        file_context: str,
+        retrieval_result: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        return self.analyze_relevance_for_file(
+            file_path=file_path,
+            file_context=file_context,
+            retrieval_result=retrieval_result,
+        )
 
     def get_additional_files_for_file(
         self,
