@@ -26,7 +26,7 @@ from utilities.token_tracker import TokenTracker  # noqa: E402
 from utilities.fl_evaluator import evaluate_fl  # noqa: E402
 
 
-DEFAULT_SPLIT = PROJECT_ROOT / "baselines" / "results" / "trs" / "trs_eval_issues.json"
+DEFAULT_SPLIT = PROJECT_ROOT / "baselines" / "results" / "trs" / "eval_issues.json"
 DEFAULT_DATASET = PROJECT_ROOT / "dataset" / "lca_dataset.parquet"
 DEFAULT_CONFIG = PROJECT_ROOT / "config.yaml"
 def _load_dataset(local_dataset: Path, config) -> List[Dict[str, Any]]:

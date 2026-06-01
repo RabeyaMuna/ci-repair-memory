@@ -587,17 +587,39 @@ class MemoryPlugin:
             )
             for ref in dependent_files[:5]
         )
-        file_entries = _safe_list(record.get("files", []))
+        file_entries = _safe_list(record.get("modified_files") or record.get("files", []))
         file_text = " | ".join(
             " ".join(
                 x for x in [
                     str(item.get("file", "")).strip(),
                     str(item.get("reason", "") or item.get("failure_reason", "")).strip(),
                     str(item.get("failure_pattern", "")).strip(),
-                    str(item.get("fix_strategy", "") or item.get("fix_direction", "")).strip(),
+                    str(item.get("modification_hint", "") or item.get("fix_strategy", "") or item.get("fix_direction", "")).strip(),
+                    " ".join(
+                        " ".join(y for y in [ref.get("file", ""), ref.get("reason", "")] if y)
+                        for ref in _structured_file_refs(item.get("depended_files") or item.get("dependent_files") or [])
+                    ),
                 ] if x
             )
             for item in file_entries[:5] if isinstance(item, dict)
+        )
+        validation_entries = _safe_list(record.get("validation_failures", []))
+        validation_text = " | ".join(
+            " ".join(
+                x for x in [
+                    str(item.get("failed_cmd") or item.get("validation") or "").strip(),
+                    str(item.get("failed_tool", "")).strip(),
+                    str(item.get("problem", "")).strip(),
+                    str(item.get("reason", "")).strip(),
+                    str(item.get("modification_hint", "")).strip(),
+                    " ".join(
+                        str(file_item.get("file", "")).strip()
+                        for file_item in _safe_list(item.get("modified_files", []))
+                        if isinstance(file_item, dict)
+                    ),
+                ] if x
+            )
+            for item in validation_entries if isinstance(item, dict)
         )
         example_files = _safe_list(record.get("example_files", []))
         example_text = " | ".join(
@@ -628,6 +650,7 @@ class MemoryPlugin:
             f"fix_direction: {record.get('fix_direction') or ''}",
             f"failure_examples: {' | '.join(str(x) for x in _safe_list(record.get('failure_examples', []))[:4])}",
             f"files: {file_text}",
+            f"validation_failures: {validation_text}",
             f"example_files: {example_text}",
             f"dependent_files: {dep_text}",
         ]
@@ -898,7 +921,7 @@ class MemoryPlugin:
             if path and path not in candidate_files:
                 candidate_files.append(path)
         for row in l2:
-            for file_row in (row.get("files", []) or row.get("modified_files", []))[:5]:
+            for file_row in (row.get("modified_files", []) or row.get("files", []))[:5]:
                 path = _normalize_path(file_row.get("file", ""))
                 if path and path not in candidate_files:
                     candidate_files.append(path)
@@ -2465,24 +2488,25 @@ Rules:
         fix_strategies = [fix_approach] if fix_approach else []
 
         # Failure reasons: collect from L2 file entries
+        l2_files = repo_row.get("modified_files") or repo_row.get("files") or []
         file_failure_reasons = list(dict.fromkeys(
             str(f.get("failure_reason") or "")
-            for f in (repo_row.get("files") or [])
+            for f in l2_files
             if f.get("failure_reason")
         ))
         failure_reasons = ([overall_reason] + file_failure_reasons)[:4] if overall_reason else file_failure_reasons[:4]
 
-        # Example files: top files from L2 for concrete retrieval context
+        # Example files: preserve all L2 file entries for concrete retrieval context.
         example_files = [
             {"file": f.get("file", ""), "issue_type": f.get("issue_type", ""), "failure_pattern": f.get("failure_pattern", "")}
-            for f in (repo_row.get("files") or [])[:3]
+            for f in l2_files
             if f.get("file")
         ]
 
         # failure_patterns: all patterns observed across files in this issue
         file_patterns = list(dict.fromkeys(
             str(f.get("failure_pattern") or "")
-            for f in (repo_row.get("files") or [])
+            for f in l2_files
             if f.get("failure_pattern")
         ))
         all_failure_patterns = list(dict.fromkeys([failure_pattern] + file_patterns)) if failure_pattern else file_patterns
