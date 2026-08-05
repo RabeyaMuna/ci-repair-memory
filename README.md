@@ -61,10 +61,38 @@ CI-REPAIR-BENCH/
 │   ├── token_analysis.py             # Token usage analysis
 │   └── comparison.py                 # Result comparison utilities
 │
-├── dataset/                          # Dataset files and preparation scripts
-│   └── lca_dataset.parquet           # Main dataset (567 issues, 103 repos)
+├── dataset/                          # Dataset files and processing scripts
+│   ├── lca_dataset.parquet           # Main dataset (567 issues, 103 repos)
+│   ├── commit_dates.json             # Commit timestamp metadata
+│   ├── error_types_extracted.json    # CI error type labels
+│   ├── failed_job_logs.json          # Failed CI execution logs
+│   ├── fetch_*.py                    # Data collection scripts
+│   ├── add_*.py / update_*.py        # Metadata enhancement scripts
+│   ├── merge_duplicate_diffs*.py     # Patch deduplication utilities
+│   ├── sort_dataset_by_commit_date.py
+│   ├── data_stat.py                  # Dataset statistics generator
+│   └── README.md                     # Dataset documentation
 │
-├── results/                          # Split outputs and benchmark results
+├── evaluation/                       # Evaluation scripts and results
+│   ├── evaluate_predictions.py       # Main patch evaluation via CI
+│   ├── evaluate_subset.py            # Subset-based evaluation
+│   ├── evaluate_topk_overall.py      # Top-k localization metrics
+│   ├── run_evaluation.sh             # Evaluation pipeline script
+│   ├── verify_metrics.py             # Metric validation
+│   ├── explain_exact_match.py        # Exact match analysis
+│   ├── compare_evaluations.py        # Cross-run comparison
+│   ├── generate_results_table.py     # Results table generation
+│   ├── visualize_results.py          # Result visualization
+│   ├── results/                      # Evaluation outputs
+│   │   ├── evaluation_results.json   #   Main evaluation results
+│   │   ├── preds.json                #   Generated predictions
+│   │   ├── preds-1.json              #   Alternative runs
+│   │   ├── jobs_success_diff.jsonl   #   Successful CI jobs
+│   │   ├── jobs_failure_diff.jsonl   #   Failed CI jobs
+│   │   └── jobs_*_diff.jsonl         #   Other job statuses
+│   └── README.md                     # Evaluation documentation
+│
+├── results/                          # Dataset split outputs
 │   ├── trs_split/                    # TRS split — primary experimental split
 │   │   ├── memory_issues.json        #   103 issues → memory bank (older, verified recurrent)
 │   │   ├── eval_issues.json          #   189 issues → evaluation (newer, have memory peer)
@@ -79,10 +107,7 @@ CI-REPAIR-BENCH/
 │   │   └── analysis_summary.txt
 │   ├── rcss_split/                   # Legacy RCSS split outputs
 │   ├── similarity_group_split/       # Legacy SGS split outputs
-│   ├── sacs_split/                   # Legacy SACS split outputs
-│   └── generated_patches.json        # Benchmark patch results
-│
-├── evaluation_plot/                  # Evaluation visualizations
+│   └── sacs_split/                   # Legacy SACS split outputs
 ├── repo/                             # Cloned repositories (one per repo)
 ├── setup/                            # GitHub org setup scripts
 ├── run_benchmark.py                  # CI benchmark runner

@@ -10,7 +10,6 @@ from typing import Dict, List, Tuple, Optional
 
 from benchmark_functions import get_results
 from benchmark_utils import save_jsonl
-from evaluation_plot.error_type_base import run_error_type_accuracy_evaluation
 
 DEBUG_FAST_FAIL = True
 
@@ -185,7 +184,6 @@ def finalize_after_last_poll(
     - Infer fast-fail using GH API
     - Rewrite dedicated files (success/failure/cancelled/timed_out/invalid/waiting)
     - Print ONE final report (pushed + dataset-grounded)
-    - Generate per-error-type plots based on success file
     """
 
     REQ_DELAY = 0.8
@@ -362,15 +360,8 @@ def finalize_after_last_poll(
     if dataset_path is None:
         dataset_path = str(repo_root / "dataset" / "lca_dataset.parquet")
 
-    # Try to load dataset rows count safely without adding pandas dependency here
-    # (your evaluation_plot function already reads the dataset; we’ll use its result too)
-    dataset_rows = None
-
     print("\n=== Overall outcome stats (attempted-only; dataset-grounded) ===")
     print(f"Repo root: {repo_root}")
-    if dataset_rows is None:
-        # We'll fill dataset_rows after calling run_error_type_accuracy_evaluation
-        pass
     print(f"Attempted/pushed: {pushed}  (coverage: 100.0%)")
     print(f"Not pushed: 0  <-- NOT counted as failed")
     print(f"Passed:  {passed}")
@@ -380,25 +371,6 @@ def finalize_after_last_poll(
     print(f"Invalid: {invalid}")
     print(f"Waiting: {waiting}")
     print(f"Accuracy (passed/attempted*100): {acc_pushed:.2f}%")
-
-    # ---- Step 5: plots + per-error-type accuracy ----
-    stats = run_error_type_accuracy_evaluation(
-        dataset_path=Path(dataset_path),
-        success_path=Path(success_path),
-        output_dir=repo_root / "evaluation_plot",
-        jobs_ids_invalid=invalid_all,
-        jobs_ids_await=final_waiting,
-        stream_results_path=results_path,  # use success+failure file as stream for eval
-    )
-
-    # Update dataset rows / dataset accuracy from returned stats (authoritative)
-    overall = stats.get("overall", {})
-    dataset_rows = overall.get("dataset_rows") or overall.get("dataset_size") or overall.get("total_dataset_size")
-
-    if dataset_rows:
-        acc_dataset = (passed / max(int(dataset_rows), 1)) * 100.0
-        print(f"\nDataset rows: {dataset_rows}")
-        print(f"Global accuracy (passed/dataset*100): {acc_dataset:.2f}%")
 
     debug_log(
         "FINAL: passed={} failed={} cancelled={} timed_out={} invalid={} waiting={} accuracy_pushed={:.2f}%",

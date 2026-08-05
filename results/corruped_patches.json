@@ -1,0 +1,24 @@
+{
+  "definition": {
+    "unable_to_apply": "Patch failed `git apply --check --3way` before the benchmark push.",
+    "corrupted_patch": "Unable-to-apply patch whose git error contains `corrupt patch` or `No valid patches in input`."
+  },
+  "summary": {
+    "unable_to_apply_count": 1,
+    "corrupted_patch_count": 0
+  },
+  "unable_to_apply": [
+    {
+      "id": "562",
+      "repo_owner": "RabeyaMuna",
+      "repo_name": "crewai",
+      "sha_fail": "06e2683fd889129c12e6bd818a3b4a5bd880444a",
+      "patch_record_id": "562",
+      "diff_lines": 31,
+      "returncode": 1,
+      "git_error": "error: .github/workflows/linter.yml: does not match index",
+      "is_corrupt_patch_error": false
+    }
+  ],
+  "corrupted_patches": []
+}

@@ -519,11 +519,39 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
 
     # Apply patch if valid
     try:
-        subprocess.run(["git", "apply", "--3way", temp_diff_path], cwd=repo_path, check=True)
+        subprocess.run(
+            ["git", "apply", "--3way", temp_diff_path],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        # Check for unmerged files (conflicts)
+        conflicts = subprocess.run(
+            ["git", "diff", "--name-only", "--diff-filter=U"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True
+        )
+
+        if conflicts.stdout.strip():
+            conflicted_files = conflicts.stdout.strip().split('\n')
+            print(f"[ERROR] Patch for ID {current_id} created conflicts in: {', '.join(conflicted_files)}")
+            print(f"[DEBUG] Attempting to abort conflicted merge...")
+            # Reset to clean state
+            subprocess.run(["git", "merge", "--abort"], cwd=repo_path, capture_output=True)
+            subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=repo_path, capture_output=True)
+            print(f"[SKIP] Patch rejected due to merge conflicts")
+            return
+
         print(f"[SUCCESS] Applied patch for ID {current_id}")
+
     except subprocess.CalledProcessError as e:
         print(f"[ERROR] Failed to apply patch for ID {current_id}")
         print(f"[DEBUG] {e.stderr}")
+        # Clean up any partial application
+        subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=repo_path, capture_output=True)
     finally:
         if os.path.exists(temp_diff_path):
             os.remove(temp_diff_path)
