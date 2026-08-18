@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Recheck waiting jobs - Root version for easy access
-"""
 
+import sys
 import os
+
+# Add parent directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
 import json
 import shutil
 import requests
