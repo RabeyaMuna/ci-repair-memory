@@ -19,6 +19,32 @@ from pathlib import Path
 from typing import Dict
 
 
+def extract_files_from_diff(diff_text: str) -> list:
+    """Extract changed file paths from diff text."""
+    if not diff_text:
+        return []
+
+    import re
+    files = []
+    # Match "diff --git a/path b/path"
+    for line in diff_text.split('\n'):
+        if line.startswith('diff --git'):
+            # Extract file path from "diff --git a/file b/file"
+            match = re.search(r'b/(.+?)(?:\s|$)', line)
+            if match:
+                files.append(match.group(1))
+
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_files = []
+    for f in files:
+        if f not in seen:
+            seen.add(f)
+            unique_files.append(f)
+
+    return unique_files
+
+
 def compute_file_localization_metrics(preds_file: Path, dataset_file: Path) -> Dict:
     """Compute file localization metrics: Top-K accuracy, Precision, Exact Match."""
     with open(preds_file, 'r') as f:
@@ -43,7 +69,12 @@ def compute_file_localization_metrics(preds_file: Path, dataset_file: Path) -> D
             continue
 
         total += 1
+
+        # Get predicted files - either from predicted_files or extract from diff
         predicted = pred_data.get('predicted_files', [])
+        if not predicted and 'diff' in pred_data:
+            predicted = extract_files_from_diff(pred_data['diff'])
+
         ground_truth = gt_files[issue_id]
 
         if not predicted or not ground_truth:
@@ -80,10 +111,27 @@ def compute_file_localization_metrics(preds_file: Path, dataset_file: Path) -> D
     }
 
 
-def compute_ci_success_metrics(results_file: Path) -> Dict:
-    """Compute CI success metrics from success_rate_evaluation.json."""
+def compute_ci_success_metrics(results_file: Path, pred_ids: set) -> Dict:
+    """Compute CI success metrics from success_rate_evaluation.json.
+
+    Returns N/A if validation data doesn't match prediction IDs.
+    """
+    if not results_file.exists():
+        return None
+
     with open(results_file, 'r') as f:
         data = json.load(f)
+
+    # Check if validation results match prediction IDs
+    validation_ids = {str(r['id']) for r in data.get('results', [])}
+
+    # Calculate overlap
+    matching_ids = pred_ids & validation_ids
+    overlap_rate = len(matching_ids) / len(pred_ids) if pred_ids else 0
+
+    # If less than 50% overlap, validation data is stale/wrong
+    if overlap_rate < 0.5:
+        return None
 
     summary = data['summary']
 
@@ -106,6 +154,11 @@ def compute_ci_success_metrics(results_file: Path) -> Dict:
             "passed": summary['workflow_level']['passed'],
             "failed": summary['workflow_level']['failed'],
             "pass_rate": summary['workflow_level']['pass_rate']
+        },
+        "validation_coverage": {
+            "total_predictions": len(pred_ids),
+            "with_validation": len(matching_ids),
+            "coverage_rate": round(overlap_rate * 100, 2)
         }
     }
 
@@ -124,17 +177,26 @@ def main():
     print()
 
     print("📊 Computing file localization metrics...")
+    pred_ids = set()
     if Path(args.preds).exists():
         loc_metrics = compute_file_localization_metrics(Path(args.preds), Path(args.dataset))
         print(f"   ✓ Evaluated {loc_metrics['total_issues']} issues")
+        # Get prediction IDs for validation check
+        with open(args.preds, 'r') as f:
+            pred_ids = set(json.load(f).keys())
     else:
         print(f"   ⚠️  Predictions file not found")
         loc_metrics = None
 
     print("\n📊 Computing CI success metrics...")
     if Path(args.ci_results).exists():
-        ci_metrics = compute_ci_success_metrics(Path(args.ci_results))
-        print(f"   ✓ Loaded {ci_metrics['overall_ci_success']['total']} issues")
+        ci_metrics = compute_ci_success_metrics(Path(args.ci_results), pred_ids)
+        if ci_metrics:
+            print(f"   ✓ Loaded {ci_metrics['overall_ci_success']['total']} issues")
+            print(f"   ✓ Coverage: {ci_metrics['validation_coverage']['coverage_rate']}%")
+        else:
+            print(f"   ⚠️  Validation data doesn't match predictions")
+            print(f"   ⚠️  Run: python scripts/analysis/calculate_success_rate.py to refresh")
     else:
         print(f"   ⚠️  Run: python scripts/analysis/calculate_success_rate.py first")
         ci_metrics = None
@@ -156,13 +218,21 @@ def main():
         print(f"   Exact Match: {loc_metrics['exact_match']['rate']}%")
         print(f"   Precision: {loc_metrics['precision']['average']}%")
         print(f"   Top-1: {loc_metrics['top_k_accuracy']['top_1']}%")
+        print(f"   Top-3: {loc_metrics['top_k_accuracy']['top_3']}%")
         print(f"   Top-5: {loc_metrics['top_k_accuracy']['top_5']}%")
+        print(f"   Top-10: {loc_metrics['top_k_accuracy']['top_10']}%")
+        print(f"   Top-15: {loc_metrics['top_k_accuracy']['top_15']}%")
 
+    print("\n🔧 CI Success:")
     if ci_metrics:
-        print("\n🔧 CI Success:")
         print(f"   Overall: {ci_metrics['overall_ci_success']['rate']}%")
         print(f"   L1 Step Success: {ci_metrics['level_1_step_success']['average_success_rate']}%")
         print(f"   L3 Workflow Pass: {ci_metrics['level_3_workflow']['pass_rate']}%")
+    else:
+        print(f"   Overall: N/A")
+        print(f"   L1 Step Success: N/A")
+        print(f"   L3 Workflow Pass: N/A")
+        print(f"   (Run validation first: python scripts/analysis/calculate_success_rate.py)")
 
     print("="*80)
 

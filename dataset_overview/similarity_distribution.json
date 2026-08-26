@@ -1,0 +1,52 @@
+{
+  "within_repository": {
+    "structural": {
+      "pct_above_0.5": 37.5,
+      "pct_above_0.6": 19.1,
+      "pct_above_0.7": 7.3,
+      "pct_above_0.8": 0.4,
+      "pct_above_0.9": 0.0
+    },
+    "lexical": {
+      "pct_above_0.5": 94.5,
+      "pct_above_0.6": 87.8,
+      "pct_above_0.7": 79.3,
+      "pct_above_0.8": 66.9,
+      "pct_above_0.9": 32.9
+    }
+  },
+  "overall_benchmark": {
+    "structural": {
+      "pct_above_0.5": 35.5,
+      "pct_above_0.6": 17.9,
+      "pct_above_0.7": 6.8,
+      "pct_above_0.8": 0.4,
+      "pct_above_0.9": 0.0
+    },
+    "lexical": {
+      "pct_above_0.5": 91.9,
+      "pct_above_0.6": 84.3,
+      "pct_above_0.7": 75.6,
+      "pct_above_0.8": 63.2,
+      "pct_above_0.9": 30.9
+    }
+  },
+  "quartiles": {
+    "within_structural": {
+      "min": 0.0,
+      "q1": 0.333,
+      "median": 0.429,
+      "mean": 0.436,
+      "q3": 0.571,
+      "max": 0.857
+    },
+    "within_lexical": {
+      "min": 0.179,
+      "q1": 0.739,
+      "median": 0.853,
+      "mean": 0.811,
+      "q3": 0.932,
+      "max": 1.0
+    }
+  }
+}

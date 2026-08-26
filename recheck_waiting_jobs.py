@@ -99,15 +99,17 @@ def _extract_owner_repo_run_id(url: str):
 def infer_conclusion_from_api(record, creds):
     """
     If record is 'waiting/queued/in_progress/empty', fetch the run's jobs and
-    compute a fast-fail-aware conclusion. Returns a string conclusion.
+    compute a fast-fail-aware conclusion. Returns (conclusion, metadata) tuple.
+
+    Metadata includes cancellation reasons and job details for debugging.
     """
     concl = (record.get("conclusion") or "").lower()
     if concl not in ("", "waiting", "queued", "in_progress", None):
-        return concl
+        return concl, {}
 
     owner, repo, run_id = _extract_owner_repo_run_id(record.get("url") or "")
     if not (owner and repo and run_id):
-        return concl or "waiting"
+        return concl or "waiting", {}
 
     headers = _headers_from_env_or_creds(creds)
     base = f"https://api.github.com/repos/{owner}/{repo}/actions"
@@ -121,26 +123,63 @@ def infer_conclusion_from_api(record, creds):
         statuses = [str(j.get("status") or "").lower() for j in jobs]
         conclusions = [str(j.get("conclusion") or "").lower() for j in jobs]
 
+        # Collect cancellation metadata
+        cancelled_jobs = [
+            {
+                "job_name": j.get("name"),
+                "job_id": j.get("id"),
+                "conclusion": j.get("conclusion"),
+                "status": j.get("status"),
+                "started_at": j.get("started_at"),
+                "completed_at": j.get("completed_at")
+            }
+            for j in jobs
+            if str(j.get("conclusion") or "").lower() == "cancelled"
+        ]
+
         # Fast-fail rules
         if any(s == "completed" and c == "failure" for s, c in zip(statuses, conclusions)):
-            return "failure"
-        if ("cancelled" in conclusions) and ("completed" in statuses):
-            return "failure"
+            return "failure", {}
+
+        # Check for cancellations (treat as separate category now)
+        if ("cancelled" in conclusions):
+            # Pure cancellation or mixed with completed jobs
+            has_completed = "completed" in statuses
+            metadata = {
+                "cancelled_jobs": cancelled_jobs,
+                "total_jobs": len(jobs),
+                "had_completed_jobs": has_completed,
+                "run_id": run_id
+            }
+            return "cancelled", metadata
+
         if any(c == "failure" for c in conclusions):
-            return "failure"
+            return "failure", {}
 
         # If still undecided, check run-level fields
         run = requests.get(f"{base}/runs/{run_id}", headers=headers, timeout=20).json()
         run_concl = (run.get("conclusion") or "").lower()
         run_stat = (run.get("status") or "").lower()
-        if run_concl in ("failure", "success", "cancelled", "timed_out", "timeout"):
-            return run_concl or (run_stat or "waiting")
 
-        return "waiting"
+        if run_concl == "cancelled":
+            # Run-level cancellation
+            metadata = {
+                "run_level_cancellation": True,
+                "run_id": run_id,
+                "total_jobs": len(jobs),
+                "event": run.get("event"),
+                "triggering_actor": run.get("triggering_actor", {}).get("login") if run.get("triggering_actor") else None
+            }
+            return "cancelled", metadata
+
+        if run_concl in ("failure", "success", "timed_out", "timeout"):
+            return run_concl or (run_stat or "waiting"), {}
+
+        return "waiting", {}
 
     except requests.RequestException as e:
         print(f"[infer_conclusion_from_api] API error for run {run_id}: {e}")
-        return concl or "waiting"
+        return concl or "waiting", {}
 
 
 # -----------------------------
@@ -148,18 +187,19 @@ def infer_conclusion_from_api(record, creds):
 # -----------------------------
 def normalize_failure_only(records):
     """
-    Normalize ONLY failures (leave success untouched).
+    Normalize ONLY failures (leave success and cancellations separate).
 
     Embedded jobs (r['jobs'] / r['job_list']):
       1) ANY job status=='completed' AND conclusion=='failure'  -> run 'failure'
-      2) ANY job 'cancelled' AND at least one job 'completed'   -> run 'failure' (fast-fail)
+      2) ANY job 'cancelled' -> keep as 'cancelled' (tracked separately)
       3) ANY job conclusion=='failure'                           -> run 'failure'
       4) Else unchanged
 
     Flat per-job rows (group by run_id/workflow_run_id/runId): same rules per group.
 
     Fallback (plain run-level rows, no jobs/run_id):
-      Treat run-level 'cancelled' / 'timed_out' as failure when status is 'completed' or missing.
+      - 'cancelled' stays as 'cancelled' (not converted to failure)
+      - 'timed_out' treated as failure when status is 'completed' or missing.
     """
     # Case A: embedded job arrays
     if any(isinstance(r, dict) and (r.get("jobs") or r.get("job_list")) for r in records):
@@ -174,12 +214,16 @@ def normalize_failure_only(records):
             statuses = [((j or {}).get("status") or "").lower() for j in jobs]
             conclusions = [((j or {}).get("conclusion") or "").lower() for j in jobs]
 
+            # Check for actual failures first
             if any(st == "completed" and co == "failure" for st, co in zip(statuses, conclusions)):
-                rr = dict(r); rr["conclusion"] = "failure"; out.append(rr); continue
-            if ("cancelled" in conclusions) and ("completed" in statuses):
                 rr = dict(r); rr["conclusion"] = "failure"; out.append(rr); continue
             if any(co == "failure" for co in conclusions):
                 rr = dict(r); rr["conclusion"] = "failure"; out.append(rr); continue
+
+            # Keep cancellations separate (don't convert to failure)
+            if "cancelled" in conclusions:
+                # Already has cancelled conclusion, keep it
+                out.append(r); continue
 
             out.append(r)
         return out
@@ -199,23 +243,35 @@ def normalize_failure_only(records):
             groups.setdefault(r.get(run_key), []).append(r)
 
         failing_runs = set()
+        cancelled_runs = set()
+
         for rid, rows in groups.items():
             if rid is None:
                 continue
             statuses = [((row.get("status") or "").lower()) for row in rows]
             conclusions = [((row.get("conclusion") or "").lower()) for row in rows]
 
+            # Check for actual failures
             if any(st == "completed" and co == "failure" for st, co in zip(statuses, conclusions)):
                 failing_runs.add(rid); continue
-            if ("cancelled" in conclusions) and ("completed" in statuses):
-                failing_runs.add(rid); continue
             if any(co == "failure" for co in conclusions):
-                failing_runs.add(rid)
+                failing_runs.add(rid); continue
+
+            # Track cancellations separately
+            if "cancelled" in conclusions:
+                cancelled_runs.add(rid)
 
         out = []
         for r in records:
-            if isinstance(r, dict) and r.get(run_key) in failing_runs:
-                rr = dict(r); rr["conclusion"] = "failure"; out.append(rr)
+            if isinstance(r, dict):
+                rid = r.get(run_key)
+                if rid in failing_runs:
+                    rr = dict(r); rr["conclusion"] = "failure"; out.append(rr)
+                elif rid in cancelled_runs and (r.get("conclusion") or "").lower() != "cancelled":
+                    # Mark as cancelled if in a cancelled run
+                    rr = dict(r); rr["conclusion"] = "cancelled"; out.append(rr)
+                else:
+                    out.append(r)
             else:
                 out.append(r)
         return out
@@ -229,8 +285,12 @@ def normalize_failure_only(records):
         status = (r.get("status") or "").lower()
         if concl == "failure":
             rr = dict(r); rr["conclusion"] = "failure"; out.append(rr)
-        elif concl in ("cancelled", "timed_out", "timeout") and (status == "completed" or not status):
+        elif concl in ("timed_out", "timeout") and (status == "completed" or not status):
+            # Timeouts are treated as failures
             rr = dict(r); rr["conclusion"] = "failure"; out.append(rr)
+        elif concl == "cancelled":
+            # Keep cancellations separate
+            out.append(r)
         else:
             out.append(r)
     return out
@@ -250,6 +310,7 @@ jobs_pushed_file  = os.path.join(results_dir, "jobs_ids_diff.jsonl")      # SOUR
 awaiting_file     = os.path.join(results_dir, "jobs_awaiting_diff.jsonl")
 success_file      = os.path.join(results_dir, "jobs_success_diff.jsonl")
 failure_file      = os.path.join(results_dir, "jobs_failure_diff.jsonl")
+cancelled_file    = os.path.join(results_dir, "jobs_cancelled_diff.jsonl")  # NEW: Track cancellations separately
 errors_file       = os.path.join(results_dir, "jobs_error_diff.jsonl")
 
 # combined (success + failure) for analysis
@@ -318,9 +379,12 @@ enriched = []
 for row in checked:
     c = (row.get("conclusion") or "").lower()
     if c in ("", "waiting", "queued", "in_progress", "invalid", "notfound"):
-        inferred = infer_conclusion_from_api(row, bench.credentials)
+        inferred, metadata = infer_conclusion_from_api(row, bench.credentials)
         if inferred:
             row["conclusion"] = inferred
+            # Store cancellation metadata for debugging/rerun decisions
+            if metadata:
+                row["cancellation_metadata"] = metadata
     enriched.append(row)
 
 # -----------------------------
@@ -331,10 +395,11 @@ normalized = normalize_failure_only(enriched)
 # -----------------------------
 # Split into dedicated outputs
 # -----------------------------
-success, failure, errors, waiting = [], [], [], []
+success, failure, cancelled, errors, waiting = [], [], [], [], []
 for job in normalized:
     repo   = job.get("repo_name", "unknown")
     branch = job.get("branch_name", "unknown")
+    issue_id = job.get("id", "unknown")
     concl  = (job.get("conclusion") or "").lower()
 
     if concl in ("waiting", "queued", "in_progress", ""):
@@ -343,8 +408,15 @@ for job in normalized:
     elif concl == "success":
         success.append(job)
         print(f"[{repo} | {branch}] → SUCCESS")
-    elif concl in ("failure", "cancelled", "timed_out", "timeout"):
-        # Count run-level cancelled/timed_out as FAILURE for fast-fail matrices
+    elif concl == "cancelled":
+        # Track cancellations separately for analysis and potential rerun
+        cancelled.append(job)
+        metadata = job.get("cancellation_metadata", {})
+        cancelled_count = len(metadata.get("cancelled_jobs", []))
+        total_jobs = metadata.get("total_jobs", "?")
+        print(f"[{repo} | {branch}] → CANCELLED (ID {issue_id}, {cancelled_count}/{total_jobs} jobs)")
+    elif concl in ("failure", "timed_out", "timeout"):
+        # Pure failures and timeouts (not cancellations)
         failure.append(job)
         print(f"[{repo} | {branch}] → FAILURE (from {concl})")
     elif concl == "error":
@@ -359,16 +431,23 @@ for job in normalized:
 # -----------------------------
 save_overwrite(success_file, success)
 save_overwrite(failure_file, failure)
+save_overwrite(cancelled_file, cancelled)
 save_overwrite(errors_file,  errors)
 save_overwrite(awaiting_file, waiting)
 
 print("\n[Write-out]")
-print(f"  success: {len(success)}  → {success_file}")
-print(f"  failure: {len(failure)}  → {failure_file}")
-print(f"  error:   {len(errors)}   → {errors_file}")
-print(f"  waiting: {len(waiting)}  → {awaiting_file}")
+print(f"  success:   {len(success)}   → {success_file}")
+print(f"  failure:   {len(failure)}   → {failure_file}")
+print(f"  cancelled: {len(cancelled)} → {cancelled_file}")
+print(f"  error:     {len(errors)}    → {errors_file}")
+print(f"  waiting:   {len(waiting)}   → {awaiting_file}")
 
-accuracy = len(success)/(len(success)+ len(failure)+len(errors)+len(waiting))
+# Calculate accuracy (cancelled jobs are excluded from success/failure metrics)
+total_completed = len(success) + len(failure) + len(errors)
+if total_completed > 0:
+    accuracy = len(success) / total_completed
+else:
+    accuracy = 0.0
 # -----------------------------
 # Build combined results (success + failure) for analysis
 # -----------------------------
@@ -378,5 +457,42 @@ save_overwrite(results_file, combined_results)
 print(f"\nCombined results (success+failure) written → {results_file}")
 print(f"[Sanity] Combined row count: {len(combined_results)}")
 
-print(f"  Accuracy (success / total_jobs): {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"\n  Accuracy (success / completed_non_cancelled): {accuracy:.4f} ({accuracy*100:.2f}%)")
+
+# -----------------------------
+# Cancellation Summary
+# -----------------------------
+if cancelled:
+    print("\n" + "="*80)
+    print(" CANCELLATION SUMMARY")
+    print("="*80)
+    print(f"\nTotal cancelled: {len(cancelled)}")
+    print("\nCancelled issues (rerun candidates):")
+
+    for job in cancelled:
+        issue_id = job.get("id", "?")
+        repo = job.get("repo_name", "unknown")
+        url = job.get("url", "N/A")
+        metadata = job.get("cancellation_metadata", {})
+
+        print(f"\n  Issue ID: {issue_id}")
+        print(f"    Repo: {repo}")
+        print(f"    URL: {url}")
+
+        if metadata:
+            if "cancelled_jobs" in metadata:
+                cancelled_job_names = [j["job_name"] for j in metadata["cancelled_jobs"]]
+                print(f"    Cancelled jobs: {', '.join(cancelled_job_names)}")
+                print(f"    Total jobs in run: {metadata.get('total_jobs', '?')}")
+                print(f"    Had completed jobs: {metadata.get('had_completed_jobs', False)}")
+
+            if "run_level_cancellation" in metadata:
+                print(f"    Cancellation type: Run-level")
+                print(f"    Trigger event: {metadata.get('event', 'unknown')}")
+                if metadata.get("triggering_actor"):
+                    print(f"    Triggered by: {metadata.get('triggering_actor')}")
+
+    print(f"\n  → All cancelled issues saved to: {cancelled_file}")
+    print("  → Consider rerunning these issues if cancellations were unintentional")
+    print("="*80)
 

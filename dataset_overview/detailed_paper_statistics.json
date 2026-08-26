@@ -1,0 +1,266 @@
+{
+  "dataset_summary": {
+    "total_instances": 565,
+    "data_collection_date": "2026",
+    "benchmark_name": "CI-REPAIR-BENCH"
+  },
+  "repositories": {
+    "overall": {
+      "unique_repo_names": 101,
+      "unique_owner_repo_pairs": 146,
+      "forks_or_duplicates": 45,
+      "repos_with_multiple_instances": 68,
+      "instances_from_multi_instance_repos": 532,
+      "percentage_in_multi_repos": 94.16
+    },
+    "top_10_by_repo_name": {
+      "agno": 84,
+      "axolotl": 51,
+      "litellm": 30,
+      "conan": 28,
+      "flower": 27,
+      "browser-use": 27,
+      "taipy": 19,
+      "docsgpt": 15,
+      "camel": 15,
+      "aiohttp": 14
+    },
+    "top_10_by_owner_repo": {
+      "RabeyaMuna/agno": 54,
+      "axolotl-ai-cloud/axolotl": 37,
+      "RabeyaMuna/conan": 21,
+      "RabeyaMuna/browser-use": 20,
+      "RabeyaMuna/taipy": 19,
+      "agno-agi/agno": 17,
+      "berriai/litellm": 16,
+      "CI-Repair/flower": 15,
+      "RabeyaMuna/aiohttp": 14,
+      "RabeyaMuna/axolotl": 14
+    },
+    "language_distribution": {
+      "python": 381,
+      "Python": 184
+    }
+  },
+  "failure_types": {
+    "unique_error_types": 12,
+    "total_error_occurrences": 891,
+    "error_type_distribution": {
+      "Code Formatting": 121,
+      "Code Linting": 208,
+      "Syntax Error": 68,
+      "Documentation or Docstring Error": 4,
+      "Runtime Error": 85,
+      "Assertion Error": 28,
+      "Dependency Issues": 148,
+      "Test Failure": 115,
+      "Package Installation Error": 47,
+      "Environment Error": 32,
+      "Configuration Error": 33,
+      "Type Checking Error": 2
+    },
+    "top_10_error_types": {
+      "Code Linting": 208,
+      "Dependency Issues": 148,
+      "Code Formatting": 121,
+      "Test Failure": 115,
+      "Runtime Error": 85,
+      "Syntax Error": 68,
+      "Package Installation Error": 47,
+      "Configuration Error": 33,
+      "Environment Error": 32,
+      "Assertion Error": 28
+    },
+    "multi_problem_stats": {
+      "single_problem_instances": 308,
+      "multi_problem_instances": 257,
+      "multi_problem_percentage": 45.49,
+      "avg_errors_per_instance": 1.58,
+      "max_errors_in_instance": 4
+    },
+    "top_10_error_combinations": [
+      {
+        "combination": [
+          "Dependency Issues",
+          "Syntax Error"
+        ],
+        "count": 32
+      },
+      {
+        "combination": [
+          "Code Linting",
+          "Dependency Issues"
+        ],
+        "count": 32
+      },
+      {
+        "combination": [
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "count": 25
+      },
+      {
+        "combination": [
+          "Code Formatting",
+          "Code Linting"
+        ],
+        "count": 21
+      },
+      {
+        "combination": [
+          "Code Linting",
+          "Dependency Issues",
+          "Syntax Error"
+        ],
+        "count": 13
+      },
+      {
+        "combination": [
+          "Environment Error",
+          "Test Failure"
+        ],
+        "count": 11
+      },
+      {
+        "combination": [
+          "Assertion Error",
+          "Runtime Error"
+        ],
+        "count": 9
+      },
+      {
+        "combination": [
+          "Dependency Issues",
+          "Test Failure"
+        ],
+        "count": 7
+      },
+      {
+        "combination": [
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "count": 6
+      },
+      {
+        "combination": [
+          "Configuration Error",
+          "Test Failure"
+        ],
+        "count": 5
+      }
+    ]
+  },
+  "jobs_and_steps": {
+    "overall_jobs": {
+      "total_jobs_all_instances": 2482,
+      "total_steps_all_instances": 20623,
+      "instances_with_job_data": 565,
+      "avg_jobs_per_instance": 4.39,
+      "avg_steps_per_instance": 36.5,
+      "avg_steps_per_job": 8.31
+    },
+    "filtered_jobs": {
+      "total_filtered_jobs": 2003,
+      "total_filtered_steps": 13006,
+      "instances_with_filtered_data": 565,
+      "avg_filtered_jobs_per_instance": 3.55,
+      "avg_filtered_steps_per_instance": 23.02
+    },
+    "distribution": {
+      "jobs_per_instance_distribution": {
+        "1": 189,
+        "2": 104,
+        "3": 62,
+        "4": 59,
+        "5": 62,
+        "6": 11,
+        "7": 6,
+        "8": 13,
+        "9": 7,
+        "10": 4,
+        "11": 1,
+        "12": 8,
+        "13": 1,
+        "14": 2,
+        "15": 1,
+        "16": 2,
+        "18": 1,
+        "20": 4,
+        "21": 1,
+        "22": 2,
+        "25": 14,
+        "30": 11
+      }
+    }
+  },
+  "failed_jobs_and_steps": {
+    "failed_jobs_overview": {
+      "instances_with_failed_jobs": 565,
+      "total_failed_jobs": 1372,
+      "total_failed_steps": 1388,
+      "avg_failed_jobs_per_instance": 2.43,
+      "avg_failed_steps_per_instance": 2.46,
+      "avg_failed_steps_per_job": 1.01
+    },
+    "top_failed_job_names": {
+      "tests (3.12)": 87,
+      "style-check (3.9)": 84,
+      "pre-commit": 60,
+      "lint": 32,
+      "Python 3.10": 32,
+      "Python 3.12": 32,
+      "Python 3.11": 31,
+      "type-checker": 26,
+      "Linux Functional (3.10)": 23,
+      "code-style": 20
+    },
+    "failed_step_categories": {
+      "test": 618,
+      "linting": 134,
+      "dependencies": 165,
+      "formatting": 99,
+      "build": 40
+    }
+  },
+  "code_changes": {
+    "aggregate": {
+      "total_lines_added": 80201,
+      "total_lines_deleted": 55463,
+      "total_lines_changed": 135664,
+      "total_files_modified": 5925,
+      "avg_lines_added_per_instance": 141.95,
+      "avg_lines_deleted_per_instance": 98.16,
+      "avg_lines_changed_per_instance": 240.11,
+      "avg_files_modified_per_instance": 10.49
+    },
+    "distribution": {
+      "lines_changed": {
+        "min": 0,
+        "25th_percentile": 6,
+        "median": 23,
+        "75th_percentile": 86,
+        "max": 14587,
+        "mean": 240.11,
+        "std": 1087.81
+      },
+      "files_modified": {
+        "min": 1,
+        "25th_percentile": 1,
+        "median": 3,
+        "75th_percentile": 6,
+        "max": 497,
+        "mean": 10.49,
+        "std": 35.35
+      }
+    },
+    "size_categories": {
+      "small_changes_1_10_lines": 189,
+      "medium_changes_11_100_lines": 250,
+      "large_changes_101_500_lines": 83,
+      "very_large_changes_500plus_lines": 43
+    }
+  }
+}

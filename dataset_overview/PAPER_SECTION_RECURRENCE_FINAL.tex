@@ -1,0 +1,174 @@
+% ==============================================================================
+% SECTION: Recurrence of Failure and Repair Patterns
+% ==============================================================================
+
+\subsection{Recurrence of Failure and Repair Patterns}
+\label{sec:benchmark-recurrence}
+
+Historical repair experience can benefit future CI repair only when
+related failure and repair patterns recur. We therefore examine whether
+CI-Repair-Bench contains recurring repair instances and characterize
+recurrence at two scopes: within individual repositories and across the
+benchmark as a whole. To account for both explicit attribute overlap
+and similarity in heterogeneous CI evidence, we measure recurrence from
+two complementary views: \emph{structural similarity} and
+\emph{lexical similarity}.
+
+\paragraph{CI context normalization.}
+Raw CI logs are heterogeneous and contain substantial execution noise.
+We therefore first normalize the failure evidence of each instance into
+a structured CI context using a fixed LLM-based extraction procedure.
+Given the CI logs and workflow evidence, the extractor identifies
+failure categories, error names, failure signals, validation commands,
+tools, relevant packages or dependencies, and affected files. The same
+prompt and output schema are applied to every benchmark instance.
+Ground-truth repair information, including the developer patch and
+modified files, is retained separately. This preprocessing provides a
+consistent representation for comparing failure and repair
+characteristics across heterogeneous CI executions.
+
+\paragraph{Structural similarity.}
+Structural similarity captures explicit overlap in the normalized CI
+context and repair artifacts. For each pair of instances, we compute
+Jaccard similarity over corresponding set-valued attributes, including
+failure categories, error/failure signals, validation commands, tools,
+packages or dependencies, and files associated with the failure and
+developer repair. For attribute $k$, Jaccard similarity is
+
+\begin{equation}
+J_k(i,j)
+=
+\frac{|A_i^k \cap A_j^k|}
+{|A_i^k \cup A_j^k|},
+\end{equation}
+
+where $A_i^k$ and $A_j^k$ denote the normalized values of attribute
+$k$ for instances $i$ and $j$. We aggregate the available
+attribute-level similarities to obtain the structural similarity
+$S_{\mathrm{struct}}(i,j)$. This view captures recurring CI
+characteristics and repair artifacts through explicit overlap.
+
+\paragraph{Lexical similarity.}
+Exact structural overlap may miss related instances expressed through
+different error messages, workflow configurations, or patches. We
+therefore complement structural similarity with lexical similarity.
+For each instance, we construct a textual representation from its
+normalized CI context, relevant failure-log evidence, workflow context,
+and ground-truth repair information. We represent this text using
+TF--IDF over unigrams and bigrams and compute cosine similarity,
+
+\begin{equation}
+S_{\mathrm{lex}}(i,j)
+=
+\frac{\mathbf{v}_i^\top \mathbf{v}_j}
+{\|\mathbf{v}_i\|_2\|\mathbf{v}_j\|_2},
+\end{equation}
+
+where $\mathbf{v}_i$ denotes the TF--IDF representation of instance
+$i$. This view captures recurring error signatures, commands,
+dependency names, workflow terms, and repair-related tokens that may
+not be reflected by exact attribute overlap.
+
+\paragraph{Recurrence analysis.}
+We quantify recurrence using nearest-neighbor similarity under two
+candidate scopes. For an instance $i$, within-repository recurrence is
+the similarity to its most similar distinct instance from the same
+repository,
+
+\begin{equation}
+R_{\mathrm{within}}(i)
+=
+\max_{\substack{j \neq i \\ r_j = r_i}}
+S(i,j),
+\end{equation}
+
+where $r_i$ denotes the repository containing instance $i$. Overall
+benchmark recurrence is defined as the similarity to the most similar
+distinct instance anywhere in CI-Repair-Bench,
+
+\begin{equation}
+R_{\mathrm{overall}}(i)
+=
+\max_{j \neq i} S(i,j).
+\end{equation}
+
+We compute both recurrence measures independently under structural
+similarity, $S_{\mathrm{struct}}$, and lexical similarity,
+$S_{\mathrm{lex}}$, and report their mean across eligible benchmark
+instances. Within-repository recurrence characterizes repeated
+project-specific failure--repair patterns, whereas overall recurrence
+measures the extent to which related patterns occur anywhere in the
+benchmark. Together, these analyses assess whether CI-Repair-Bench
+contains recurring repair experience that can motivate historical
+memory-based CI repair.
+
+% ------------------------------------------------------------------------------
+
+Table~\ref{tab:benchmark_recurrence} reports mean nearest-neighbor
+similarity under both scopes. We observe moderate structural recurrence
+within repositories (0.436), indicating that repositories exhibit
+recurring combinations of failure categories, tools, and affected files.
+Lexical recurrence is substantially higher (0.811 within-repository,
+0.796 overall), suggesting that error messages, workflow configurations,
+and repair patterns exhibit strong textual similarity even when explicit
+structural overlap is partial. The similar magnitudes of within-repository
+and overall benchmark recurrence (0.436 vs.\ 0.445 structural, 0.811 vs.\
+0.796 lexical) indicate that recurring patterns occur both within individual
+projects and across the broader benchmark. These findings validate the
+premise that historical repair experience is available and exhibits
+recurring patterns that can inform memory-based CI repair.
+
+% ==============================================================================
+% TABLE: Recurrence Similarity
+% ==============================================================================
+
+\begin{table}[t]
+\caption{Recurrence of similar CI repair instances in CI-Repair-Bench.
+         Values report mean nearest-neighbor similarity under two scopes:
+         within-repository and overall benchmark.}
+\label{tab:benchmark_recurrence}
+\centering
+\begin{tabular}{lcc}
+\hline
+\textbf{Scope} &
+\textbf{Structural} &
+\textbf{Lexical} \\
+\hline
+Within repository  & 0.436 & 0.811 \\
+Overall benchmark  & 0.445 & 0.796 \\
+\hline
+\end{tabular}
+\end{table}
+
+% ==============================================================================
+% IMPLEMENTATION NOTES (for appendix or supplementary material)
+% ==============================================================================
+
+\paragraph{Implementation details.}
+
+\textbf{CI context extraction.}
+The normalization uses GPT-4o (gpt-4o-2024-08-06) with temperature 0.0
+and a fixed JSON schema. The extraction prompt instructs the model to
+identify failure categories, error signals with tool names and locations,
+validation commands, and affected files from the CI logs and workflow
+evidence. All 543 extracted CI contexts are included in the benchmark
+release. A manual validation on a stratified sample of 50 instances can
+be conducted to assess extraction quality.
+
+\textbf{File path handling.}
+For within-repository comparisons, we use full file paths since path
+structure is meaningful within a single codebase. For cross-repository
+comparisons, we use basenames only, as full paths are not comparable
+across different repositories.
+
+\textbf{TF--IDF vectorization.}
+We use scikit-learn's TfidfVectorizer with a vocabulary size of 1000,
+English stop word removal, unigrams and bigrams (ngram\_range=(1,2)),
+and minimum document frequency of 2.
+
+\textbf{Affected vs.\ changed files.}
+We distinguish between \emph{affected files} (mentioned in CI failure
+evidence) and \emph{changed files} (modified by the developer repair
+patch). The former describes failure localization; the latter describes
+the actual repair. Both are included as separate attributes in
+structural similarity computation.

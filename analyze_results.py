@@ -48,17 +48,17 @@ def main():
 
     analyses_to_run = []
 
-    # 1. Comprehensive Statistics (always run unless skipped)
+    # 1. Unified Evaluation (always run unless skipped)
     if not args.skip_stats:
         analyses_to_run.append({
-            'cmd': ['python3', 'scripts/analysis/comprehensive_stats.py'],
-            'description': 'Comprehensive Statistics (Top-K, Precision, Exact Match)'
+            'cmd': ['python3', 'evaluate.py'],
+            'description': 'Unified Evaluation (Top-K, Precision, Exact Match, L1, L3)'
         })
 
     # 2. 3-Level Evaluation (optional, slower)
     if args.detailed and not args.skip_multilevel:
         analyses_to_run.append({
-            'cmd': ['python3', 'scripts/analysis/multilevel_eval.py'],
+            'cmd': ['python3', 'scripts/analysis/calculate_success_rate.py'],
             'description': '3-Level Evaluation (L1: Failed Jobs, L2: All Jobs, L3: Workflow)'
         })
 

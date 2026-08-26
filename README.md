@@ -60,7 +60,21 @@ python run_benchmark.py
 python scripts/analysis/calculate_success_rate.py
 ```
 
-### 5. Evaluate Results
+### 5. Generate Dataset Overview (Optional)
+
+Get comprehensive dataset statistics:
+
+```bash
+python scripts/analysis/dataset_overview.py --output results/dataset_overview.json
+```
+
+This generates:
+- Diff statistics (lines added/deleted per issue)
+- Validation steps overview
+- Failure type distribution
+- Language and repository statistics
+
+### 6. Evaluate Results
 
 ```bash
 python evaluate.py \
@@ -68,6 +82,16 @@ python evaluate.py \
   --ci-results results/success_rate_evaluation.json \
   --output results/evaluation_summary.json
 ```
+
+## Dataset Statistics
+
+The dataset contains:
+- **567 issues** from **145 unique repositories**
+- **~133K lines** of code changes (82K added, 51K deleted)
+- **20,638 validation steps** across 2,486 jobs
+- **12 failure types** including linting, dependencies, formatting, tests, and runtime errors
+
+Run `python scripts/analysis/dataset_overview.py` for detailed statistics.
 
 ## Evaluation Metrics
 
@@ -95,6 +119,7 @@ CI-REPAIR-BENCH/
 ├── scripts/analysis/
 │   ├── calculate_success_rate.py    # L1/L3 evaluation
 │   ├── fetch_validation_steps.py    # Fetch from GitHub API
+│   ├── dataset_overview.py          # Dataset statistics
 │   └── generate_plots.py            # Visualization
 ├── evaluate.py                      # Unified evaluation script
 ├── run_benchmark.py                 # Push patches to GitHub

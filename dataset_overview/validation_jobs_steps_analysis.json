@@ -1,0 +1,292 @@
+{
+  "summary": {
+    "total_instances_with_validation": 501,
+    "total_validation_jobs": 6445,
+    "total_validation_steps": 44262,
+    "total_failed_jobs": 3263,
+    "total_failed_steps": 3361,
+    "total_commits_analyzed": 1878,
+    "avg_commits_per_instance": 3.75,
+    "avg_jobs_per_instance": 12.86,
+    "avg_steps_per_instance": 88.35,
+    "avg_failed_jobs_per_instance": 6.51,
+    "avg_failed_steps_per_instance": 6.71,
+    "avg_steps_per_job": 6.87,
+    "failed_jobs_percentage": 50.63,
+    "failed_steps_percentage": 7.59
+  },
+  "distributions": {
+    "jobs_per_instance": {
+      "min": 2,
+      "25th": 3,
+      "median": 6,
+      "75th": 11,
+      "max": 264,
+      "mean": 12.86,
+      "std": 26.93
+    },
+    "steps_per_instance": {
+      "min": 0,
+      "25th": 18,
+      "median": 36,
+      "75th": 68,
+      "max": 2928,
+      "mean": 88.35,
+      "std": 223.29
+    },
+    "failed_jobs_per_instance": {
+      "min": 1,
+      "25th": 1,
+      "median": 3,
+      "75th": 6,
+      "max": 174,
+      "mean": 6.51,
+      "std": 13.14
+    },
+    "failed_steps_per_instance": {
+      "min": 0,
+      "25th": 1,
+      "median": 3,
+      "75th": 6,
+      "max": 174,
+      "mean": 6.71,
+      "std": 13.67
+    }
+  },
+  "unique_names": {
+    "unique_job_names": 480,
+    "unique_step_names": 724,
+    "unique_failed_job_names": 320,
+    "unique_failed_step_names": 181
+  },
+  "top_job_names": {
+    "tests (3.12)": 83,
+    "style-check (3.9)": 79,
+    "pre-commit": 72,
+    "lint": 35,
+    "Python 3.10": 28,
+    "Python 3.11": 28,
+    "Python 3.12": 28,
+    "type-checker": 28,
+    "code-style": 26,
+    "syntax-errors": 26
+  },
+  "top_step_names": {
+    "Set up job": 498,
+    "Install dependencies": 259,
+    "Run actions/checkout@v4": 229,
+    "Run actions/checkout@v3": 126,
+    "Set up Python 3.12": 123,
+    "Run tests": 99,
+    "Install uv": 97,
+    "Set up Python 3.9": 96,
+    "Mypy": 79,
+    "Ruff check": 79
+  },
+  "top_failed_job_names": {
+    "tests (3.12)": 81,
+    "style-check (3.9)": 79,
+    "pre-commit": 62,
+    "lint": 30,
+    "type-checker": 26,
+    "Python 3.12": 23,
+    "Python 3.10": 21,
+    "code-style": 21,
+    "Python 3.11": 20,
+    "test": 16
+  },
+  "top_failed_step_names": {
+    "Ruff check": 79,
+    "Run tests for Agno": 79,
+    "Run tests": 78,
+    "Run pre-commit/action@v3.0.1": 43,
+    "Install dependencies": 26,
+    "Run pre-commit": 26,
+    "Run uv run pyright": 24,
+    "Run uv run pre-commit run --all-files --show-diff-on-failure": 21,
+    "Lint + Test (isort/black/docformatter/mypy/pylint/flake8/pytest)": 20,
+    "Set up Python environment and install dependencies": 14
+  },
+  "per_instance_details": [
+    {
+      "id": "44",
+      "repo": "wandb/wandb",
+      "total_jobs": 2,
+      "total_steps": 14,
+      "failed_jobs": 2,
+      "failed_steps": 2,
+      "commits": 2
+    },
+    {
+      "id": "64",
+      "repo": "errbotio/errbot",
+      "total_jobs": 9,
+      "total_steps": 99,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 3
+    },
+    {
+      "id": "63",
+      "repo": "RabeyaMuna/errbot",
+      "total_jobs": 6,
+      "total_steps": 66,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "37",
+      "repo": "online-ml/river",
+      "total_jobs": 3,
+      "total_steps": 3,
+      "failed_jobs": 3,
+      "failed_steps": 3,
+      "commits": 3
+    },
+    {
+      "id": "27",
+      "repo": "optuna/optuna",
+      "total_jobs": 4,
+      "total_steps": 20,
+      "failed_jobs": 3,
+      "failed_steps": 3,
+      "commits": 2
+    },
+    {
+      "id": "11",
+      "repo": "skypilot-org/skypilot",
+      "total_jobs": 2,
+      "total_steps": 18,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "13",
+      "repo": "RabeyaMuna/skypilot",
+      "total_jobs": 2,
+      "total_steps": 12,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "15",
+      "repo": "Muna4029/skypilot",
+      "total_jobs": 2,
+      "total_steps": 18,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "12",
+      "repo": "RabeyaMuna/skypilot",
+      "total_jobs": 2,
+      "total_steps": 18,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "59",
+      "repo": "octodns/octodns",
+      "total_jobs": 14,
+      "total_steps": 28,
+      "failed_jobs": 12,
+      "failed_steps": 12,
+      "commits": 2
+    },
+    {
+      "id": "5",
+      "repo": "tornadoweb/tornado",
+      "total_jobs": 11,
+      "total_steps": 50,
+      "failed_jobs": 6,
+      "failed_steps": 6,
+      "commits": 2
+    },
+    {
+      "id": "26",
+      "repo": "hacs/integration",
+      "total_jobs": 18,
+      "total_steps": 104,
+      "failed_jobs": 2,
+      "failed_steps": 2,
+      "commits": 2
+    },
+    {
+      "id": "32",
+      "repo": "django-import-export/django-import-export",
+      "total_jobs": 2,
+      "total_steps": 12,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "36",
+      "repo": "mosaicml/composer",
+      "total_jobs": 3,
+      "total_steps": 18,
+      "failed_jobs": 3,
+      "failed_steps": 3,
+      "commits": 3
+    },
+    {
+      "id": "65",
+      "repo": "openvinotoolkit/open_model_zoo",
+      "total_jobs": 3,
+      "total_steps": 21,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "33",
+      "repo": "django-import-export/django-import-export",
+      "total_jobs": 2,
+      "total_steps": 12,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "58",
+      "repo": "mwaskom/seaborn",
+      "total_jobs": 13,
+      "total_steps": 84,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "4",
+      "repo": "sanic-org/sanic",
+      "total_jobs": 2,
+      "total_steps": 6,
+      "failed_jobs": 2,
+      "failed_steps": 2,
+      "commits": 2
+    },
+    {
+      "id": "30",
+      "repo": "RabeyaMuna/django-import-export",
+      "total_jobs": 2,
+      "total_steps": 12,
+      "failed_jobs": 1,
+      "failed_steps": 1,
+      "commits": 2
+    },
+    {
+      "id": "7",
+      "repo": "canonical/cloud-init",
+      "total_jobs": 16,
+      "total_steps": 88,
+      "failed_jobs": 6,
+      "failed_steps": 6,
+      "commits": 2
+    }
+  ]
+}

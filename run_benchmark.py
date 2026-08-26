@@ -43,6 +43,7 @@ dataset_info = os.path.join(config.get("base_dir"), "dataset", "lca_dataset.parq
 # Load dataset once
 all_ids = [row["id"] for row in CIBenchPython.get_dataset(dataset_info=dataset_info)]
 
+# Evaluated Issues
 # selected_ids = [
 #   "43",
 #   "63",
@@ -457,10 +458,43 @@ all_ids = [row["id"] for row in CIBenchPython.get_dataset(dataset_info=dataset_i
 # ]
 
 #a Select datapoints from 327 to end
-selected_ids = all_ids[0:]
+# selected_ids = all_ids[0:]
 
-
-
+selected_ids = [
+    "96",
+    "551",
+    "260",
+    "251",
+    "147",
+    "299",
+    "300",
+    "301",
+    "256",
+    "302",
+    "303",
+    "286",
+    "253",
+    "575",
+    "576",
+    "224",
+    "225",
+    "313",
+    "212",
+    "321",
+    "248",
+    "314",
+    "264",
+    "228",
+    "229",
+    "230",
+    "285",
+    "318",
+    "319",
+    "252",
+    "245",
+    "289",
+    "266",
+]
 
 
 # ---------- OPTION 2: Online Dataset ----------

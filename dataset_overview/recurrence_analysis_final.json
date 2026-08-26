@@ -1,0 +1,12 @@
+{
+  "within_repository": {
+    "structural": 0.436,
+    "lexical": 0.811,
+    "n_instances": 507
+  },
+  "overall_benchmark": {
+    "structural": 0.445,
+    "lexical": 0.796,
+    "n_instances": 541
+  }
+}
