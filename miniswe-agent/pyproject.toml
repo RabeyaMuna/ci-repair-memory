@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mini-swe-agent"
+version = "2.3.0"
+description = "Mini SWE Agent - A simple AI software engineering agent"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE.md" }
+authors = [
+  { name = "Kilian Lieret", email = "kilian.lieret@posteo.de" },
+  { name = "Carlos E. Jimenez", email = "carlosej@princeton.edu" },
+]
+dependencies = [
+  "pyyaml",
+  "requests",
+  "jinja2",
+  "pydantic>=2.0",
+  "litellm==1.79.3",
+  "tenacity",
+  "rich",
+  "python-dotenv",
+  "click<8.2",
+  "typer",
+  "platformdirs",
+  "textual",
+  "prompt_toolkit",
+  "datasets==4.4.1",
+  "openai==1.109.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "pytest-asyncio",
+  "pytest-xdist",
+  "ruff",
+]
+analysis = [
+  "matplotlib>=3.9.0,<4.0.0",
+  "seaborn>=0.13.0,<0.14.0",
+  "jupyter>=1.0.0,<2.0.0",
+  "notebook>=7.2.0,<8.0.0",
+  "ipykernel>=6.29.0,<7.0.0",
+]
+
+[project.urls]
+Documentation = "https://mini-swe-agent.com/latest/"
+Repository = "https://github.com/SWE-agent/mini-swe-agent"
+
+[project.scripts]
+mini = "minisweagent.run.mini:app"
+mini-swe-agent = "minisweagent.run.mini:app"
+mini-extra = "minisweagent.run.utilities.mini_extra:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src", "."]
+include = ["minisweagent*", "utilities*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+minisweagent = ["config/**/*", "py.typed"]

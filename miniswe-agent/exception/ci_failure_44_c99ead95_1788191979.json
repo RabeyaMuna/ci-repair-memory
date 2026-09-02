@@ -1,0 +1,9 @@
+{
+  "issue_id": "44",
+  "sha_fail": "c99ead9542bde331497f2456537fdbb0e37706d0",
+  "timestamp": 1788191979,
+  "error": "Failed to generate structured summary from CI log steps.",
+  "id": "44",
+  "reason": "summary_generation_failed",
+  "steps_count": 1
+}

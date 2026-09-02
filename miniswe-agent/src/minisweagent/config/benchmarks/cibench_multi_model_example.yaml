@@ -1,0 +1,38 @@
+################################################################################
+# Example multi-model config for CI repair benchmarking.
+#
+# Usage:
+#   mini-swe-agent cibench \
+#     --dataset /path/to/ci_dataset.jsonl \
+#     --output results/multi_model \
+#     -c src/minisweagent/config/benchmarks/cibench.yaml \
+#     -c src/minisweagent/config/benchmarks/cibench_multi_model_example.yaml
+#
+# This uses RouletteModel to choose one model per agent turn.
+# Replace YOUR_OPENROUTER_API_KEY before use.
+################################################################################
+
+model:
+  model_name: "roulette"
+  model_class: "minisweagent.models.extra.roulette.RouletteModel"
+  model_kwargs:
+    - model_name: "anthropic/claude-sonnet-4-5-20250929"
+      model_kwargs:
+        temperature: 0.0
+        parallel_tool_calls: true
+        drop_params: true
+
+    - model_name: "openai/gpt-4.1"
+      model_kwargs:
+        temperature: 0.0
+        parallel_tool_calls: true
+        drop_params: true
+
+    - model_name: "MiniMax-M2.5"
+      model_kwargs:
+        custom_llm_provider: "openai"
+        api_base: "https://api.minimax.io/v1"
+        api_key: "YOUR_OPENROUTER_API_KEY"
+        temperature: 0.0
+        parallel_tool_calls: true
+        drop_params: true

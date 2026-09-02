@@ -1,0 +1,28 @@
+# Mini SWE Agent - Dependencies
+# Install: pip install -r requirements.txt
+# Or editable: pip install -e .
+
+# Core utilities
+pyyaml
+requests
+jinja2
+pydantic>=2.0
+tenacity
+rich
+python-dotenv
+click<8.2
+typer
+platformdirs
+textual
+prompt_toolkit
+litellm==1.79.3
+openai==1.109.1
+datasets==4.4.1
+
+# Development (optional)
+pytest
+pytest-cov
+pytest-asyncio
+pytest-xdist
+ruff
+mypy

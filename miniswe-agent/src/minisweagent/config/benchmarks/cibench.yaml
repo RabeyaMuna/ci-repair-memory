@@ -1,0 +1,245 @@
+################################################################################
+#  cibench.yaml — mini-swe-agent config for CI-failure repair
+#
+#  Usage:
+#    mini-swe-agent cibench --dataset ci_instances.jsonl --output results/
+#    mini-swe-agent cibench -c cibench.yaml -c model.model_name=gpt-4o ...
+#
+#  Each instance in the dataset must contain:
+#    instance_id, sha_fail, repo_owner, repo_name,
+#    workflow, workflow_path, workflow_name, logs
+#
+#  The runner loads externally predicted fault localization, clones the failing
+#  commit, lets mini-SWE-agent repair it, and captures the resulting git diff.
+################################################################################
+
+# ── Agent ────────────────────────────────────────────────────────────────────
+agent:
+  system_template: |
+    You are an expert software engineer specializing in CI failure repair.
+    Your job is to analyze CI failures, understand why they occurred at a
+    specific commit, and produce a minimal patch to fix the issue so that
+    the CI pipeline passes.
+
+  instance_template: |
+    <ci_failure_task>
+    {{task}}
+    </ci_failure_task>
+
+    <instructions>
+    # CI Repair Task
+
+    ## Your Goal
+    The CI pipeline failed at the commit shown above.  Your task is to fix
+    the project so the CI passes **without breaking other functionality**.
+
+    ## Repository State
+    You are already on the failing commit (sha_fail).
+    The repository is checked out at `{{testbed_path}}`.
+    This checkout is shared by all per-problem repair runs. It may already
+    contain valid edits made for earlier problems. Preserve those edits unless
+    current repository evidence proves they conflict with the present repair.
+    The benchmark runner will collect one final diff from the complete working
+    tree after every problem has been processed.
+
+    ## Recommended Workflow
+
+    1. **Understand the failure** — read the CI Failure Report above carefully.
+       Pay close attention to:
+         - The "Why the CI Failed" section (error reasons)
+         - The "Failed Jobs / Commands" section (exact command that failed)
+         - The "Affected Files" section (which files are implicated)
+
+    2. **Use bounded environment setup only when useful** — environment setup is
+       optional and must not delay code diagnosis. First inspect the repository's
+       declared toolchain and reuse an existing environment when available. This
+       benchmark does not provide Docker, and you must not attempt to install or
+       start it. For a Python project, you may lazily create or reuse
+       `{{testbed_path}}/.ci-repair-venv` if a targeted installation or check is
+       likely to run. Creating the virtual environment does not require installing
+       the whole project. Use its full executable paths in later commands because
+       shell activation does not persist between tool calls. Do not install guessed
+       "nearest" or latest package versions: use lock files, constraints, project
+       metadata, or exact CI commands as the source of truth.
+
+    3. **Explore the codebase** — read the affected files and any files they
+       import to understand the root cause.
+
+    4. **Apply a minimal fix** — change only what is needed to fix the failure.
+       Project configuration files such as `pyproject.toml`, `setup.cfg`,
+       `setup.py`, lock files, and source files are valid repair targets when
+       the CI evidence points to them. Inspect relevant tests before deciding
+       where the defect lives. If a correct test exposes a source defect, fix
+       the source. Modify a test only when the test itself is broken or when it
+       must be updated for an intentional behavior or API change. Do not modify
+       unrelated files.
+       **CRITICAL: NEVER modify files under `.github/` directory - this is an
+       absolute restriction with NO exceptions. Fix the source code to pass CI,
+       not the CI configuration itself.**
+
+    5. **Validate the repair when feasible without blocking the patch** — inspect
+       the relevant test and run the narrowest applicable validation command when
+       it is already available or can be prepared cheaply. Prefer the exact failing
+       command from the report. If setup, installation, services, runtime, or
+       platform incompatibility prevents execution, perform an available static
+       check and proceed with an evidence-based patch. Clearly record what could
+       not be run. After two failed setup/install attempts, stop retrying.
+
+    6. **Prefer static debugging when setup is incompatible** — use the CI log,
+       failed commands, affected files, imports, and surrounding code to infer
+       the root cause and produce the patch even when local validation is not
+       possible.
+
+    ## Important Constraints
+    - ONLY modify files under `{{testbed_path}}`
+    - Inspect relevant tests before deciding whether source code or test code is
+      defective
+    - Modify tests only when they are themselves broken or must reflect an
+      intentional behavior/API change; otherwise fix the source they exercise
+    - **CRITICAL: NEVER modify ANY files under `.github/` directory**
+      - This includes workflows, actions, CI configuration
+      - NO EXCEPTIONS - even if the workflow seems to be the problem
+      - Fix the SOURCE CODE to pass existing CI checks, not the CI configuration
+      - CI workflows are managed by DevOps and must not be changed
+    - Project config and dependency files such as `pyproject.toml`, `setup.cfg`,
+      `setup.py`, lock files, and requirements files may be modified when they
+      are the root cause
+    - Do NOT commit your changes
+    - Your fix must be minimal and targeted
+    - Validation is strongly preferred when it is already available or cheap to
+      prepare, but successful local execution is not a prerequisite for a patch
+    - If the exact CI command cannot run locally, use the closest low-cost static
+      or targeted check available and record the limitation; do not fabricate a
+      successful validation result
+    - Do not use Docker; it is unavailable in this benchmark environment
+    - Do not install dependencies globally and do not modify dependency files
+      merely to make the local experiment install successfully
+    - When useful for a Python task, lazily create or reuse `.ci-repair-venv`
+      across problems. Check whether it already exists before creating it, and
+      invoke tools such as
+      `{{testbed_path}}/.ci-repair-venv/bin/python` directly instead of relying
+      on `source` or `activate`
+    - Limit setup to two install/setup attempts. A missing compiler, unavailable
+      service, unsupported runtime, network failure, or incompatible platform is
+      sufficient reason to switch to static analysis
+
+    ## Command Execution Rules
+    - You issue at least one command per response
+    - Directory / env variable changes are NOT persistent between commands
+    - Prefix with `cd {{testbed_path}} && ...` when needed
+    - Use non-interactive flags: `-y`, `-f`, `-n`, etc.
+    - Avoid interactive editors (vi, nano)
+    - If local setup seems promising, you may install dependencies or run extra
+      preparation commands before validation
+    - If local setup seems unworkable, fall back to repository inspection,
+      targeted file reads, and minimal edits
+
+    ## Submission
+    When your fix is complete:
+
+    **Step 0** — Verify you did NOT modify .github/ (REQUIRED):
+    ```bash
+    cd {{testbed_path}} && git diff --name-only | grep -E '^\.github/' && echo "ERROR: Modified .github/ files - this is forbidden!" || echo "OK: No .github/ modifications"
+    ```
+
+    **Step 1** — Inspect all accumulated changes in the shared working tree:
+    ```bash
+    git -C {{testbed_path}} diff --binary --no-ext-diff
+    ```
+
+    **Step 2** — Finish this problem run and include the current accumulated
+    working-tree diff in the submission (EXACT command):
+    ```bash
+    echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT && git -C {{testbed_path}} diff --binary --no-ext-diff
+    ```
+
+    <CRITICAL>
+    - You CANNOT continue working after submitting.
+    - Do not create or edit a patch file. Every problem run edits the same
+      working tree, and the benchmark runner collects one final diff after all
+      problems have been processed.
+    - If `git diff` is empty, no changes were detected — re-check your edits.
+    - If Step 0 shows "ERROR: Modified .github/ files", you MUST revert those
+      changes before submitting. The patch will be rejected if it modifies .github/.
+    </CRITICAL>
+    </instructions>
+
+  step_limit: 250
+  cost_limit: 4.0
+
+# ── Run ───────────────────────────────────────────────────────────────────────
+run:
+  # Broad automatic installation can consume the repair budget and pollute the
+  # host environment. Agents may create a narrow, reusable local environment
+  # when the current problem can realistically be reproduced.
+  auto_install_dependencies: false
+  # Executed after the runner has already fetched and hard-reset the repo
+  # to the exact failing commit. Keep this limited to lightweight setup.
+  startup_command: |
+    git config user.email "ci-repair@mini-swe-agent" && \
+    git config user.name "mini-swe-agent"
+
+# ── Environment ───────────────────────────────────────────────────────────────
+# Uses LocalEnvironment — no Docker or container runtime required.
+# `cwd` is set dynamically to the per-instance clone path ({{testbed_path}});
+# do not set it here.
+environment:
+  timeout: 120
+  interpreter: ["bash", "-c"]
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: -R
+    PIP_PROGRESS_BAR: "off"
+    TQDM_DISABLE: "1"
+    GIT_PAGER: cat
+
+# ── Model ─────────────────────────────────────────────────────────────────────
+model:
+  model_name: "openrouter/minimax/minimax-m2.5"
+  model_kwargs:
+    drop_params: true
+    temperature: 0.0
+    max_tokens: 32000
+    parallel_tool_calls: false
+
+  observation_template: |
+    {% if output.exception_info -%}
+    <exception>{{output.exception_info}}</exception>
+    {% endif -%}
+    <returncode>{{output.returncode}}</returncode>
+    {% if output.output | length < 10000 -%}
+    <output>
+    {{ output.output -}}
+    </output>
+    {%- else -%}
+    <warning>
+    The output of your last command was too long.
+    Please try a different command that produces less output.
+    Use head/tail/sed/grep to view relevant portions selectively.
+    </warning>
+    {%- set elided_chars = output.output | length - 10000 -%}
+    <output_head>
+    {{ output.output[:5000] }}
+    </output_head>
+    <elided_chars>
+    {{ elided_chars }} characters elided
+    </elided_chars>
+    <output_tail>
+    {{ output.output[-5000:] }}
+    </output_tail>
+    {%- endif -%}
+
+  format_error_template: |
+    Tool call error:
+
+    <error>
+    {{error}}
+    </error>
+
+    Use the bash tool with your command as the argument:
+    - Tool: bash
+    - Arguments: {"command": "your_command_here"}
+
+    If you have completed your fix, follow the submission instructions in the
+    first message to submit your patch.
