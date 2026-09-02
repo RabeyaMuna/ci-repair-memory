@@ -12,7 +12,7 @@ from langchain_core.messages import HumanMessage
 from utilities.constant import ERROR_KEYWORDS
 from utilities.load_config import load_config
 from utilities.chunking_logic import chunk_log_by_tokens
-from utilities.model_token_limits import get_chunk_threshold_simple, get_model_limits
+from utilities.model_token_limits import get_chunk_threshold_simple
 
 
 load_dotenv()
@@ -41,49 +41,7 @@ class CILogAnalyzerLLM:
         self.model_name = model_name
         self._encoder = self._get_encoder()
 
-        # 70 % of the model's safe prompt budget — workflow is summarized if it
-        # exceeds this to leave room for log_details and the prompt template.
-        _limits = get_model_limits(self.model_name)
-        self._workflow_token_threshold = int(_limits.prompt_budget() * 0.70)
-        print(f"[INIT] model={self.model_name}  context={_limits.context_window:,}  "
-              f"workflow_threshold={self._workflow_token_threshold:,} tokens (70 % of prompt budget)")
-
         self.error_details: List[Dict[str, Any]] = []
-
-    def _invoke_json_prompt(self, prompt: str, method: str, step: str) -> Dict[str, Any]:
-        last_error: Exception | None = None
-
-        for attempt in range(2):
-            response = self.llm.invoke([HumanMessage(content=prompt)]).content
-            content = self.load_json_maybe_fenced(response)
-            if not content or not content.strip():
-                last_error = ValueError(f"LLM returned an empty response for {method}")
-                continue
-
-            try:
-                return json.loads(content)
-            except json.JSONDecodeError:
-                try:
-                    return demjson3.decode(content)
-                except Exception as dec_err:
-                    last_error = ValueError(f"JSON parse failed: {dec_err}")
-                    self._log_error(
-                        method=method,
-                        error=last_error,
-                        step=step,
-                        raw_response=content[:4000],
-                    )
-                    if attempt == 0:
-                        prompt = (
-                            f"{prompt}\n\n"
-                            "Your previous reply was not valid JSON. "
-                            "Retry and return exactly one valid JSON object with double-quoted keys, "
-                            "no trailing commas, and no text before or after the JSON."
-                        )
-
-        if last_error is None:
-            last_error = ValueError(f"Unknown JSON parsing failure in {method}")
-        raise last_error
 
     def ci_log_analysis(self) -> List[Dict[str, Any]]:
         """
@@ -218,8 +176,6 @@ Do NOT use ``` or ```json.
 Rules:
 - If no files exist, return: "relevant_files": []
 - If no failures exist, return: "relevant_failures": []
-- Use double quotes for every JSON key and string value.
-- Do not emit trailing commas.
 - Output plain JSON only — no text before or after.
 
 ────────────────────────────────
@@ -227,15 +183,19 @@ CI LOG CHUNK
 {chunk}
 """
 
-                    try:
-                        cleaned_json = self._invoke_json_prompt(
-                            prompt=prompt,
-                            method="ci_log_analysis",
-                            step=f"{step_name}#chunk-{i + 1}",
-                        )
-                    except Exception as exc:
-                        print(f"[WARN] Failed to parse chunk {i + 1}/{len(chunks)} for '{step_name}': {exc}")
+
+
+                    response = self.llm.invoke([HumanMessage(content=prompt)]).content
+                    content = self.load_json_maybe_fenced(response)
+                    if content is None:
                         continue
+
+                    try:
+                    # Try standard JSON decoding
+                        cleaned_json = json.loads(content)
+                    except json.JSONDecodeError:
+                    # Fallback: tolerant decoder
+                        cleaned_json = demjson3.decode(content)
                         
                     # Decide whether to skip this chunk
                     no_failures = not cleaned_json.get("relevant_failures")   # [] or missing -> True
@@ -294,7 +254,7 @@ of the CI failure for this step using the following STRICT JSON schema
 (**do not add or remove top-level keys**)
 
 {{
-"step_name": "{step_name}",
+"step_name": {step_name},
 "sha_fail": "{self.sha_fail}",
 "log_content": "<Explain overall details of the CI log in natural language>",
 "error_context": [
@@ -368,17 +328,19 @@ of the CI failure for this step using the following STRICT JSON schema
 - Output MUST be a single raw JSON object.
 - Do NOT wrap the JSON in triple backticks.
 - Do NOT include ```json or any other marker/fence.
-- Use double quotes for every JSON key and string value.
-- Do not emit trailing commas.
 - Do NOT add any text before or after the JSON.
 """
 
             try:
-                summary = self._invoke_json_prompt(
-                    prompt=prompt,
-                    method="generate_log_summary",
-                    step=f"{step_name}",
-                )
+                
+                response = self.llm.invoke([HumanMessage(content=prompt)]).content
+                content = self.load_json_maybe_fenced(response)
+
+                try:
+                    summary = json.loads(content)
+                except json.JSONDecodeError:
+                    summary = demjson3.decode(content)
+                    
                 log_details.append(summary)
             except Exception as e:
                 # If one chunk fails, log and continue
@@ -414,9 +376,6 @@ Each element in `log_details` corresponds to ONE CI step and typically includes:
 - "relevant_files": list of files tied to the failure in this step, each with:
   - "file"
   - "line_number" (may be null)
-  - "issue_type": short failure classification for this file (may be null)
-  - "failed_cmd": the command that triggered the failure for this file (may be null)
-  - "failed_tool": the tool that reported the failure for this file (may be null)
   - "reason"
 - "error_types": list of error classifications for this step, each with:
   - "category"
@@ -432,7 +391,7 @@ Parsed CI workflow (e.g., GitHub Actions YAML) including jobs, steps, and comman
 Use this to map failing steps to their jobs and commands when possible.
 
 Full workflow details:
-{self._prepare_workflow(workflow_details, log_details)}
+{json.dumps(workflow_details, indent=2, ensure_ascii=False)}
 
 ---
 
@@ -448,9 +407,6 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
     {{
       "file": "path/to/file.py",
       "line_number": 123,
-      "issue_type": "Short failure classification for this file, e.g. 'Test Failure', 'Import Error', 'Type Error', 'Dependency Error', 'Lint Error'. Use null if not clearly tied to a failure.",
-      "failed_cmd": "The exact command that triggered the failure for this file, e.g. 'pytest tests/', 'python -m mypy src/'. Use null if not identifiable.",
-      "failed_tool": "The tool that reported or caused the failure for this file, e.g. 'pytest', 'mypy', 'flake8', 'pip'. Use null if not identifiable.",
       "reason": "Short evidence-based explanation of why this file is tied to the failure."
     }},
   ],
@@ -492,12 +448,6 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
    - If the same file appears in multiple steps, merge the reasons into a single concise,
      evidence-based `"reason"` that reflects all relevant contexts.
    - Use `"line_number":` the most specific failing line if available; otherwise `null`.
-   - For each file, analyze the failure evidence together with the matching workflow job/step/command to infer:
-     - `"failed_cmd"` from the exact workflow `run` command or `uses` action tied to the failing step.
-     - `"failed_tool"` from the reporting tool or command invoked in that step (for example `pytest`, `mypy`, `ruff`, `flake8`, `pip`, `npm`, `go test`).
-     - `"issue_type"` from the file-specific failure mode described in the logs (for example test failure, lint error, import error, type error, dependency error).
-   - Prefer file-specific values from the step analysis when present. Otherwise, infer them from the workflow step that produced the file-level failure. Use `null` only when the value cannot be supported by the logs or workflow.
-   - The `"reason"` for each file must explain why that file is tied to the failure and, when possible, mention the step/tool/command that connects the file to the failing workflow step.
    - Include only files that are clearly tied to failures, errors, or critical warnings.
    - If no such file exists, return `"relevant_files": []`.
 
@@ -517,7 +467,6 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
        - The value of `"run"` if present, or `"uses"` if it is an action reference.
        - If no command can be found, use `null`.
    - If multiple jobs/steps clearly fail, include multiple entries in `"failed_job"`.
-   - Reuse this same step-to-workflow mapping when populating each file's `"failed_cmd"` and `"failed_tool"` so the file-level metadata stays consistent with the recorded failed job/step.
 
 6. **Output Rules**
    - Return **only valid JSON** — no markdown, commentary, or code fences.
@@ -526,11 +475,13 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
    - Ensure every item is concise, evidence-based, and traceable to the logs and/or workflow.
 """
         try:
-            summary = self._invoke_json_prompt(
-                prompt=prompt,
-                method="full_content_summary",
-                step="aggregate",
-            )
+            response = self.llm.invoke([HumanMessage(content=prompt)]).content
+            content = self.load_json_maybe_fenced(response)
+
+            try:
+                summary = json.loads(content)
+            except json.JSONDecodeError:
+                summary = demjson3.decode(content)
             print(" Completed: _generate_summary")
             
             summary["sha_fail"] = self.sha_fail
@@ -559,28 +510,8 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
     # ------------------------------------------------------------------
     def run(self) -> Dict[str, Any]:
         print(f"Fully Autonomous Execution for Commit: {self.sha_fail}")
-        if self.ci_log is None or len(self.ci_log) == 0:
-            return {
-                "error": "missing_logs",
-                "message": "Dataset row does not contain CI logs for this sha_fail.",
-                "sha_fail": self.sha_fail,
-                "id": self.task_id,
-            }
-        selected_logs = self.ci_log_analysis()
-        if not any(step.get("chunks") for step in selected_logs):
-            return {
-                "error": "missing_or_unparseable_step_logs",
-                "message": "CI logs were present, but no chunk-level summaries could be parsed from any step.",
-                "sha_fail": self.sha_fail,
-                "id": self.task_id,
-            }
+        selected_logs= self.ci_log_analysis()
         log_details = self.generate_log_summary(selected_logs)
-        if not log_details:
-            return {
-                "error": "No step summaries produced — all CI log steps failed to parse.",
-                "sha_fail": self.sha_fail,
-                "id": self.task_id,
-            }
         generated_summary = self.full_content_summary(log_details, workflow_details=self.workflow)
         return generated_summary
 
@@ -598,86 +529,7 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
             return 0
         return len(self._encoder.encode(text))
 
-    # ------------------------------------------------------------------
-    # Workflow preparation for full_content_summary
-    # ------------------------------------------------------------------
-
-    _PROMPT_TEMPLATE_TOKENS = 3_000   # conservative estimate for full_content_summary template
-
-    def _prepare_workflow(self, workflow_details: Any, log_details: List[Dict[str, Any]]) -> str:
-        """Return workflow content ready for the full_content_summary prompt.
-
-        First checks whether log_details + workflow combined exceeds the model's
-        context threshold (70 % of prompt budget, set at __init__).
-        The workflow is only summarized when that combined check fails —
-        no content is ever hard-clipped.
-
-        If LLM summarization fails, the raw workflow is returned as-is and the
-        underlying LLM call will surface any context-overflow naturally.
-        """
-        raw = workflow_details if isinstance(workflow_details, str) else json.dumps(workflow_details, ensure_ascii=False)
-
-        log_tokens      = self._estimate_tokens(json.dumps(log_details, ensure_ascii=False))
-        workflow_tokens = self._estimate_tokens(raw)
-        combined        = log_tokens + workflow_tokens + self._PROMPT_TEMPLATE_TOKENS
-
-        if combined <= self._workflow_token_threshold:
-            return raw
-
-        print(
-            f"[WORKFLOW] Combined input ~{combined:,} tokens exceeds threshold "
-            f"{self._workflow_token_threshold:,}  "
-            f"(log={log_tokens:,}  workflow={workflow_tokens:,}  template={self._PROMPT_TEMPLATE_TOKENS:,}) "
-            f"— summarizing workflow with LLM."
-        )
-
-        prompt = f"""You are given a raw GitHub Actions workflow YAML.
-Extract a compact structured summary as a single JSON object.
-
-Return ONLY valid JSON — no markdown fences, no extra text.
-
-{{
-  "steps": [
-    {{
-      "job":              "job name or id",
-      "step_name":        "step name",
-      "installation_cmd": "full install command, or null",
-      "validation_cmd":   "full test/lint/check command, or null"
-    }}
-  ],
-  "toolchain": {{
-    "python_version":        "e.g. 3.9, or null",
-    "python_versions_found": ["3.9", "3.10"],
-    "package_manager":       "pip / npm / cargo / etc, or null",
-    "language":              "python / node / go / etc, or null",
-    "tools":                 ["pytest", "ruff", "mypy"]
-  }}
-}}
-
-Rules:
-- Include every step that has a run: command or uses: action.
-- installation_cmd: any install/setup command in that step, otherwise null.
-- validation_cmd: any test/lint/type-check command in that step, otherwise null.
-- toolchain.tools: only validation/check tools found across all steps.
-
-Workflow YAML:
-{raw}
-"""
-        try:
-            response = self.llm.invoke([HumanMessage(content=prompt)]).content
-            content  = self.load_json_maybe_fenced(response)
-            if content and content.strip():
-                json.loads(content)   # validate it is parseable
-                after = self._estimate_tokens(content)
-                print(f"[WORKFLOW] Summarized: {workflow_tokens:,} → {after:,} tokens.")
-                return content
-        except Exception as exc:
-            print(f"[WORKFLOW] LLM summarization failed ({exc}); using raw workflow.")
-
-        # No clip — return raw and let the final LLM call handle it
-        return raw
-
-    def _log_error(self, method: str, error: Exception, step: str = "", raw_response: str | None = None):
+    def _log_error(self, method: str, error: Exception, step: str = ""):
         base_dir = os.path.join(
             self.config["exception_dir"], "interrupted_error_log"
         )
@@ -691,7 +543,6 @@ Workflow YAML:
                     "method": method,
                     "step": step,
                     "error": str(error),
-                    "raw_response": raw_response,
                 },
                 f,
                 indent=2,

@@ -17,7 +17,7 @@ from langchain_core.output_parsers import JsonOutputParser
 
 from utilities.model_token_limits import get_prompt_token_budget
 from utilities.load_config import load_config
-from utilities.snippet_extractor import extract_snippet_from_line_range, find_line_range
+from utilities.snippet_extractor import clamp_line_range, extract_snippet_from_line_range, find_line_range
 from utilities.symbols_outline import build_outline, format_outline
 from utilities.chunking_logic import chunk_log_by_tokens, chunk_lines_with_overlap, estimate_tokens
 from utilities.model_token_limits import is_large_context_model
@@ -30,13 +30,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 api_key = os.getenv("OPENAI_API_KEY")
 
 
-def _clip_for_prompt(value: Any, limit: int) -> str:
-    text = str(value or "").strip()
-    if len(text) <= limit:
-        return text
-    return text[: max(0, limit - 3)] + "..."
-
-
 class FaultLocalization:
     def __init__(
         self,
@@ -47,8 +40,6 @@ class FaultLocalization:
         llm: ChatOpenAI,
         model_name: Optional[str] = None,
         changed_files_info: Optional[dict] = None,
-        memory_plugin: Optional[Any] = None,
-        memory_context: Optional[Dict[str, Any]] = None,
     ):
         """
         FaultLocalization agent.
@@ -97,742 +88,8 @@ class FaultLocalization:
 
         self.model_name = model_name
         self.llm = llm
-        self.memory_plugin = memory_plugin
-        if self.memory_plugin is not None:
-            try:
-                self.memory_plugin.set_llm(llm)
-            except Exception:
-                pass
-        self.memory_context = memory_context or {"enabled": False, "matches": []}
-
-        # Build the issue-level memory query once; used as base for per-file retrieval.
-        self._memory_query: Optional[Dict[str, Any]] = None
-        if self.memory_plugin is not None and self.memory_plugin.is_enabled():
-            try:
-                repo_name = os.path.basename(self.repo_path.rstrip("/\\"))
-                self._memory_query = self.memory_plugin.build_query(
-                    task_id=str(self.id),
-                    sha_fail=sha_fail,
-                    repo_name=repo_name,
-                    workflow_path="",
-                    workflow=self.workflow or "",
-                    log_analysis_result=self.error_logs,
-                    changed_files_info=None,  # per-file targeting happens during suspicious-file memory enrichment
-                )
-            except Exception as _qe:
-                print(f"[Memory] Could not build query: {_qe}")
 
         self.parser = JsonOutputParser()
-
-    def _normalize_path_key(self, value: Any) -> str:
-        return os.path.normpath(str(value or "").strip())
-
-    def _normalize_previous_experience(self, experience: Dict[str, Any]) -> Dict[str, Any]:
-        return {
-            "memory_level": str(experience.get("memory_level", "")).strip(),
-            "memory_rank_score": float(experience.get("memory_rank_score", 0.0) or 0.0),
-            "failure_pattern": str(experience.get("failure_pattern", "")).strip(),
-            "memory_reason": str(experience.get("memory_reason", "")).strip(),
-            "inspection_hint": str(experience.get("inspection_hint", "")).strip(),
-            "confidence": str(experience.get("confidence", "")).strip() or "medium",
-        }
-
-    def _normalize_file_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
-        previous = []
-        for item in entry.get("previous_experiences", []) or []:
-            if isinstance(item, dict):
-                previous.append(self._normalize_previous_experience(item))
-        normalized = {
-            "file": (entry.get("file") or entry.get("path") or "").strip(),
-            "reason": str(entry.get("reason", "")).strip(),
-            "issue_type": str(entry.get("issue_type") or "").strip(),
-            "previous_experiences": previous,
-        }
-        inspection_hint = str(entry.get("inspection_hint") or "").strip()
-        if inspection_hint:
-            normalized["inspection_hint"] = inspection_hint
-        modification_hint = str(entry.get("modification_hint") or entry.get("fix_hint") or "").strip()
-        if modification_hint:
-            normalized["modification_hint"] = modification_hint
-        memory_context_text = str(entry.get("memory_context_text") or "").strip()
-        if memory_context_text:
-            normalized["memory_context_text"] = memory_context_text
-        if isinstance(entry.get("memory_analysis"), dict):
-            normalized["memory_analysis"] = entry["memory_analysis"]
-        memory_dependencies = []
-        for ref in entry.get("memory_dependencies", []) or []:
-            if isinstance(ref, dict) and (ref.get("file") or ref.get("path")):
-                memory_dependencies.append(ref)
-        if memory_dependencies:
-            normalized["memory_dependencies"] = memory_dependencies
-        return normalized
-
-    def _merge_text_values(self, left: str, right: str) -> str:
-        values = []
-        for text in (left, right):
-            cleaned = str(text or "").strip()
-            if cleaned and cleaned not in values:
-                values.append(cleaned)
-        return " | ".join(values)
-
-    def _merge_previous_experiences(
-        self,
-        left: List[Dict[str, Any]],
-        right: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
-        merged: Dict[tuple, Dict[str, Any]] = {}
-        for item in [*(left or []), *(right or [])]:
-            if not isinstance(item, dict):
-                continue
-            normalized = self._normalize_previous_experience(item)
-            key = (
-                normalized.get("memory_level", ""),
-                normalized.get("failure_pattern", ""),
-                normalized.get("memory_reason", ""),
-                normalized.get("inspection_hint", ""),
-            )
-            current = merged.get(key)
-            if current is None:
-                merged[key] = normalized
-                continue
-            current["memory_rank_score"] = max(
-                float(current.get("memory_rank_score", 0.0) or 0.0),
-                float(normalized.get("memory_rank_score", 0.0) or 0.0),
-            )
-            if not current.get("failure_pattern"):
-                current["failure_pattern"] = normalized.get("failure_pattern", "")
-            if not current.get("memory_reason"):
-                current["memory_reason"] = normalized.get("memory_reason", "")
-            if not current.get("inspection_hint"):
-                current["inspection_hint"] = normalized.get("inspection_hint", "")
-        ordered = list(merged.values())
-        ordered.sort(key=lambda item: float(item.get("memory_rank_score", 0.0) or 0.0), reverse=True)
-        return ordered[:4]
-
-    def _merge_file_entry(self, base: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, Any]:
-        merged = dict(base)
-        merged["file"] = (base.get("file") or extra.get("file") or "").strip()
-        merged["reason"] = self._merge_text_values(base.get("reason", ""), extra.get("reason", ""))
-        merged["inspection_hint"] = self._merge_text_values(
-            base.get("inspection_hint", ""),
-            extra.get("inspection_hint", ""),
-        )
-        if not merged["inspection_hint"]:
-            merged.pop("inspection_hint", None)
-        merged["modification_hint"] = self._merge_text_values(
-            base.get("modification_hint", ""),
-            extra.get("modification_hint", ""),
-        )
-        if not merged["modification_hint"]:
-            merged.pop("modification_hint", None)
-        base_issue = str(base.get("issue_type") or "").strip()
-        extra_issue = str(extra.get("issue_type") or "").strip()
-        merged["issue_type"] = base_issue if base_issue else extra_issue
-        merged["previous_experiences"] = self._merge_previous_experiences(
-            base.get("previous_experiences", []) or [],
-            extra.get("previous_experiences", []) or [],
-        )
-        merged["memory_context_text"] = self._merge_text_values(
-            base.get("memory_context_text", ""),
-            extra.get("memory_context_text", ""),
-        )
-        if not merged["memory_context_text"]:
-            merged.pop("memory_context_text", None)
-        if not merged.get("memory_analysis") and extra.get("memory_analysis"):
-            merged["memory_analysis"] = extra.get("memory_analysis")
-        dependencies = []
-        seen_deps = set()
-        for ref in [*(base.get("memory_dependencies", []) or []), *(extra.get("memory_dependencies", []) or [])]:
-            if not isinstance(ref, dict):
-                continue
-            dep_file = (ref.get("file") or ref.get("path") or "").strip()
-            dep_reason = str(ref.get("reason") or "").strip()
-            key = (self._normalize_path_key(dep_file), dep_reason)
-            if dep_file and key not in seen_deps:
-                seen_deps.add(key)
-                dependencies.append(ref)
-        if dependencies:
-            merged["memory_dependencies"] = dependencies
-        return merged
-
-    def _dedupe_file_entries(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        merged: Dict[str, Dict[str, Any]] = {}
-        order: List[str] = []
-        for entry in entries:
-            normalized = self._normalize_file_entry(entry)
-            key = self._normalize_path_key(normalized.get("file", ""))
-            if not key:
-                continue
-            if key not in merged:
-                merged[key] = normalized
-                order.append(key)
-            else:
-                merged[key] = self._merge_file_entry(merged[key], normalized)
-        return [merged[key] for key in order]
-
-    def _build_entry_from_relevant_file(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        return self._normalize_file_entry(
-            {
-                "file": (item.get("file") or item.get("path") or "").strip(),
-                "reason": item.get("reason", ""),
-                "issue_type": item.get("issue_type", ""),
-                "previous_experiences": [],
-            }
-        )
-
-    def _memory_experiences_from_analysis(self, analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
-        experiences: List[Dict[str, Any]] = []
-        for item in (analysis or {}).get("selected_items", []) or []:
-            if not isinstance(item, dict):
-                continue
-            experiences.append(
-                self._normalize_previous_experience(
-                    {
-                        "memory_level": item.get("memory_level", ""),
-                        "memory_rank_score": item.get("similarity_score", 0.0),
-                        "failure_pattern": item.get("failure_pattern", ""),
-                        "memory_reason": item.get("failure_reason") or item.get("justification", ""),
-                        "inspection_hint": item.get("localization_hint") or item.get("fix_direction", ""),
-                        "confidence": item.get("relevance", "") or "medium",
-                    }
-                )
-            )
-        for item in (analysis or {}).get("selected_context", []) or []:
-            if not isinstance(item, dict):
-                continue
-            experiences.append(
-                self._normalize_previous_experience(
-                    {
-                        "memory_level": item.get("memory_level", ""),
-                        "memory_rank_score": item.get("score", 0.0),
-                        "failure_pattern": item.get("failure_pattern", ""),
-                        "memory_reason": item.get("fl_guidance", ""),
-                        "inspection_hint": item.get("fix_strategy", ""),
-                        "confidence": "medium",
-                    }
-                )
-            )
-        return self._merge_previous_experiences([], experiences)
-
-    def _memory_dependencies_from_analysis(self, analysis: Dict[str, Any]) -> List[Dict[str, str]]:
-        dependencies: List[Dict[str, str]] = []
-        seen: set[str] = set()
-
-        def _add(ref: Any) -> None:
-            if not isinstance(ref, dict):
-                return
-            dep_file = (ref.get("file") or ref.get("path") or "").strip()
-            if not dep_file:
-                return
-            key = self._normalize_path_key(dep_file)
-            if key in seen:
-                return
-            seen.add(key)
-            dependencies.append(
-                {
-                    "file": dep_file,
-                    "reason": str(ref.get("reason") or "").strip(),
-                    "failure_pattern": str(ref.get("failure_pattern") or "").strip(),
-                    "fix_strategy": str(ref.get("fix_strategy") or ref.get("fix_direction") or "").strip(),
-                }
-            )
-
-        for ref in (analysis or {}).get("dependent_files", []) or []:
-            _add(ref)
-        for ref in (analysis or {}).get("additional_files_to_inspect", []) or []:
-            _add(ref)
-        for item in (analysis or {}).get("selected_items", []) or []:
-            if not isinstance(item, dict):
-                continue
-            for ref in item.get("dependent_files", []) or []:
-                _add(ref)
-            for ref in item.get("additional_localization_files", []) or []:
-                _add(ref)
-        return dependencies
-
-    def _selected_memory_summary_from_analysis(
-        self,
-        analysis: Dict[str, Any],
-        retrieval_result: Dict[str, Any],
-    ) -> str:
-        if not analysis:
-            return ""
-        lines = ["HIERARCHICAL MEMORY SYNTHESIS (selected by LLM):"]
-        levels = analysis.get("selected_memory_levels", []) or []
-        lines.append(f"  Levels used: {', '.join(levels) or 'None'}")
-        lines.append(
-            "  Similarity scores: "
-            f"L1={retrieval_result.get('level_scores', {}).get('L1', 0.0):.2f}, "
-            f"L2={retrieval_result.get('level_scores', {}).get('L2', 0.0):.2f}, "
-            f"L3={retrieval_result.get('level_scores', {}).get('L3', 0.0):.2f}, "
-            f"weighted={retrieval_result.get('weighted_similarity', 0.0):.2f}, "
-            f"file_relevance={analysis.get('similarity_score', 0.0):.2f}"
-        )
-        if analysis.get("similarity_reason"):
-            lines.append(f"  Relevance: {_clip_for_prompt(analysis.get('similarity_reason'), 500)}")
-        if analysis.get("diagnostic_summary"):
-            lines.append(f"  Summary: {_clip_for_prompt(analysis.get('diagnostic_summary'), 600)}")
-        for item in (analysis.get("selected_items", []) or [])[:6]:
-            if not isinstance(item, dict):
-                continue
-            lines.append(
-                "  selected: "
-                f"level={item.get('memory_level', '')} "
-                f"score={float(item.get('similarity_score', 0.0) or 0.0):.2f} "
-                f"pattern={_clip_for_prompt(item.get('failure_pattern', ''), 180)}"
-            )
-            if item.get("localization_hint"):
-                lines.append(f"    localization_hint={_clip_for_prompt(item.get('localization_hint'), 260)}")
-            if item.get("fix_direction"):
-                lines.append(f"    fix_direction={_clip_for_prompt(item.get('fix_direction'), 260)}")
-        for item in (analysis.get("selected_context", []) or [])[:4]:
-            if not isinstance(item, dict):
-                continue
-            lines.append(
-                "  context: "
-                f"score={float(item.get('score', 0.0) or 0.0):.2f} "
-                f"guidance={_clip_for_prompt(item.get('fl_guidance', ''), 260)}"
-            )
-        return "\n".join(lines)
-
-    def _read_file_content_by_repo_path(self, file_path: str) -> str:
-        resolved = self.find_full_file_path(file_path)
-        if resolved.get("status") != "found":
-            return ""
-        return self._read_file_content(resolved["full_path"])
-
-    def _enrich_file_entry_with_memory(self, entry: Dict[str, Any]) -> Dict[str, Any]:
-        normalized = self._normalize_file_entry(entry)
-        file_path = (normalized.get("file") or "").strip()
-        if not file_path or self.memory_plugin is None or self._memory_query is None:
-            return normalized
-
-        content = self._read_file_content_by_repo_path(file_path)
-        file_context = content or normalized.get("reason", "")
-
-        try:
-            retrieval_result = self.memory_plugin.retrieve_for_file(
-                file_path=file_path,
-                file_context=file_context,
-                issue_query=self._memory_query,
-            )
-        except Exception as exc:
-            print(f"[Memory] Per-file retrieval failed for {file_path}: {exc}")
-            return normalized
-
-        try:
-            analysis = self.memory_plugin.select_relevant_memory_for_file(
-                file_path=file_path,
-                file_context=file_context,
-                retrieval_result=retrieval_result,
-            )
-        except Exception as exc:
-            print(f"[Memory] LLM memory selection failed for {file_path}: {exc}")
-            analysis = {}
-
-        has_selected_memory = bool(
-            (analysis or {}).get("selected_items")
-            or (analysis or {}).get("selected_context")
-            or (analysis or {}).get("dependent_files")
-            or (analysis or {}).get("additional_files_to_inspect")
-        )
-        if not has_selected_memory:
-            return normalized
-
-        normalized["previous_experiences"] = self._merge_previous_experiences(
-            normalized.get("previous_experiences", []) or [],
-            self._memory_experiences_from_analysis(analysis),
-        )
-
-        normalized["memory_analysis"] = analysis
-        normalized["memory_context_text"] = self._selected_memory_summary_from_analysis(
-            analysis,
-            retrieval_result,
-        )
-
-        dependencies = self._memory_dependencies_from_analysis(analysis)
-        if dependencies:
-            normalized["memory_dependencies"] = dependencies
-
-        if normalized.get("previous_experiences") and "Retrieved from similar prior failures" not in normalized.get("reason", ""):
-            normalized["reason"] = self._merge_text_values(
-                normalized.get("reason", ""),
-                "Selected memory from similar prior failures provides file-specific localization hints.",
-            )
-        return normalized
-
-    def _compact_previous_experience_text(self, item: Dict[str, Any]) -> str:
-        parts = []
-        if item.get("memory_level"):
-            parts.append(f"level={item['memory_level']}")
-        if item.get("memory_rank_score"):
-            parts.append(f"score={float(item['memory_rank_score']):.2f}")
-        if item.get("failure_pattern"):
-            parts.append(f"failure_pattern={item['failure_pattern']}")
-        if item.get("memory_reason"):
-            parts.append(f"reason={item['memory_reason']}")
-        if item.get("inspection_hint"):
-            parts.append(f"hint={item['inspection_hint']}")
-        if item.get("confidence"):
-            parts.append(f"confidence={item['confidence']}")
-        return " | ".join(parts)
-
-    def _format_file_entry_context(self, file_entry: Optional[Dict[str, Any]]) -> str:
-        if not file_entry:
-            return "No file-level organizer summary."
-        lines = [
-            f"file={file_entry.get('file', '')}",
-            f"reason={file_entry.get('reason', '') or 'None'}",
-            f"issue_type={file_entry.get('issue_type', '') or 'other'}",
-        ]
-        if file_entry.get("inspection_hint"):
-            lines.append(f"inspection_hint={file_entry.get('inspection_hint')}")
-        if file_entry.get("modification_hint"):
-            lines.append(f"modification_hint={file_entry.get('modification_hint')}")
-        previous = file_entry.get("previous_experiences", []) or []
-        if not previous:
-            lines.append("previous_experiences=None")
-        else:
-            lines.append("previous_experiences:")
-            for idx, item in enumerate(previous[:3], start=1):
-                lines.append(f"  {idx}. {self._compact_previous_experience_text(item)}")
-        dependencies = file_entry.get("memory_dependencies", []) or []
-        if dependencies:
-            lines.append("memory_dependencies:")
-            for ref in dependencies[:5]:
-                if isinstance(ref, dict):
-                    lines.append(
-                        f"  - file={ref.get('file') or ref.get('path') or ''} "
-                        f"reason={ref.get('reason', '')}"
-                    )
-        memory_context_text = str(file_entry.get("memory_context_text") or "").strip()
-        if memory_context_text:
-            lines.append("selected_memory_context:")
-            lines.append(memory_context_text)
-        return "\n".join(lines)
-
-    def _compact_file_for_memory_organizer(self, entry: Dict[str, Any]) -> Dict[str, Any]:
-        previous = []
-        for item in (entry.get("previous_experiences", []) or [])[:4]:
-            if isinstance(item, dict):
-                previous.append(
-                    {
-                        "memory_level": item.get("memory_level", ""),
-                        "score": item.get("memory_rank_score", 0.0),
-                        "failure_pattern": _clip_for_prompt(item.get("failure_pattern", ""), 240),
-                        "reason": _clip_for_prompt(item.get("memory_reason", ""), 320),
-                        "hint": _clip_for_prompt(item.get("inspection_hint", ""), 320),
-                    }
-                )
-        candidate_dependencies = []
-        for ref in (entry.get("memory_dependencies", []) or [])[:8]:
-            if isinstance(ref, dict):
-                candidate_dependencies.append(
-                    {
-                        "file": ref.get("file") or ref.get("path") or "",
-                        "reason": _clip_for_prompt(ref.get("reason", ""), 260),
-                    }
-                )
-        return {
-            "file": entry.get("file", ""),
-            "reason": _clip_for_prompt(entry.get("reason", ""), 500),
-            "issue_type": entry.get("issue_type", ""),
-            "inspection_hint": _clip_for_prompt(entry.get("inspection_hint", ""), 300),
-            "modification_hint": _clip_for_prompt(entry.get("modification_hint", ""), 300),
-            "selected_memory_summary": _clip_for_prompt(entry.get("memory_context_text", ""), 1200),
-            "previous_experiences": previous,
-            "candidate_dependencies": candidate_dependencies,
-        }
-
-    def _build_memory_organizer_prompt(self, entries: List[Dict[str, Any]]) -> str:
-        payload = [self._compact_file_for_memory_organizer(entry) for entry in entries]
-        return f"""You are organizing suspicious files for CI fault localization.
-
-Use the current CI failure and the selected prior-memory evidence to produce the final
-file list that should proceed to fault localization and patch reasoning.
-
-Goals:
-- Keep files that are relevant to the current CI failure.
-- If candidate_dependencies contain files that likely need inspection or modification,
-  promote them into their own top-level file entries.
-- Ignore dependency/relevant files that do not need inspection or modification for the current failure.
-- Remove redundant or weak memory details.
-- Produce clear reason, inspection_hint, and modification_hint for each file.
-- Do not invent files that are not present as either a suspicious file or candidate_dependency in the input.
-
-Return ONLY a JSON array. No markdown, no prose.
-
-Schema:
-[
-  {{
-    "file": "relative/path.py",
-    "reason": "why this file should be inspected for the current failure",
-    "issue_type": "short issue type",
-    "inspection_hint": "what to inspect in this file",
-    "modification_hint": "likely modification direction, if supported by evidence",
-    "previous_experiences": [
-      {{
-        "memory_level": "L1|L2|L3",
-        "memory_rank_score": 0.0,
-        "failure_pattern": "prior compatible failure pattern",
-        "memory_reason": "short transferable prior reason",
-        "inspection_hint": "short transferable inspection or fix hint",
-        "confidence": "high|medium|low"
-      }}
-    ]
-  }}
-]
-
-Rules:
-- Output a FLAT list only. Do not output nested dependencies.
-- A dependency is included only by promoting it to a top-level file object.
-- Do not include dependencies just because they are related; include them only when they likely require fault localization or modification.
-- If previous_experiences are not useful for an output file, return previous_experiences as [].
-
-CURRENT CI FAILURE
-Error types:
-{json.dumps(self.error_types, indent=2, ensure_ascii=False)}
-
-Failed jobs:
-{json.dumps(self.failed_jobs, indent=2, ensure_ascii=False)}
-
-Error context:
-{json.dumps(self.error_context, indent=2, ensure_ascii=False)}
-
-SUSPICIOUS FILES WITH SELECTED MEMORY EVIDENCE
-{json.dumps(payload, indent=2, ensure_ascii=False)}
-""".strip()
-
-    def _parse_memory_organizer_response(self, raw: str) -> List[Dict[str, Any]]:
-        raw = (raw or "").strip()
-        if raw.startswith("```"):
-            raw = re.sub(r"^```[a-zA-Z]*\n?", "", raw)
-            raw = re.sub(r"\n?```$", "", raw).strip()
-        try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError:
-            parsed = demjson3.decode(raw)
-        if not isinstance(parsed, list):
-            return []
-        out = []
-        for item in parsed:
-            if not isinstance(item, dict):
-                continue
-            file_path = (item.get("file") or item.get("path") or "").strip()
-            if not file_path:
-                continue
-            out.append(
-                {
-                    "file": file_path,
-                    "reason": str(item.get("reason") or "").strip(),
-                    "issue_type": str(item.get("issue_type") or "").strip(),
-                    "inspection_hint": str(item.get("inspection_hint") or "").strip(),
-                    "modification_hint": str(item.get("modification_hint") or item.get("fix_hint") or "").strip(),
-                    "previous_experiences": item.get("previous_experiences", []) or [],
-                }
-            )
-        return self._dedupe_file_entries(out)
-
-    def _organizer_allowed_file_entries(self, entries: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
-        allowed: Dict[str, Dict[str, Any]] = {}
-        for entry in entries:
-            file_path = (entry.get("file") or entry.get("path") or "").strip()
-            if file_path:
-                allowed[self._normalize_path_key(file_path)] = entry
-            for ref in entry.get("memory_dependencies", []) or []:
-                if not isinstance(ref, dict):
-                    continue
-                dep_file = (ref.get("file") or ref.get("path") or "").strip()
-                if not dep_file:
-                    continue
-                key = self._normalize_path_key(dep_file)
-                allowed.setdefault(
-                    key,
-                    {
-                        "file": dep_file,
-                        "reason": str(ref.get("reason") or "Relevant file suggested by selected previous experience.").strip(),
-                        "issue_type": entry.get("issue_type", ""),
-                        "previous_experiences": entry.get("previous_experiences", []) or [],
-                    },
-                )
-        return allowed
-
-    def _strip_intermediate_memory_fields(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        out = []
-        for entry in self._dedupe_file_entries(entries):
-            cleaned = {
-                "file": entry.get("file", ""),
-                "reason": entry.get("reason", ""),
-                "issue_type": entry.get("issue_type", ""),
-                "previous_experiences": entry.get("previous_experiences", []) or [],
-            }
-            if entry.get("inspection_hint"):
-                cleaned["inspection_hint"] = entry.get("inspection_hint", "")
-            if entry.get("modification_hint"):
-                cleaned["modification_hint"] = entry.get("modification_hint", "")
-            out.append(cleaned)
-        return out
-
-    def _organize_memory_enriched_suspicious_files(
-        self,
-        entries: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
-        if not entries or not self.llm:
-            return self._dedupe_file_entries(entries)
-
-        model_for_count = self.model_name or "gpt-4o-mini"
-        token_limit = int(get_prompt_token_budget(self.model_name) * 0.8)
-
-        def _organize_batch(batch: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-            prompt = self._build_memory_organizer_prompt(batch)
-            raw = self.llm.invoke([HumanMessage(content=prompt)]).content.strip()
-            organized = self._parse_memory_organizer_response(raw)
-            allowed = self._organizer_allowed_file_entries(batch)
-            merged = []
-            for item in organized:
-                key = self._normalize_path_key(item.get("file", ""))
-                if key not in allowed:
-                    continue
-                if self.find_full_file_path(item.get("file", "")).get("status") != "found":
-                    continue
-                merged.append(self._merge_file_entry(allowed[key], item))
-            return merged
-
-        full_prompt = self._build_memory_organizer_prompt(entries)
-        if estimate_tokens(full_prompt, model=model_for_count) <= token_limit:
-            try:
-                organized = _organize_batch(entries)
-                return self._strip_intermediate_memory_fields(organized or entries)
-            except Exception as exc:
-                print(f"[Memory Organizer] LLM organization failed: {exc}")
-                return self._strip_intermediate_memory_fields(entries)
-
-        organized_all: List[Dict[str, Any]] = []
-        current_batch: List[Dict[str, Any]] = []
-        for entry in entries:
-            trial_batch = current_batch + [entry]
-            trial_prompt = self._build_memory_organizer_prompt(trial_batch)
-            if current_batch and estimate_tokens(trial_prompt, model=model_for_count) > token_limit:
-                try:
-                    organized_all.extend(_organize_batch(current_batch))
-                except Exception as exc:
-                    print(f"[Memory Organizer] Chunk organization failed: {exc}")
-                    organized_all.extend(current_batch)
-                current_batch = [entry]
-            else:
-                current_batch = trial_batch
-        if current_batch:
-            try:
-                organized_all.extend(_organize_batch(current_batch))
-            except Exception as exc:
-                print(f"[Memory Organizer] Final chunk organization failed: {exc}")
-                organized_all.extend(current_batch)
-        return self._strip_intermediate_memory_fields(organized_all or entries)
-
-    def _enqueue_or_merge_file(
-        self,
-        *,
-        queue: List[Dict[str, Any]],
-        queued_entries: Dict[str, Dict[str, Any]],
-        entry: Dict[str, Any],
-        processed_files: set[str],
-    ) -> None:
-        normalized = self._normalize_file_entry(entry)
-        key = self._normalize_path_key(normalized.get("file", ""))
-        if not key or key in processed_files:
-            return
-        if key in queued_entries:
-            merged = self._merge_file_entry(queued_entries[key], normalized)
-            queued_entries[key] = merged
-            for index, existing in enumerate(queue):
-                if self._normalize_path_key(existing.get("file", "")) == key:
-                    queue[index] = merged
-                    break
-            return
-        queued_entries[key] = normalized
-        queue.append(normalized)
-
-    def _build_changed_files_selection_prompt(
-        self,
-        *,
-        changed_files: List[Dict[str, Any]],
-        failed_jobs_text: str,
-    ) -> str:
-        files_payload = []
-        for item in changed_files:
-            files_payload.append(
-                {
-                    "file": item.get("file_path", ""),
-                    "diff": item.get("diff", ""),
-                }
-            )
-
-        return f"""
-You are a **Suspicious File Selector** for CI failures.
-
-Goal:
-Given a set of changed files with unified diffs and the CI failed jobs description, return ONLY the files whose changes are likely responsible for, or closely related to, the CI failure.
-Select a file only when the diff provides strong evidence that it is relevant to the failed jobs. Do not speculate.
-
-Return **only** a JSON array, as plain text:
-
-[
-  {{
-    "file": "path/to/file",
-    "reason": "short concrete reason tied to the failed jobs and diff",
-    "issue_type": "formatting | linting | type_error | runtime_error | test_failure | dependency_error | docstring | complexity | other"
-  }}
-]
-
-Hard rules:
-- Do NOT add markdown fences.
-- Do NOT add extra text before or after the JSON.
-- Return `[]` if none of the files are suspicious.
-- Only include files from the provided changed-files list.
-- Keep each reason short, concrete, and tied to the diff plus failed jobs.
-
-FAILED JOBS (CI context):
-{failed_jobs_text}
-
-CHANGED FILES WITH DIFFS:
-{json.dumps(files_payload, indent=2, ensure_ascii=False)}
-""".strip()
-
-    def _parse_suspicious_files_response(self, raw_response: str) -> List[Dict[str, Any]]:
-        text = (raw_response or "").strip()
-        if text.startswith("```"):
-            lines = text.splitlines()
-            lines = lines[1:]
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            text = "\n".join(lines).strip()
-
-        try:
-            parsed = json.loads(text)
-        except json.JSONDecodeError:
-            parsed = demjson3.decode(text)
-
-        if not isinstance(parsed, list):
-            return []
-
-        out: List[Dict[str, Any]] = []
-        for item in parsed:
-            if not isinstance(item, dict):
-                continue
-            file_path = (item.get("file") or "").strip()
-            if not file_path:
-                continue
-            out.append(
-                self._normalize_file_entry(
-                    {
-                        "file": file_path,
-                        "reason": item.get("reason", ""),
-                        "issue_type": item.get("issue_type", "other"),
-                        "previous_experiences": [],
-                    }
-                )
-            )
-        return out
 
     # ------------------------------------------------------------------ #
     # Public entry
@@ -846,7 +103,6 @@ CHANGED FILES WITH DIFFS:
 
             print("[Step 1] Running File Selection...")
             suspecious_files = self.select_suspecious_files()
-            suspecious_files = self._apply_memory_to_suspicious_files(suspecious_files)
             print("[Step 2] Running final fault localization...")
             result = self._final_fault_localization(suspecious_files)
             result["id"] = self.id 
@@ -972,10 +228,10 @@ CHANGED FILES WITH DIFFS:
                 continue
 
             ext = Path(file_path).suffix.lower()
-            if ext not in {".py", ".txt", ".toml", ".md", ".rst", ".in", ".cfg", ".ini", ".yaml", ".yml"}:
+            if ext not in {".py", ".txt", ".toml", ".md", ".rst", ".tsx"}:
                 continue
 
-            suspecious_files.append(self._build_entry_from_relevant_file(item))
+            suspecious_files.append({"file": file_path})
 
         # Build a set of already-selected file paths from suspecious_files
         seen_paths: set[str] = set()
@@ -989,257 +245,156 @@ CHANGED FILES WITH DIFFS:
         if not changed_files_list:
             return suspecious_files
 
-        failed_jobs_text = json.dumps(self.failed_jobs, indent=2, ensure_ascii=False)
-
-        eligible_changed_files: List[Dict[str, Any]] = []
+        candidates: List[Dict[str, Any]] = []
         for item in changed_files_list:
             file_path = (item.get("file_path") or "").strip()
-            if not file_path or file_path in seen_paths:
+            if not file_path:
+                continue
+
+            # If this file is already in suspecious_files, skip immediately
+            if file_path in seen_paths:
+                # Already included from relevant_files or earlier changed_files
                 continue
 
             ext = Path(file_path).suffix.lower()
-            if ext not in {".py", ".txt", ".toml", ".md", ".rst", ".in", ".cfg", ".ini", ".yaml", ".yml"}:
+            if ext not in {".py", ".txt"}:
                 continue
-
-            eligible_changed_files.append(
-                {
-                    "file_path": file_path,
-                    "diff": item.get("diff", ""),
-                }
+            candidates.append(
+                {"file_path": file_path, "diff": str(item.get("diff") or "")}
             )
 
-        if not eligible_changed_files:
-            return self._dedupe_file_entries(suspecious_files)
+        if not candidates:
+            return suspecious_files
 
+        failed_jobs_text = json.dumps(self.failed_jobs, indent=2, ensure_ascii=False)
         model_for_count = self.model_name or "gpt-4o-mini"
-        token_limit = int(get_prompt_token_budget(self.model_name) * 0.8)
+        # Keep additional headroom beyond the model registry's reserved output
+        # because a selector response is small and provider token counts vary.
+        prompt_budget = max(4_000, int(get_prompt_token_budget(self.model_name) * 0.90))
 
-        def _select_from_batch(batch: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-            prompt = self._build_changed_files_selection_prompt(
-                changed_files=batch,
-                failed_jobs_text=failed_jobs_text,
-            )
-            raw_response = self.llm.invoke(prompt).content.strip()
-            return self._parse_suspicious_files_response(raw_response)
-
-        full_prompt = self._build_changed_files_selection_prompt(
-            changed_files=eligible_changed_files,
-            failed_jobs_text=failed_jobs_text,
-        )
-
-        selected_from_changed: List[Dict[str, Any]] = []
-        used_full_batch = False
-        if estimate_tokens(full_prompt, model=model_for_count) <= token_limit:
-            try:
-                selected_from_changed = _select_from_batch(eligible_changed_files)
-                used_full_batch = True
-            except Exception as e:
-                print(f"[Selector] Batch selection failed; falling back to chunked mode: {e}")
-
-        if not used_full_batch:
-            current_batch: List[Dict[str, Any]] = []
-            for item in eligible_changed_files:
-                trial_batch = current_batch + [item]
-                trial_prompt = self._build_changed_files_selection_prompt(
-                    changed_files=trial_batch,
-                    failed_jobs_text=failed_jobs_text,
-                )
-                if current_batch and estimate_tokens(trial_prompt, model=model_for_count) > token_limit:
-                    try:
-                        selected_from_changed.extend(_select_from_batch(current_batch))
-                    except Exception as e:
-                        print(f"[Selector] Chunked batch selection failed: {e}")
-                    current_batch = [item]
-                else:
-                    current_batch = trial_batch
-
-            if current_batch:
-                try:
-                    selected_from_changed.extend(_select_from_batch(current_batch))
-                except Exception as e:
-                    print(f"[Selector] Final chunked batch selection failed: {e}")
-
-        for entry in selected_from_changed:
-            file_path = (entry.get("file") or "").strip()
-            if not file_path or file_path in seen_paths:
-                continue
-            suspecious_files.append(entry)
-            seen_paths.add(file_path)
-            print(f"[Selector] Marked '{file_path}' as suspicious based on batched diff analysis.")
-
-        return self._dedupe_file_entries(suspecious_files)
-
-    def _apply_memory_to_suspicious_files(
-        self,
-        suspicious_files: List[Dict[str, Any]],
-    ) -> List[Dict[str, Any]]:
-        matches = self.memory_context.get("matches", []) or []
-        if self.memory_plugin is None or not self.memory_plugin.is_enabled():
-            return self._dedupe_file_entries(suspicious_files)
-
-        # ── FALLBACK: no suspicious files from diff/log selection ──────────
-        # Use error details + L1/L2/L3 memory to ask the LLM which files to
-        # inspect. This replaces per-file augmentation when there is nothing
-        # to augment.
-        if not suspicious_files:
-            if not matches:
-                print("[Memory] No suspicious files and no memory matches — nothing to work with.")
-                return []
-            return self._derive_files_from_memory_and_error_context()
-
-        # ── NORMAL PATH: augment the existing suspicious files ──────────────
-        augmented = self.memory_plugin.augment_suspicious_files(
-            suspicious_files=suspicious_files,
-            changed_files_info=self.changed_files_info,
-            retrieval_result=self.memory_context,
-        )
-        normalized_augmented: List[Dict[str, Any]] = []
-        existing_paths = {
-            self._normalize_path_key(item.get("file", "")) for item in suspicious_files if item.get("file")
-        }
-        for item in augmented:
-            file_path = (item.get("file") or item.get("path") or "").strip()
-            if not file_path:
-                continue
-            key = self._normalize_path_key(file_path)
-            if key in existing_paths:
-                normalized_augmented.append(item)
-                continue
-            normalized_augmented.append(
+        def build_prompt(batch: List[Dict[str, Any]]) -> str:
+            batch_payload = [
                 {
-                    "file": file_path,
-                    "reason": "Retrieved from similar prior failures for the current repository and CI context.",
-                    "issue_type": "",
-                    "previous_experiences": [],
+                    "file_path": entry["file_path"],
+                    "diff_part": entry["diff_part"],
+                    "part": entry["part"],
+                    "total_parts": entry["total_parts"],
                 }
-            )
+                for entry in batch
+            ]
+            return f"""
+You are a Suspicious File Selector for CI failures.
 
-        enriched: List[Dict[str, Any]] = [
-            self._enrich_file_entry_with_memory(item)
-            for item in normalized_augmented
-        ]
+For every supplied file diff (or diff part), decide whether the changed code is
+strongly evidenced as responsible for, or closely related to, the failed CI
+jobs. Set is_suspicious=true only with strong evidence. Do not speculate.
 
-        organized = self._organize_memory_enriched_suspicious_files(enriched)
-        deduped = self._dedupe_file_entries(organized)
-        ranked = self.memory_plugin.rank_files(deduped, self.memory_context)
+Return only a valid JSON array in this exact form:
+[
+  {{"file_path": "path/from/input", "is_suspicious": true}},
+  {{"file_path": "another/path", "is_suspicious": false}}
+]
 
-        print(
-            f"[Memory] Retrieved {len(matches)} similar cases. "
-            f"Candidate files after memory augmentation: {len(ranked)}"
-        )
-        return self._dedupe_file_entries(ranked)
+Rules:
+- Return exactly one decision for every input item, in input order.
+- Copy file_path exactly from the input.
+- If any diff part contains strong evidence, that file may be suspicious.
+- No markdown fences, explanations, comments, or extra keys.
 
-    def _derive_files_from_memory_and_error_context(self) -> List[Dict[str, Any]]:
-        """
-        Called when suspicious_files is empty in memory mode.
+FAILED JOBS:
+{failed_jobs_text}
 
-        Sends the current error details (error_context, error_types, failed_jobs)
-        together with the retrieved L1 / L2 / L3 memory matches to the LLM and
-        asks it to identify which files in this repository are likely faulty.
-        Returns those files as suspicious_files for the normal FL pipeline.
-        """
-        l1_matches       = self.memory_context.get("l1_matches", []) or []
-        l2_matches       = self.memory_context.get("l2_matches", []) or []
-        l3_matches       = self.memory_context.get("l3_matches", []) or []
-        high_level_hints = self.memory_context.get("high_level_hints", []) or []
-
-        primary_issue = (
-            self.error_types[0].get("error_type", "")
-            if self.error_types and isinstance(self.error_types[0], dict)
-            else ""
-        )
-
-        prompt = f"""You are a CI fault localization agent.
-
-No suspicious files were found by static diff analysis for the current failing commit.
-Using the CI failure details and retrieved memory from previous similar failures,
-identify which source files in this repository are most likely faulty and should be inspected.
-
-Return ONLY a JSON array. No markdown, no prose.
-
-Schema for each element:
-{{
-  "file": "relative/path/to/file.py",
-  "reason": "why this file is likely responsible for the CI failure",
-  "inspection_hint": "what specifically to look for in this file",
-  "issue_type": "short description of the issue type"
-}}
-
-Return [] if you cannot identify any file with reasonable confidence.
-
-==============================================================================
-CURRENT CI FAILURE DETAILS
-------------------------------------------------------------------------------
-Error types:
-{json.dumps(self.error_types, indent=2, ensure_ascii=False)}
-
-Failed jobs:
-{json.dumps(self.failed_jobs, indent=2, ensure_ascii=False)}
-
-Error context from logs:
-{json.dumps(self.error_context, indent=2, ensure_ascii=False)}
-
-==============================================================================
-RETRIEVED MEMORY — PREVIOUS SIMILAR FAILURES
-------------------------------------------------------------------------------
-L1 (per-file failures from same repo / same error type):
-{json.dumps(l1_matches, indent=2, ensure_ascii=False)}
-
-L2 (issue-level failures — overall reason + modified files):
-{json.dumps(l2_matches, indent=2, ensure_ascii=False)}
-
-L3 (universal cross-repo patterns and principles):
-{json.dumps(l3_matches, indent=2, ensure_ascii=False)}
-
-High-level hints:
-{json.dumps(high_level_hints, indent=2, ensure_ascii=False)}
-==============================================================================
-
-Return only the JSON array.
+FILES AND UNIFIED DIFFS:
+{json.dumps(batch_payload, indent=2, ensure_ascii=False)}
 """.strip()
 
-        print("[Memory Fallback] Asking LLM to derive suspicious files from error context + memory.")
-        try:
-            raw = self.llm.invoke([HumanMessage(content=prompt)]).content.strip()
-            # Strip markdown fences if present
-            if raw.startswith("```"):
-                raw = re.sub(r"^```[a-zA-Z]*\n?", "", raw)
-                raw = re.sub(r"\n?```$", "", raw).strip()
+        # First split a single exceptionally large diff. Most runs produce one
+        # part per file; this path prevents one file from overflowing a batch.
+        empty_prompt_tokens = estimate_tokens(build_prompt([]), model=model_for_count)
+        per_diff_budget = max(1_000, prompt_budget - empty_prompt_tokens - 500)
+        parts: List[Dict[str, Any]] = []
+        for candidate in candidates:
+            diff_parts = chunk_log_by_tokens(
+                candidate["diff"],
+                max_tokens=per_diff_budget,
+                overlap=0,
+                model=model_for_count,
+            ) or [""]
+            for part_index, diff_part in enumerate(diff_parts, 1):
+                parts.append(
+                    {
+                        "file_path": candidate["file_path"],
+                        "diff_part": diff_part,
+                        "part": part_index,
+                        "total_parts": len(diff_parts),
+                    }
+                )
+
+        # Greedily pack file diffs into the fewest token-safe requests.
+        batches: List[List[Dict[str, Any]]] = []
+        current: List[Dict[str, Any]] = []
+        for part in parts:
+            proposed = [*current, part]
+            if current and estimate_tokens(build_prompt(proposed), model=model_for_count) > prompt_budget:
+                batches.append(current)
+                current = [part]
+            else:
+                current = proposed
+        if current:
+            batches.append(current)
+
+        print(
+            f"[Selector] Evaluating {len(candidates)} changed files in "
+            f"{len(batches)} token-aware batch(es)."
+        )
+
+        suspicious_paths: set[str] = set()
+        for batch_index, batch in enumerate(batches, 1):
+            prompt = build_prompt(batch)
             try:
-                candidates = json.loads(raw)
-            except json.JSONDecodeError:
-                candidates = demjson3.decode(raw)
-            if not isinstance(candidates, list):
-                candidates = []
-        except Exception as exc:
-            print(f"[Memory Fallback] LLM call failed: {exc}")
-            return []
+                raw_response = self.llm.invoke(prompt).content.strip()
+                if raw_response.startswith("```"):
+                    raw_response = raw_response.strip("` \n")
 
-        result: List[Dict[str, Any]] = []
-        for item in candidates:
-            if not isinstance(item, dict):
-                continue
-            fp = (item.get("file") or "").strip().lstrip("/").replace("\\", "/")
-            if not fp:
-                continue
-            # Only include files that actually exist in the repo at this commit
-            if not os.path.isfile(os.path.join(self.repo_path, fp)):
-                print(f"[Memory Fallback] '{fp}' not found in repo — skipping.")
-                continue
+                try:
+                    parsed = json.loads(raw_response)
+                except json.JSONDecodeError:
+                    parsed = demjson3.decode(raw_response)
 
-            result.append(self._normalize_file_entry({
-                "file":       fp,
-                "reason":     str(item.get("reason") or "Identified by memory-guided LLM analysis.").strip(),
-                "issue_type": str(item.get("issue_type") or primary_issue).strip(),
-                "previous_experiences": [],
-            }))
-            print(f"[Memory Fallback] Added '{fp}' from LLM memory analysis.")
+                if not isinstance(parsed, list):
+                    raise ValueError("selector response must be a JSON array")
 
-        if not result:
-            print("[Memory Fallback] LLM found no verifiable files in this repo.")
-        else:
-            print(f"[Memory Fallback] {len(result)} candidate file(s) derived from memory + error context.")
-        return result
+                allowed_paths = {entry["file_path"] for entry in batch}
+                returned_paths: set[str] = set()
+                for decision in parsed:
+                    if not isinstance(decision, dict):
+                        continue
+                    path = str(decision.get("file_path") or "").strip()
+                    if path not in allowed_paths:
+                        continue
+                    returned_paths.add(path)
+                    if decision.get("is_suspicious") is True:
+                        suspicious_paths.add(path)
+
+                missing = allowed_paths - returned_paths
+                if missing:
+                    print(
+                        f"[Selector] Batch {batch_index} omitted decisions for: "
+                        f"{', '.join(sorted(missing))}"
+                    )
+            except Exception as e:
+                print(f"[Selector] Error deciding batch {batch_index}: {e}")
+
+        for candidate in candidates:
+            file_path = candidate["file_path"]
+            if file_path in suspicious_paths and file_path not in seen_paths:
+                suspecious_files.append({"file": file_path})
+                seen_paths.add(file_path)
+                print(f"[Selector] Marked '{file_path}' as suspicious based on diff.")
+            elif file_path not in suspicious_paths:
+                print(f"[Selector] '{file_path}' not suspicious.")
+
+        return suspecious_files
 
 
     # ------------------------------------------------------------------ #
@@ -1250,22 +405,9 @@ Return only the JSON array.
         print("[Tool] read_error_file called")
 
         fault_localization: List[Dict[str, Any]] = []
-        queue: List[Dict[str, Any]] = self._dedupe_file_entries(list(suspecious_files))
-        queued_entries: Dict[str, Dict[str, Any]] = {
-            self._normalize_path_key(item.get("file", "")): item
-            for item in queue
-            if item.get("file")
-        }
-        processed_files: set[str] = set()
-
-        while queue:
-            item = queue.pop(0)
+        for item in suspecious_files:
             file_path = (item.get("file") or item.get("path") or "").strip()
             if not file_path:
-                continue
-            normalized_file = os.path.normpath(file_path)
-            queued_entries.pop(normalized_file, None)
-            if normalized_file in processed_files:
                 continue
 
             ext = Path(file_path).suffix.lower()
@@ -1288,11 +430,8 @@ Return only the JSON array.
             numbered_full_content = self._numbered_file_content(content)
 
             chunks = self._chunk_file(numbered_full_content)
-            num_chunks = len(chunks)
 
-            # Memory was already retrieved, selected, deduped, and attached to
-            # each suspicious file in _apply_memory_to_suspicious_files().
-            per_file_memory = None
+            num_chunks = len(chunks)
 
             # Per-chunk strict FL
             all_faults: List[Dict[str, Any]] = []
@@ -1317,15 +456,14 @@ Return only the JSON array.
                     original_content=content,
                     chunk_idx=idx,
                     num_chunks=num_chunks,
+                    faults=all_faults,
                     outline=outline,
-                    chunk=ch["content"],
-                    per_file_memory=per_file_memory,
-                    file_entry=item,
+                    chunk=ch["content"]
                 )
 
                 if faults:
                     all_faults.extend(faults)
-
+            
             if all_faults:
                 fault_localization.append(
                     {
@@ -1334,7 +472,6 @@ Return only the JSON array.
                         "faults": all_faults,
                     }
                 )
-            processed_files.add(normalized_file)
 
         results = {
             "sha_fail": self.failed_commit,
@@ -1350,26 +487,18 @@ Return only the JSON array.
     def prompt_for_fault_localization(
     self,
     *,
-    file_path: str,
     file_summary: str,
     valid_start: int,
     valid_end: int,
-    per_file_memory: Optional[Dict[str, Any]] = None,
-    file_entry: Optional[Dict[str, Any]] = None,
+    faults: list,
     ) -> str:
         """
         Build the strict fault-localization prompt for a single (sub)chunk.
 
         - file_summary: includes file metadata + outline + the code chunk (already fenced).
         - valid_start/valid_end: absolute (file-level) line numbers for this chunk window.
-        - per_file_memory: optional explicit retrieval result; normally selected memory is already in file_entry.
+        - faults: previously detected faults (used only to avoid duplicates).
         """
-        memory_context_text = self._memory_context_for_file(
-            file_path,
-            file_summary,
-            per_file_memory,
-            file_entry=file_entry,
-        )
         return f"""
 You are a **Strict Fault Localization Agent**.
 
@@ -1406,9 +535,6 @@ ERROR TYPES:
 
 RELEVANT FILES FROM LOGS:
 {json.dumps(self.relevant_files, indent=2, ensure_ascii=False)}
-
-RETRIEVED PREVIOUS EXPERIENCE:
-{memory_context_text}
 
 CHUNK WINDOW: lines {valid_start}–{valid_end}
 
@@ -1491,12 +617,9 @@ If you cannot name exact line numbers → DO NOT return the fault.
 ==============================================================================
 LINE RANGE RULES
 ------------------------------------------------------------------------------
-- "line_range" MUST always be exactly TWO integers: [start, end].
-- For a single faulty line N, use [N, N] — NEVER [N] alone.
-- For a range of lines N to M, use [N, M].
+- "line_range" MUST include the faulty line(s).
 - Must stay within {valid_start}–{valid_end}.
 - Use displayed line numbers as integers (no leading zeros).
-- INVALID: [10]  VALID: [10, 10]  VALID: [10, 25]
 
 ==============================================================================
 FAULT MERGING RULE
@@ -1518,7 +641,7 @@ Return ONLY:
   {{
     "line_range": [start, end],
     "reason": "...",
-    "issue_type": "short description of the issue type as returned by analysis, e.g. type_error, test_failure, dependency_error",
+    "issue_type": "formatting | linting | type_error | runtime_error | test_failure | dependency_error | docstring | complexity | other",
     "fault_localization_level": "line | method | class | import_block"
   }}
 ]
@@ -1532,8 +655,6 @@ FINAL CHECK
 - No speculation
 - Numeric containment strictly respected
 - Exact line numbers cited
-- Treat retrieved memory as compact hints only. Ignore any prior experience that is not directly supported by the current CI logs and current code in this chunk.
-- Use retrieved memory only as supporting evidence. Current CI logs and current code always win.
 - Valid JSON only
 """.strip()
                             
@@ -1548,21 +669,18 @@ FINAL CHECK
     original_content: str,
     chunk_idx: int,
     num_chunks: int,
+    faults: list,
     outline: List[Dict[str, Any]],
     chunk: str,
-    per_file_memory: Optional[Dict[str, Any]] = None,
-    file_entry: Optional[Dict[str, Any]] = None,
     ) -> list:
         fault_locations: List[Dict[str, Any]] = []
         token_limit = get_prompt_token_budget(self.model_name)
 
         prompt = self.prompt_for_fault_localization(
-            file_path=file_path,
             file_summary=file_summary,
             valid_start=valid_start,
             valid_end=valid_end,
-            per_file_memory=per_file_memory,
-            file_entry=file_entry,
+            faults=faults,
         )
 
         print(f"[Chunk {chunk_idx+1}/{num_chunks}] Analyzing lines {valid_start}-{valid_end}...")
@@ -1570,22 +688,12 @@ FINAL CHECK
         def _invoke_and_parse(p: str):
             raw_response = self.llm.invoke([HumanMessage(content=p)]).content.strip()
             if raw_response.startswith("```"):
-                lines = raw_response.splitlines()
-                lines = lines[1:]  # drop opening fence line (``` or ```json)
-                if lines and lines[-1].strip() == "```":
-                    lines = lines[:-1]
-                raw_response = "\n".join(lines).strip()
-
-            if not raw_response:
-                return []
+                raw_response = raw_response.strip("` \n")
 
             try:
                 parsed = json.loads(raw_response)
             except json.JSONDecodeError:
-                try:
-                    parsed = demjson3.decode(raw_response)
-                except Exception:
-                    return []
+                parsed = demjson3.decode(raw_response)
 
             if not isinstance(parsed, list) or not parsed:
                 return []
@@ -1645,12 +753,10 @@ FINAL CHECK
                 )
 
                 sub_prompt = self.prompt_for_fault_localization(
-                    file_path=file_path,
                     file_summary=sub_file_summary,
                     valid_start=abs_start,
                     valid_end=abs_end,
-                    per_file_memory=per_file_memory,
-                    file_entry=file_entry,
+                    faults=faults,
                 )
 
                 if estimate_tokens(sub_prompt, model=model_for_count) > token_limit:
@@ -1685,10 +791,10 @@ FINAL CHECK
             line_range = fault.get("line_range")
             fault_level = fault.get("fault_localization_level")
 
-            if not line_range or len(line_range) < 2:
+            if not line_range:
                 continue
 
-            start, end = line_range[0], line_range[1]
+            start, end = line_range
             if valid_start <= start and end <= valid_end:
                 extended_range = self._expand_line_range_with_outline(
                     line_range=line_range,
@@ -1696,6 +802,17 @@ FINAL CHECK
                     fault_level=fault_level,
                 )
                 print("\n--- Before Line range ---", line_range)
+                bounded_range = clamp_line_range(
+                    extended_range,
+                    len(original_content.splitlines()),
+                )
+                if bounded_range is None:
+                    print(
+                        f"[Chunk {chunk_idx+1}] Skipping invalid expanded line "
+                        f"range {extended_range}"
+                    )
+                    continue
+                extended_range = list(bounded_range)
                 fault["line_range"] = extended_range
 
                 snippet = extract_snippet_from_line_range(
@@ -1717,31 +834,6 @@ FINAL CHECK
                 )
 
         return fault_locations
-
-    def _memory_context_for_file(
-        self,
-        file_path: str,
-        file_context: str = "",
-        per_file_memory: Optional[Dict[str, Any]] = None,
-        file_entry: Optional[Dict[str, Any]] = None,
-    ) -> str:
-        sections = [self._format_file_entry_context(file_entry)]
-
-        # Prefer the organized memory selected during suspicious-file enrichment.
-        if file_entry and (
-            str(file_entry.get("memory_context_text") or "").strip()
-            or file_entry.get("previous_experiences")
-            or file_entry.get("memory_dependencies")
-        ):
-            return "\n\n".join(section for section in sections if section.strip())
-
-        # Only format raw retrieval data when a caller explicitly provides it.
-        ctx = per_file_memory or {}
-        if ctx.get("selected_memory_levels") and self.memory_plugin is not None:
-            sections.append(self.memory_plugin.format_for_file_prompt(file_path, ctx, file_context=file_context))
-        else:
-            sections.append("No similar prior failures retrieved.")
-        return "\n\n".join(section for section in sections if section.strip())
 
     # ------------------------------------------------------------------ #
     # Path & file helpers
@@ -1788,16 +880,7 @@ FINAL CHECK
 
     def _read_file_content(self, resolved_path: str) -> str:
         """Return file content as a string, or '' if file is missing/unreadable."""
-        try:
-            self._ensure_repo_at_commit(self.failed_commit, require_clean=True)
-        except RuntimeError:
-            # Repo is dirty (e.g. leftover patch state); attempt force clean and continue.
-            try:
-                self._force_clean_and_checkout(self.failed_commit)
-            except Exception as clean_err:
-                print(f"[WARN] Could not restore repo to {self.failed_commit}: {clean_err}")
-                return ""
-
+        self._ensure_repo_at_commit(self.failed_commit, require_clean=True)
         if not os.path.exists(resolved_path):
             print(f"[WARN] File not found: {resolved_path}")
             return ""
@@ -1971,14 +1054,10 @@ FINAL CHECK
         - anything else / None: return tightest containing node of any kind.
         """
 
-        if not line_range or len(line_range) < 2:
-            # Single-element range: treat as [N, N]
-            if line_range and len(line_range) == 1:
-                line_range = [line_range[0], line_range[0]]
-            else:
-                return line_range
+        if not line_range:
+            return line_range
 
-        start, end = line_range[0], line_range[1]
+        start, end = line_range
         if not (isinstance(start, int) and isinstance(end, int)):
             return line_range
 

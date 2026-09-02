@@ -52,10 +52,6 @@ MODEL_PRICING: Dict[str, Dict[str, float]] = {
     # DeepSeek
     "deepseek-chat":  {"input": 0.27,  "output": 1.10},
     "deepseek-coder": {"input": 0.27,  "output": 1.10},
-    # MiniMax via OpenRouter
-    "minimax/minimax-m2.5": {"input": 0.15, "output": 1.15},
-    "MiniMax-M2.5": {"input": 0.15, "output": 1.15},
-    "minimax-m2.5": {"input": 0.15, "output": 1.15},
 }
 
 
@@ -542,13 +538,6 @@ class TokenTracker:
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        if not isinstance(data, dict):
-            print(
-                f"[TokenTracker] Prior report at {path} is not a summary object "
-                f"(found {type(data).__name__}); ignoring it and starting fresh."
-            )
-            return
-
         prior_llm = data.get("all_llm_calls", [])
         prior_tools = data.get("all_tool_calls", [])
         prior_tasks = data.get("per_task", [])
@@ -615,9 +604,9 @@ class TokenTracker:
 
     def save_step_trace(self, path: str) -> None:
         """
-        Save a step-by-step trace of every LLM call (token counts, costs,
-        agent/call-site metadata) to a separate JSON file.  Prompt and
-        response text are excluded to keep the file small.
+        Save a full step-by-step trace of every LLM call (with complete prompt
+        and response text) to a separate JSON file.  Kept separate from
+        token_report.json because prompt/response bodies can be very large.
         """
         trace = []
         for c in self._llm_calls:
@@ -632,6 +621,8 @@ class TokenTracker:
                 "total_tokens": c.total_tokens,
                 "cost_usd": round(c.cost_usd, 8),
                 "timestamp": c.timestamp,
+                "prompt": c.prompt,
+                "response": c.response,
             })
         with open(path, "w", encoding="utf-8") as f:
             json.dump(trace, f, indent=2)

@@ -18,3 +18,5 @@ evaluation/results/
 __pycache__/
 data_managment/results/
 .claude
+miniswe-agent/.venv-mini/
+baselines/exception_dir

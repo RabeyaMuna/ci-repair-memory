@@ -10,15 +10,14 @@ headers in ``generated_patches.json``:
     diff --git a/path/to/file.py b/path/to/file.py
 
 These are the files the pipeline (or a reference solution) ultimately had to
-patch in order to fix the CI failure.
+patch in order to fix the CI failure.  ``changed_files/`` is intentionally
+NOT used here — those JSON files record every file touched by the failing
+commit, not the files that contain the bug.
 
 Predicted
 ---------
-Primary: files predicted by the FaultLocalization agent (``fault_localization.json``).
-Augmented: files from ``changed_files/{sha_fail}.json`` are unioned in
-           (excluding ``.github/workflows/`` paths) so that files touched by
-           the failing commit but not surfaced by FL are still credited in
-           Top@K and Precision metrics.
+The files predicted by the FaultLocalization agent, taken from
+``fault_localization.json``.
 
 Metrics (per task and aggregate)
 ---------------------------------
@@ -110,51 +109,10 @@ def _hit_at_k(predicted: List[str], ground_truth: List[str], k: int) -> bool:
 # main entry point
 # ---------------------------------------------------------------------------
 
-_EXCLUDE_PREFIXES = (".github/workflows/",)
-
-
-def _load_changed_files(changed_files_dir: str, sha_fail: str) -> List[str]:
-    """Load changed_files for a sha_fail, excluding CI workflow paths."""
-    path = os.path.join(changed_files_dir, f"{sha_fail}.json")
-    if not os.path.exists(path):
-        return []
-    try:
-        data = _load_json(path)
-        result = []
-        for entry in data.get("changed_files") or []:
-            fp = (entry.get("file_path") or "").strip()
-            if not fp:
-                continue
-            norm = _normalise(fp)
-            if any(norm.startswith(prefix) for prefix in _EXCLUDE_PREFIXES):
-                continue
-            result.append(fp)
-        return result
-    except Exception:
-        return []
-
-
-def _derive_changed_files_dir(fault_localization_path: str) -> Optional[str]:
-    """Auto-detect baselines/changed_files/ from the results path."""
-    # fault_localization_path is typically baselines/results/<run>/fault_localization.json
-    results_dir = os.path.dirname(os.path.abspath(fault_localization_path))
-    baselines_dir = os.path.dirname(results_dir)   # baselines/results/ -> baselines/
-    candidate = os.path.join(baselines_dir, "changed_files")
-    if os.path.isdir(candidate):
-        return candidate
-    # one more level up (results/<run>/ -> results/ -> baselines/)
-    baselines_dir2 = os.path.dirname(baselines_dir)
-    candidate2 = os.path.join(baselines_dir2, "changed_files")
-    if os.path.isdir(candidate2):
-        return candidate2
-    return None
-
-
 def evaluate_fl(
     fault_localization_path: str,
     generated_patches_path: str,
     output_path: Optional[str] = None,
-    changed_files_dir: Optional[str] = None,
 ) -> dict:
     """
     Parameters
@@ -163,9 +121,6 @@ def evaluate_fl(
     generated_patches_path  : path to generated_patches.json (same result dir)
     output_path             : where to write fl_evaluation.json
                               (defaults to same dir as fault_localization_path)
-    changed_files_dir       : directory containing {sha_fail}.json changed-file
-                              records; auto-detected from path if not supplied.
-                              Set to '' to disable augmentation.
 
     Returns
     -------
@@ -173,10 +128,6 @@ def evaluate_fl(
     """
     fl_records      = _load_json(fault_localization_path)  # list
     patch_records   = _load_json(generated_patches_path)   # list
-
-    # Resolve changed_files directory (None means auto-detect, '' means disabled)
-    if changed_files_dir is None:
-        changed_files_dir = _derive_changed_files_dir(fault_localization_path)
 
     # Build a lookup: sha_fail -> list of patched files (from diff headers)
     patched_files_by_sha: Dict[str, List[str]] = {}
@@ -193,19 +144,9 @@ def evaluate_fl(
         sha_fail = record.get("sha_fail", "")
         task_id  = str(record.get("id", ""))
 
-        # Predicted files — ordered as returned by FL (agent predictions first)
+        # Predicted files — ordered as returned by FL
         fl_data         = record.get("fault_localization_data") or []
-        fl_predicted    = [e["file_path"] for e in fl_data if e.get("file_path")]
-
-        # Augment with changed_files (files touched by the failing commit)
-        extra_files: List[str] = []
-        if changed_files_dir:
-            fl_norm_set = set(_normalise(p) for p in fl_predicted)
-            for fp in _load_changed_files(changed_files_dir, sha_fail):
-                if _normalise(fp) not in fl_norm_set:
-                    extra_files.append(fp)
-
-        predicted_files = fl_predicted + extra_files
+        predicted_files = [e["file_path"] for e in fl_data if e.get("file_path")]
 
         # Ground-truth files — from the generated patch diff headers
         ground_truth_files = patched_files_by_sha.get(sha_fail)
@@ -222,8 +163,6 @@ def evaluate_fl(
         per_task.append({
             "task_id":             task_id,
             "sha_fail":            sha_fail,
-            "fl_predicted_files":  fl_predicted,
-            "changed_files_added": extra_files,
             "predicted_files":     predicted_files,
             "ground_truth_files":  ground_truth_files,   # files actually patched
             "exact_match": (
@@ -234,8 +173,6 @@ def evaluate_fl(
             "hit_at_3": _hit_at_k(predicted_files, ground_truth_files, 3),
             "hit_at_5": _hit_at_k(predicted_files, ground_truth_files, 5),
             "num_predicted":     len(predicted_files),
-            "num_fl_predicted":  len(fl_predicted),
-            "num_changed_added": len(extra_files),
             "num_ground_truth":  len(ground_truth_files),
             **metrics,
         })

@@ -1,0 +1,48 @@
+{
+  "definition": "Observed wall time is max(log timestamp) minus min(log timestamp) across the job logs retained for one benchmark instance.",
+  "caveat": "This is an exact workflow-span proxy only when logs for every job are retained; partial-log durations are lower-bound observations.",
+  "instances_total": 565,
+  "instances_with_timestamps": 565,
+  "instances_with_complete_job_log_coverage": 291,
+  "instances_with_partial_job_log_coverage": 274,
+  "complete_coverage_wall_time": {
+    "count": 291,
+    "mean_seconds": 382.658,
+    "median_seconds": 120.366,
+    "p25_seconds": 51.521,
+    "p75_seconds": 389.205,
+    "p90_seconds": 914.277,
+    "minimum_seconds": 0.383,
+    "maximum_seconds": 7780.688
+  },
+  "all_observed_wall_time": {
+    "count": 565,
+    "mean_seconds": 801.507,
+    "median_seconds": 163.035,
+    "p25_seconds": 55.004,
+    "p75_seconds": 549.382,
+    "p90_seconds": 1900.911,
+    "minimum_seconds": 0.319,
+    "maximum_seconds": 14592.996
+  },
+  "partial_coverage_wall_time_lower_bound": {
+    "count": 274,
+    "mean_seconds": 1246.342,
+    "median_seconds": 310.298,
+    "p25_seconds": 67.092,
+    "p75_seconds": 1071.076,
+    "p90_seconds": 4312.33,
+    "minimum_seconds": 0.319,
+    "maximum_seconds": 14592.996
+  },
+  "complete_coverage_runner_time": {
+    "count": 291,
+    "mean_seconds": 185.941,
+    "median_seconds": 112.253,
+    "p25_seconds": 50.731,
+    "p75_seconds": 157.734,
+    "p90_seconds": 215.628,
+    "minimum_seconds": 0.383,
+    "maximum_seconds": 8567.75
+  }
+}

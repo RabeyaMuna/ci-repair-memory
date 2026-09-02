@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import json
 import subprocess
-import time
+from omegaconf import OmegaConf
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download
 from datasets import load_dataset  # (unused right now but kept)
@@ -13,33 +13,16 @@ from datasets import load_dataset  # (unused right now but kept)
 from utilities.fetch_failed_commit_changed_files import (
     collect_changed_files_for_fail_and_parent,
 )
-from utilities.load_config import load_config
-from utilities.llm_provider import filesystem_safe_model_key, get_default_model_key, get_llm, get_tracked_llm
+from utilities.llm_provider import get_llm, get_tracked_llm
 from utilities.token_tracker import TokenTracker
 from utilities.fl_evaluator import evaluate_fl
-from utilities.memory_plugin import MemoryPlugin
-from utilities.trajectory_logger import create_logger
-from ci_repair.ci_log_analyzer import CILogAnalyzerLLM
+from ci_repair.ci_log_analyzer_bm25 import CILogAnalyzerBM25
+from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
 from ci_repair.fault_localization import FaultLocalization
 from ci_repair.patch_generation import PatchGeneration
 from utilities.ensure_repo import ensure_repo_at_commit
 
 load_dotenv()
-
-
-def _make_run_suffix(config) -> str:
-    """
-    Compute the result-dir suffix based on memory mode and ablation level.
-    baseline        → _baseline
-    memory L1       → _memory_L1
-    memory L1+L2    → _memory_L1L2
-    memory L1+L2+L3 → _memory   (backward-compat with already-existing runs)
-    """
-    if not bool(config.get("memory_enabled", False)):
-        return "_baseline"
-    ablation = str(config.get("memory_ablation_levels", "L1+L2+L3"))
-    level_tag = ablation.replace("+", "")  # "L1" | "L1L2" | "L1L2L3"
-    return "_memory" if level_tag == "L1L2L3" else f"_memory_{level_tag}"
 
 
 def _load_json_list(path):
@@ -48,54 +31,6 @@ def _load_json_list(path):
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
-
-
-def _find_log_entry(sha_fail: str, log_list: list) -> dict | None:
-    """Return the log_details entry for sha_fail, or None if not found."""
-    for entry in log_list:
-        if str(entry.get("sha_fail") or "") == str(sha_fail):
-            return entry
-    return None
-
-
-def _safe_logs(value):
-    """
-    Coerce the ``logs`` column from a parquet row into a plain Python list
-    of normalized dicts containing only the two fields we actually use:
-      - "step_name"  (the CI step name)
-      - "log"        (the raw log text for that step)
-
-    Parquet + pandas returns numpy arrays for list-typed columns, which
-    raises ``ValueError: The truth value of an array with more than one
-    element is ambiguous`` when a truthiness check is applied later.
-    """
-    if value is None:
-        return []
-    try:
-        import numpy as np
-        if isinstance(value, np.ndarray):
-            entries = value.tolist() if value.size > 0 else []
-        elif isinstance(value, np.generic):
-            entries = [value.item()]
-        else:
-            entries = value
-    except Exception:
-        entries = value
-
-    if isinstance(entries, dict):
-        entries = [entries]
-    elif not isinstance(entries, list):
-        return []
-
-    normalized = []
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        normalized.append({
-            "step_name": entry.get("step_name") or "",
-            "log":       entry.get("log") or "",
-        })
-    return normalized
 
 
 def _merge_by_key(existing: list, new_item: dict, key: str) -> list:
@@ -113,62 +48,32 @@ def process_entire_dataset(
     config,
     llm,
     model_key,
+    log_analyzer_type="llm",
     tracker: TokenTracker = None,
 ):
-    model_dir_key = filesystem_safe_model_key(model_key)
     result_dir = os.path.join(
-        config.project_result_dir, f"{model_dir_key}{_make_run_suffix(config)}"
+        config.project_result_dir, f"{model_key}_{log_analyzer_type}"
     )
     os.makedirs(result_dir, exist_ok=True)
     token_report_path = os.path.join(result_dir, "token_report.json")
-    memory_plugin = MemoryPlugin(config=config, result_dir=result_dir, llm=llm)
 
     # ------------------------------------------------------------------
-    # Initialize trajectory tracker for detailed execution analysis
-    # Using structured storage for better organization
+    # Always load whatever already exists on disk so every run accumulates
+    # on top of prior work.  New issues are appended; re-processed issues
+    # replace the old entry (keyed by sha_fail / task_id).
+    # Token counts, API calls, cost, and tool-call stats are accumulated
+    # from the saved token_report.json so the final report covers ALL runs.
     # ------------------------------------------------------------------
-    run_mode = _make_run_suffix(config).lstrip("_")  # "baseline", "memory_L1", etc.
-    trajectory_tracker = TrajectoryTracker(
-        result_dir=result_dir,
-        model_name=model_key,
-        run_mode=run_mode,
-        use_structured_storage=True,  # Use new hierarchical storage
-        base_result_dir=config.project_result_dir
-    )
-    print(f"[MAIN] Trajectory tracking enabled (structured storage): {trajectory_tracker.trajectories_dir}")
-
-    # ------------------------------------------------------------------
-    # Shared log_details — ONE file for all runs of the same model.
-    # Baseline, L1, L1+L2 and L1+L2+L3 all read from and write to the
-    # same path so CI log analysis is never repeated for the same sha_fail.
-    # ------------------------------------------------------------------
-    shared_log_dir  = os.path.join(config.project_result_dir, model_dir_key)
-    os.makedirs(shared_log_dir, exist_ok=True)
-    shared_log_path = os.path.join(shared_log_dir, "log_details.json")
-
-    _initial_log_count = len(_load_json_list(shared_log_path))
-    print(f"[MAIN] Shared log_details: {shared_log_path} ({_initial_log_count} entries cached)")
-
-    # Per-run outputs — FL and patches are still mode-specific.
+    error_details      = _load_json_list(os.path.join(result_dir, "log_details.json"))
     fault_localization = _load_json_list(os.path.join(result_dir, "fault_localization.json"))
     generated_patches  = _load_json_list(os.path.join(result_dir, "generated_patches.json"))
-    # O(1) lookup sets — updated in-place as new results are produced this run.
-    existing_fl_shas = {
-        str(item.get("sha_fail") or "")
-        for item in fault_localization
-        if str(item.get("sha_fail") or "")
-    }
-    existing_generated_patch_shas = {
-        str(item.get("sha_fail") or "")
-        for item in generated_patches
-        if str(item.get("sha_fail") or "")
-    }
 
     if tracker:
         tracker.load_prior_report(token_report_path)
 
     print(
-        f"loaded {len(fault_localization)} FL entries, "
+        f"loaded {len(error_details)} log entries, "
+        f"{len(fault_localization)} FL entries, "
         f"{len(generated_patches)} patches from prior run."
     )
 
@@ -185,144 +90,28 @@ def process_entire_dataset(
         head_branch = datapoint["head_branch"]
         sha_fail = datapoint["sha_fail"]
         benchmark_owner = config.benchmark_owner
+        if not benchmark_owner or str(benchmark_owner).startswith("<"):
+            benchmark_owner = repo_owner
         repo_url = f"https://github.com/{benchmark_owner}/{repo_name}.git"
-        logs = _safe_logs(datapoint["logs"])
+        logs = datapoint["logs"]
         workflow = datapoint["workflow"]
         workflow_path = datapoint["workflow_path"]
         sha_success = datapoint["sha_success"]
 
         print(f"\n[MAIN] Proceeding with failed commit: {sha_fail}")
 
-        # ------------------------------------------------------------------
-        # 3-TIER RESUME — evaluated before any expensive work (repo clone etc.)
-        #
-        #  Tier 1: FL + patch both present → fully done, skip everything.
-        #  Tier 2: FL present, patch missing → clone, skip log+FL, run patch gen.
-        #  Tier 3: Log present, FL missing → clone, skip log step, run FL+patch.
-        #  Tier 4: Nothing cached → clone and run all three steps.
-        #
-        # Tier 1 is the only one resolved before the repo clone.
-        # ------------------------------------------------------------------
-        _has_fl    = sha_fail in existing_fl_shas
-        _has_patch = sha_fail in existing_generated_patch_shas
-
-        if _has_fl and _has_patch:
-            print(f"[MAIN] Fully cached {sha_fail} (FL + patch found in prior results) — skipping.")
-            continue
-
-        # ------------------------------------------------------------------
-        # TRAJECTORY LOGGING - Initialize logger for this issue
-        # ------------------------------------------------------------------
-        memory_enabled = bool(config.get("memory_enabled", False))
-        if memory_enabled:
-            condition = "memory"
-            ablation = str(config.get("memory_ablation_levels", "L1+L2+L3"))
-            level = ablation.replace("+", "")  # "L1L2L3"
-        else:
-            condition = "baseline"
-            level = None
-
-        trajectory_logger = create_logger(
-            result_dir=config.project_result_dir,
-            model=model_key,
-            condition=condition,
-            level=level,
-            task_id=task_id,
-            sha_fail=sha_fail,
-            repo_name=repo_name
-        )
-
-        # ------------------------------------------------------------------
-        # START TRAJECTORY TRACKING FOR THIS ISSUE
-        # ------------------------------------------------------------------
-        trajectory = trajectory_tracker.start_issue(
-            task_id=task_id,
-            sha_fail=sha_fail,
-            repo_name=repo_name,
-            repo_owner=repo_owner,
-            workflow_path=workflow_path,
-            memory_enabled=bool(config.get("memory_enabled", False)),
-            memory_ablation_levels=str(config.get("memory_ablation_levels", "L1+L2+L3"))
-        )
-
-        # Track resume state
-        trajectory.was_cached["fl"] = _has_fl
-        trajectory.was_cached["patch"] = _has_patch
-
         if tracker:
             tracker.start_task(task_id)
 
         try:
-            # ------------------------------------------------------------------
-            # STEP: Repo Initialization
-            # ------------------------------------------------------------------
-            step_repo = trajectory.add_step(
-                StepType.REPO_CLONE,
-                inputs={
-                    "repo_url": repo_url,
-                    "repo_path": repo_path,
-                    "sha_fail": sha_fail
-                }
-            )
-
-            try:
-                ensure_repo_at_commit(repo_url, repo_path, sha_fail)
-                step_repo.complete(
-                    status=StepStatus.COMPLETED,
-                    outputs={"repo_ready": True}
-                )
-            except Exception as e:
-                step_repo.complete(
-                    status=StepStatus.FAILED,
-                    error=str(e)
-                )
-                raise
+            # Make sure repo is cloned and at sha_fail
+            ensure_repo_at_commit(repo_url, repo_path, sha_fail)
 
             # ------------------------------------------------------------------
             # 1) CI LOG ANALYSIS
-            #    Always reload the shared log_details from disk first so we
-            #    pick up entries written by any previous issue in this run
-            #    (or a previous run of any mode for the same model).
-            #    If sha_fail is already there → reuse, no LLM call.
-            #    Otherwise → run the log analyzer and save the result.
             # ------------------------------------------------------------------
-            step_log = trajectory.add_step(
-                StepType.CI_LOG_ANALYSIS,
-                inputs={
-                    "logs_count": len(logs),
-                    "workflow": workflow,
-                    "workflow_path": workflow_path
-                }
-            )
-
             try:
-                log_details = _load_json_list(shared_log_path)
-                cached_entry = _find_log_entry(sha_fail, log_details)
-
-                if cached_entry is not None:
-                    log_analysis_result = cached_entry
-                    trajectory.was_cached["ci_log"] = True
-                    print(f"[MAIN] Reusing CI log analysis for {sha_fail} (found in shared log_details).")
-                    step_log.complete(
-                        status=StepStatus.CACHED,
-                        outputs={
-                            "failed_steps": log_analysis_result.get("failed_steps", []),
-                            "error_description": log_analysis_result.get("error_description", ""),
-                            "cached": True
-                        }
-                    )
-                    # Log to simple trajectory
-                    trajectory_logger.log(
-                        "ci_log_analysis",
-                        {"logs_count": len(logs), "cached": True},
-                        {
-                            "failed_steps": log_analysis_result.get("failed_steps", []),
-                            "error_description": log_analysis_result.get("error_description", "")[:200]  # First 200 chars
-                        },
-                        duration=0.0
-                    )
-                else:
-                    print(f"[MAIN] Running CI log analyzer for {sha_fail}...")
+                if log_analyzer_type == "llm":
                     _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerLLM") if tracker else llm
                     log_analysis_result = CILogAnalyzerLLM(
                         repo_path,
@@ -334,289 +123,72 @@ def process_entire_dataset(
                         model_name=model_key,
                         task_id=task_id,
                     ).run()
+                else:
+                    _llm_log = get_tracked_llm(model_key, tracker, "CILogAnalyzerBM25") if tracker else llm
+                    log_analysis_result = CILogAnalyzerBM25(
+                        repo_path,
+                        logs,
+                        sha_fail,
+                        workflow,
+                        workflow_path,
+                        llm=_llm_log,
+                        model_name=model_key,
+                        task_id=task_id,
+                    ).run()
 
-                    if log_analysis_result.get("error"):
-                        print(f"[MAIN] Log analysis failed for {sha_fail}: {log_analysis_result['error']} — skipping FL/patch")
-                        step_log.complete(
-                            status=StepStatus.FAILED,
-                            error=log_analysis_result.get("error")
-                        )
-                        trajectory.complete(status=StepStatus.FAILED, final_error="CI log analysis failed")
-                        trajectory_tracker.save_trajectory(trajectory)
-                        continue
+                error_details = _merge_by_key(error_details, log_analysis_result, "sha_fail")
 
-                    # Save to the shared log so the next issue (and every future
-                    # run of any mode) can reuse this result immediately.
-                    log_details = _merge_by_key(log_details, log_analysis_result, "sha_fail")
-                    with open(shared_log_path, "w", encoding="utf-8") as f:
-                        json.dump(log_details, f, indent=4)
-
-                    step_log.complete(
-                        status=StepStatus.COMPLETED,
-                        outputs={
-                            "failed_steps": log_analysis_result.get("failed_steps", []),
-                            "error_description": log_analysis_result.get("error_description", ""),
-                            "cached": False
-                        }
-                    )
-                    # Log to simple trajectory
-                    trajectory_logger.log(
-                        "ci_log_analysis",
-                        {"logs_count": len(logs), "cached": False},
-                        {
-                            "failed_steps": log_analysis_result.get("failed_steps", []),
-                            "error_description": log_analysis_result.get("error_description", "")[:200]
-                        }
-                    )
+                with open(os.path.join(result_dir, "log_details.json"), "w") as f:
+                    json.dump(error_details, f, indent=4)
 
             except Exception as e:
                 print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
-                step_log.complete(status=StepStatus.FAILED, error=str(e))
-                trajectory.complete(status=StepStatus.FAILED, final_error=str(e))
-                trajectory_tracker.save_trajectory(trajectory)
+                continue
+
+            try:
+                changed_files_info = collect_changed_files_for_fail_and_parent(
+                    owner=benchmark_owner,
+                    repo=repo_name,
+                    repo_path=repo_path,
+                    sha_fail=sha_fail,
+                    workflow_rel_path=workflow_path,
+                    workflow_yaml_from_dataset=workflow
+                )
+
+                # Save to per-commit JSON file in baselines/changed_files/{sha_fail}.json
+                changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
+                with open(changed_files_path, "w", encoding="utf-8") as f:
+                    json.dump(changed_files_info, f, indent=4)
+
+                print(f"[MAIN] Saved changed files info to {changed_files_path}")
+
+            except Exception as e:
+                print(f"[ERROR] Failed to collect/save changed files for {sha_fail}: {e}")
                 continue
 
             # ------------------------------------------------------------------
-            # 2) CHANGED FILES — cache-first, GitHub fallback
-            #    Load from disk if already fetched; only hit GitHub on miss.
-            #    If GitHub fetch also fails, proceed with empty info so FL
-            #    can still run (it will rely on log analysis alone).
+            # 3) FAULT LOCALIZATION (later we can inject changed_files_info)
             # ------------------------------------------------------------------
-            step_changed_files = trajectory.add_step(
-                StepType.CHANGED_FILES,
-                inputs={"sha_fail": sha_fail}
-            )
-
-            changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
-            if os.path.exists(changed_files_path):
-                try:
-                    with open(changed_files_path, "r", encoding="utf-8") as f:
-                        changed_files_info = json.load(f)
-                    print(f"[MAIN] Loaded changed files from cache: {changed_files_path}")
-                    step_changed_files.complete(
-                        status=StepStatus.CACHED,
-                        outputs={
-                            "changed_files_count": len(changed_files_info.get("changed_files", [])),
-                            "files": [cf.get("file_path") for cf in changed_files_info.get("changed_files", [])]
-                        }
-                    )
-                except Exception as e:
-                    print(f"[WARN] Cache read failed for {sha_fail} ({e}), fetching from GitHub.")
-                    changed_files_info = None
-            else:
-                changed_files_info = None
-
-            if changed_files_info is None:
-                try:
-                    changed_files_info = collect_changed_files_for_fail_and_parent(
-                        owner=benchmark_owner,
-                        repo=repo_name,
-                        repo_path=repo_path,
-                        sha_fail=sha_fail,
-                        workflow_rel_path=workflow_path,
-                        workflow_yaml_from_dataset=workflow,
-                    )
-                    with open(changed_files_path, "w", encoding="utf-8") as f:
-                        json.dump(changed_files_info, f, indent=4)
-                    print(f"[MAIN] Fetched and cached changed files: {changed_files_path}")
-                    step_changed_files.complete(
-                        status=StepStatus.COMPLETED,
-                        outputs={
-                            "changed_files_count": len(changed_files_info.get("changed_files", [])),
-                            "files": [cf.get("file_path") for cf in changed_files_info.get("changed_files", [])]
-                        }
-                    )
-                except Exception as e:
-                    print(f"[WARN] Could not fetch changed files for {sha_fail} ({e}). Proceeding with empty info.")
-                    changed_files_info = {"sha_fail": sha_fail, "changed_files": []}
-                    step_changed_files.complete(
-                        status=StepStatus.FAILED,
-                        outputs={"changed_files_count": 0, "files": []},
-                        error=str(e)
-                    )
-
-            # ------------------------------------------------------------------
-            # 3) FAULT LOCALIZATION
-            #    Resume (Tier 2): if FL is already in the per-mode file from a
-            #    prior interrupted run, reuse it — FL is mode-specific (memory
-            #    level affects its output, so it is NOT shared across modes).
-            # ------------------------------------------------------------------
-            step_fl = trajectory.add_step(
-                StepType.FAULT_LOCALIZATION,
-                inputs={
-                    "has_log_analysis": bool(log_analysis_result),
-                    "has_changed_files": bool(changed_files_info.get("changed_files")),
-                    "memory_enabled": bool(config.get("memory_enabled", False))
-                }
-            )
-
             try:
-                memory_context = {"enabled": False, "matches": []}
+                _llm_fl = get_tracked_llm(model_key, tracker, "FaultLocalization") if tracker else llm
+                fault_localizer = FaultLocalization(
+                    sha_fail=sha_fail,
+                    repo_path=repo_path,
+                    error_logs=log_analysis_result,
+                    workflow=workflow,
+                    llm=_llm_fl,
+                    model_name=model_key,
+                    changed_files_info=changed_files_info,
+                ).run()
 
-                # Memory retrieval step (if enabled)
-                if memory_plugin.is_enabled() and not _has_fl:
-                    step_memory = trajectory.add_step(
-                        StepType.MEMORY_RETRIEVAL,
-                        inputs={
-                            "ablation_levels": str(config.get("memory_ablation_levels", "L1+L2+L3"))
-                        }
-                    )
+                fault_localization = _merge_by_key(fault_localization, fault_localizer, "sha_fail")
 
-                    try:
-                        memory_query = memory_plugin.build_query(
-                            task_id=task_id,
-                            sha_fail=sha_fail,
-                            repo_name=repo_name,
-                            workflow_path=workflow_path,
-                            workflow=workflow,
-                            log_analysis_result=log_analysis_result,
-                            changed_files_info=changed_files_info,
-                        )
-                        memory_context = memory_plugin.retrieve(memory_query)
-
-                        step_memory.complete(
-                            status=StepStatus.COMPLETED,
-                            outputs={
-                                "enabled": memory_context.get("enabled", False),
-                                "level_scores": memory_context.get("level_scores", {}),
-                                "weighted_similarity": memory_context.get("weighted_similarity", 0.0),
-                                "memory_injected": bool(memory_context.get("matches")),
-                                "selected_memory_levels": memory_context.get("selected_memory_levels", []),
-                                "matches_count": len(memory_context.get("matches", []))
-                            }
-                        )
-
-                        # Log to simple trajectory
-                        trajectory_logger.log(
-                            "memory_retrieval",
-                            {
-                                "ablation_levels": str(config.get("memory_ablation_levels", "L1+L2+L3")),
-                                "query_built": True
-                            },
-                            {
-                                "enabled": memory_context.get("enabled", False),
-                                "memory_injected": bool(memory_context.get("matches")),
-                                "weighted_similarity": memory_context.get("weighted_similarity", 0.0),
-                                "level_scores": memory_context.get("level_scores", {}),
-                                "selected_memory_levels": memory_context.get("selected_memory_levels", []),
-                                "matches_count": len(memory_context.get("matches", [])),
-                                # Detailed match info
-                                "l1_matches": memory_context.get("l1_matches", []),
-                                "l2_matches": memory_context.get("l2_matches", []),
-                                "l3_matches": memory_context.get("l3_matches", []),
-                                "candidate_files": memory_context.get("candidate_files", []),
-                                "high_level_hints": memory_context.get("high_level_hints", [])
-                            },
-                            success=True
-                        )
-                    except Exception as e:
-                        step_memory.complete(status=StepStatus.FAILED, error=str(e))
-                        trajectory_logger.log(
-                            "memory_retrieval",
-                            {"ablation_levels": str(config.get("memory_ablation_levels", "L1+L2+L3"))},
-                            {},
-                            success=False,
-                            error=str(e)
-                        )
-
-                if _has_fl:
-                    fault_localizer = next(
-                        e for e in fault_localization
-                        if str(e.get("sha_fail") or "") == str(sha_fail)
-                    )
-                    print(f"[MAIN] Reusing FL result for {sha_fail} (found in prior results).")
-
-                    step_fl.complete(
-                        status=StepStatus.CACHED,
-                        outputs={
-                            "predicted_files": fault_localizer.get("fault_localization_data", []),
-                            "files_count": len(fault_localizer.get("fault_localization_data", [])),
-                            "cached": True
-                        }
-                    )
-                else:
-                    _llm_fl = get_tracked_llm(model_key, tracker, "FaultLocalization") if tracker else llm
-                    fault_localizer = FaultLocalization(
-                        sha_fail=sha_fail,
-                        repo_path=repo_path,
-                        error_logs=log_analysis_result,
-                        workflow=workflow,
-                        llm=_llm_fl,
-                        model_name=model_key,
-                        changed_files_info=changed_files_info,
-                        memory_plugin=memory_plugin,
-                        memory_context=memory_context,
-                    ).run()
-
-                    # Embed full memory context so each FL entry is self-contained
-                    # for ablation analysis (no need to join memory_retrieval_log.jsonl).
-                    fault_localizer["memory_summary"] = {
-                        "ablation_levels": str(config.get("memory_ablation_levels", "L1+L2+L3")),
-                        "memory_enabled": memory_context.get("enabled", False),
-                        "level_scores": memory_context.get("level_scores", {"L1": 0.0, "L2": 0.0, "L3": 0.0}),
-                        "weighted_similarity": memory_context.get("weighted_similarity", 0.0),
-                        "selected_memory_levels": memory_context.get("selected_memory_levels", []),
-                        "memory_injected": bool(memory_context.get("matches")),
-                        "suppressed_reason": memory_context.get("reason"),
-                        "candidate_files": memory_context.get("candidate_files", []),
-                        "high_level_hints": memory_context.get("high_level_hints", []),
-                        "l1_matches": memory_context.get("l1_matches", []),
-                        "l2_matches": memory_context.get("l2_matches", []),
-                        "l3_matches": memory_context.get("l3_matches", []),
-                    }
-
-                    fault_localization = _merge_by_key(fault_localization, fault_localizer, "sha_fail")
-                    existing_fl_shas.add(str(sha_fail))
-                    with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
-                        json.dump(fault_localization, f, indent=4)
-
-                    predicted_files = [
-                        f.get("file_path") for f in fault_localizer.get("fault_localization_data", [])
-                    ]
-
-                    step_fl.complete(
-                        status=StepStatus.COMPLETED,
-                        outputs={
-                            "predicted_files": predicted_files,
-                            "files_count": len(predicted_files),
-                            "memory_injected": bool(memory_context.get("matches")),
-                            "cached": False
-                        }
-                    )
-
-                    # Update trajectory with FL predictions
-                    trajectory.fl_files_predicted = predicted_files
-
-                    # Log to simple trajectory
-                    trajectory_logger.log(
-                        "fault_localization",
-                        {"memory_enabled": memory_enabled},
-                        {
-                            "predicted_files": predicted_files,
-                            "files_count": len(predicted_files),
-                            "memory_was_injected": bool(memory_context.get("matches"))
-                        }
-                    )
+                with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
+                    json.dump(fault_localization, f, indent=4)
 
                 if not fault_localizer.get("fault_localization_data"):
-                    mode = "memory" if bool(config.get("memory_enabled", False)) else "baseline"
-                    # FL found nothing — fall back to changed_files from the commit diff.
-                    # The developer changed these files; one of them likely contains the fix.
-                    changed = (changed_files_info or {}).get("changed_files", [])
-                    if changed:
-                        print(f"[MAIN] FL empty for {sha_fail} ({mode}) — injecting {len(changed)} changed file(s) as fallback targets.")
-                        fault_localizer["fault_localization_data"] = [
-                            {
-                                "file_path": cf["file_path"],
-                                "full_file_path": os.path.join(repo_path, cf["file_path"]),
-                                "faults": [{"description": "FL found no suspicious files; using commit-changed file as fallback target.", "line_range": []}],
-                            }
-                            for cf in changed
-                            if cf.get("file_path", "").endswith((".py", ".toml", ".yml", ".yaml", ".txt"))
-                        ]
-                    if not fault_localizer.get("fault_localization_data"):
-                        print(f"[MAIN] No suspicious files found for {sha_fail} ({mode}) — skipping patch gen.")
-                        continue
+                    print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
+                    continue
 
             except Exception as e:
                 print(f"[ERROR] Failed processing {sha_fail} during fault localization: {e}")
@@ -624,23 +196,8 @@ def process_entire_dataset(
 
             # ------------------------------------------------------------------
             # 4) PATCH GENERATION
-            #    Normal path: we reach here only when _has_patch is False.
-            #    Safety guard: if patch somehow exists without FL (data mismatch),
-            #    skip rather than duplicate.
             # ------------------------------------------------------------------
-            step_patch = trajectory.add_step(
-                StepType.PATCH_GENERATION,
-                inputs={
-                    "fl_files_count": len(fault_localizer.get("fault_localization_data", []))
-                }
-            )
-
             try:
-                if _has_patch:
-                    print(f"[MAIN] Skipping patch generation for {sha_fail} (patch found in prior results).")
-                    step_patch.complete(status=StepStatus.CACHED)
-                    continue
-
                 _llm_pg = get_tracked_llm(model_key, tracker, "PatchGeneration") if tracker else llm
                 patch_generator = PatchGeneration(
                     bug_report=fault_localizer,
@@ -656,79 +213,12 @@ def process_entire_dataset(
 
                 if not patch_generator.get("diff"):
                     print(f"[MAIN] No patch generated for {sha_fail}")
-                    step_patch.complete(
-                        status=StepStatus.FAILED,
-                        outputs={"patch_generated": False},
-                        error="No diff generated"
-                    )
-                    trajectory.patch_generated = False
-                    trajectory.complete(status=StepStatus.COMPLETED, final_error="No patch generated")
-                    trajectory_tracker.save_trajectory(trajectory)
                     continue
 
                 generated_patches = _merge_by_key(generated_patches, patch_generator, "sha_fail")
-                existing_generated_patch_shas.add(sha_fail)
 
                 with open(os.path.join(result_dir, "generated_patches.json"), "w") as f:
                     json.dump(generated_patches, f, indent=4)
-
-                # Extract patched files for trajectory tracking
-                patched_files = []
-                diff_content = patch_generator.get("diff", "")
-                for line in diff_content.split("\n"):
-                    if line.startswith("diff --git"):
-                        parts = line.split()
-                        if len(parts) >= 3:
-                            patched_files.append(parts[2].lstrip("a/"))
-
-                step_patch.complete(
-                    status=StepStatus.COMPLETED,
-                    outputs={
-                        "patch_generated": True,
-                        "patched_files": patched_files,
-                        "patched_files_count": len(patched_files),
-                        "diff_size": len(diff_content)
-                    }
-                )
-
-                trajectory.patch_generated = True
-                trajectory.fl_files_correct = list(set(trajectory.fl_files_predicted) & set(patched_files))
-
-                # Log to simple trajectory
-                trajectory_logger.log(
-                    "patch_generation",
-                    {"fl_files_count": len(predicted_files)},
-                    {
-                        "patch_generated": True,
-                        "patched_files": patched_files,
-                        "patched_files_count": len(patched_files)
-                    }
-                )
-
-                # Incremental FL evaluation — updates fl_evaluation.json after every
-                # issue so scores are visible without waiting for the full run to finish.
-                try:
-                    evaluate_fl(
-                        fault_localization_path=os.path.join(result_dir, "fault_localization.json"),
-                        generated_patches_path=os.path.join(result_dir, "generated_patches.json"),
-                        output_path=os.path.join(result_dir, "fl_evaluation.json"),
-                    )
-                except Exception as _fl_err:
-                    print(f"[MAIN] Incremental FL evaluation failed: {_fl_err}")
-
-                if bool(config.get("memory_writeback_enabled", False)):
-                    memory_plugin.save_memory_entry(
-                        task_id=task_id,
-                        sha_fail=sha_fail,
-                        repo_name=repo_name,
-                        repo_owner=repo_owner,
-                        workflow_path=workflow_path,
-                        workflow=workflow,
-                        log_analysis_result=log_analysis_result,
-                        changed_files_info=changed_files_info,
-                        fault_localizer=fault_localizer,
-                        patch_generator=patch_generator,
-                    )
 
             except Exception as e:
                 print(f"[ERROR] Failed processing {sha_fail} during patch generation: {e}")
@@ -744,51 +234,35 @@ def process_entire_dataset(
                     os.path.join(result_dir, "step_trace.json")
                 )
 
-                # Update trajectory with token usage from tracker
-                task_report = tracker.get_task_summary(task_id) if hasattr(tracker, 'get_task_summary') else {}
-                if task_report:
-                    trajectory.total_tokens = task_report.get("total_tokens", {"input": 0, "output": 0})
-                    trajectory.total_cost_usd = task_report.get("total_cost_usd", 0.0)
-
-            # Complete and save trajectory
-            if trajectory.patch_generated:
-                trajectory.complete(status=StepStatus.COMPLETED)
-            elif trajectory.final_error:
-                trajectory.complete(status=StepStatus.FAILED)
-            else:
-                trajectory.complete(status=StepStatus.COMPLETED, final_error="Completed without patch")
-
-            trajectory_tracker.save_trajectory(trajectory)
-
-            # Save simple trajectory with final results
-            task_report = tracker.get_task_summary(task_id) if tracker and hasattr(tracker, 'get_task_summary') else {}
-            trajectory_logger.set_result(
-                patch_generated=trajectory.patch_generated if hasattr(trajectory, 'patch_generated') else False,
-                fl_predictions=trajectory.fl_files_predicted if hasattr(trajectory, 'fl_files_predicted') else [],
-                total_tokens=task_report.get("total_tokens", {"input": 0, "output": 0}),
-                cost=task_report.get("total_cost_usd", 0.0)
-            )
-            trajectory_logger.save()
-
     return generated_patches
 
 
 if __name__ == "__main__":
-    # Load config
-    config = load_config()
-
+    # Load the local config when present. A fresh checkout can use the public
+    # example config; secrets continue to come from environment variables.
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(base_dir, "config.yaml")
+    if not os.path.exists(config_path):
+        config_path = os.path.join(base_dir, "config.example.yaml")
+        print(f"[CONFIG] config.yaml not found; using {config_path}")
+    config = OmegaConf.load(config_path)
+    # Make all configured relative paths stable regardless of the shell's cwd.
+    os.chdir(base_dir)
 
-    model_key = get_default_model_key()  # or "gpt4o", "deepseek-chat", etc.
+    model_key = "gpt-5-mini"  # or "gpt4o", "deepseek-chat", etc.
+    log_analyzer_type = "llm"  # "llm" or "bm25"
     llm = get_llm(model_key)
 
     # ------------------------------------------------------------------
     # Token / cost tracker — shared across the entire run
     # ------------------------------------------------------------------
-    tracker = TokenTracker(model_name=model_key)
+    tracker = TokenTracker(model_name=model_key, log_analyzer_type=log_analyzer_type)
 
     hf_token = os.getenv("HF_TOKEN") or config.get("HUGGINGFACE_TOKEN")
+    if hf_token and str(hf_token).startswith("<"):
+        hf_token = None
 
+    print("[DATASET] Fetching latest ci-benchmark-user/ci-repair-bench parquet...")
     dataset_path = hf_hub_download(
         repo_id="ci-benchmark-user/ci-repair-bench",
         filename="ci_repair_dataset.parquet",
@@ -797,6 +271,7 @@ if __name__ == "__main__":
     )
 
     dataset_df = pd.read_parquet(dataset_path)
+    print(f"[DATASET] Loaded {len(dataset_df)} rows from {dataset_path}")
     dataset = dataset_df.to_dict(orient="records")
 
     # Set resume_from to the number of items already processed (0 = fresh run).
@@ -804,6 +279,7 @@ if __name__ == "__main__":
     try:
         results = process_entire_dataset(
             dataset, config, llm, model_key,
+            log_analyzer_type=log_analyzer_type,
             tracker=tracker
         )
     finally:
@@ -812,8 +288,7 @@ if __name__ == "__main__":
         # ------------------------------------------------------------------
         tracker.print_summary()
         result_dir = os.path.join(
-            config.project_result_dir,
-            f"{filesystem_safe_model_key(model_key)}{_make_run_suffix(config)}",
+            config.project_result_dir, f"{model_key}_{log_analyzer_type}"
         )
         os.makedirs(result_dir, exist_ok=True)
 
@@ -836,14 +311,8 @@ if __name__ == "__main__":
             except Exception as fl_err:
                 print(f"[MAIN] FL evaluation failed: {fl_err}")
 
-    output_file = os.path.join(
-        config.project_result_dir,
-        f"generated_patches_{'memory' if config.get('memory_enabled', False) else 'baseline'}.json",
-    )
+    output_file = os.path.join(config.project_result_dir, "generated_patches.json")
     with open(output_file, "w") as f:
         json.dump(results, f, indent=4)
 
     print(f"[MAIN] Results saved in {output_file}")
-
-    # Print trajectory tracking summary
-    trajectory_tracker.print_summary()

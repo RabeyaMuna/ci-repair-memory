@@ -5,9 +5,8 @@ from typing import Any, Set
 
 import pandas as pd
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATASET_PATH = PROJECT_ROOT / "dataset" / "lca_dataset.parquet"
-LOG_PATH = PROJECT_ROOT / "baselines" / "results" / "deepseek-chat_llm" / "generated_patches.json"
+DATASET_PATH = Path("/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/lca_dataset.parquet")
+LOG_PATH = Path("/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/results/deepseek-chat_llm/generated_patches.json")
 
 
 def collect_sha_fail_values(obj: Any, out: Set[str]) -> None:

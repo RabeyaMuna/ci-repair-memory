@@ -36,16 +36,10 @@ load_dotenv()
 # ----------------------------
 # Only run these task IDs
 # ----------------------------
-TARGET_IDS = [112, 115, 117, 118, 122, 123, 128, 133,
-    146, 151, 161, 200, 212, 213, 229, 235, 241, 244,
-    249, 251, 252, 258, 261, 265, 266, 268, 274, 276,
-    277, 278, 285, 289, 304, 312, 318, 320, 321, 330,
-    342, 344, 369, 370, 371, 380, 381, 383, 386, 393,
-    396, 410, 411, 413, 414, 416, 418, 424, 426, 434,
-    436, 440, 445, 448, 451, 453, 454, 455, 463, 472,
-    474, 476, 477, 478, 481, 483, 489, 507, 519, 531,
-    534, 538, 541, 545, 547, 549, 558
-]
+TARGET_IDS = ["300", "301", "302", "303", "304", "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318"]
+
+
+
 TARGET_ID_SET = set(TARGET_IDS)
 
 # ----------------------------------------------------------------------
@@ -120,15 +114,23 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
     patches_index = _load_results_index(patches_path, key_field="sha_fail")
 
     # --- robust subset selection ---
+        # --- robust subset selection (works for int or str ids) ---
+    target_id_str_set = {str(x) for x in TARGET_IDS}
+
     subset = []
     found_ids = set()
     for dp in dataset:
-        dp_id = _coerce_int(dp.get("id"))
-        if dp_id is not None and dp_id in TARGET_ID_SET:
-            subset.append(dp)
-            found_ids.add(dp_id)
+        dp_id_raw = dp.get("id")
+        if dp_id_raw is None:
+            continue
+        dp_id_str = str(dp_id_raw)
 
-    missing_ids = [i for i in TARGET_IDS if i not in found_ids]
+        if dp_id_str in target_id_str_set:
+            subset.append(dp)
+            found_ids.add(dp_id_str)
+
+    missing_ids = [str(i) for i in TARGET_IDS if str(i) not in found_ids]
+
 
     print(f"[MAIN] Dataset size: {len(dataset)}")
     print(f"[MAIN] Will process {len(subset)} datapoints from TARGET_IDS")
@@ -154,6 +156,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         # 0) Ensure repo at sha_fail
         try:
             ensure_repo_at_commit(repo_url, repo_path, sha_fail)
+            
         except Exception as e:
             print(f"[ERROR] ensure_repo_at_commit failed for {sha_fail}: {e}")
             continue
@@ -227,6 +230,10 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                 model_name=model_key,
                 changed_files_info=changed_files_info,
             ).run()
+
+            if not fault_localizer["fault_localization_data"]:
+                print(f"[MAIN] Fault localization found no data for {sha_fail}")
+                continue
 
             if isinstance(fault_localizer, dict):
                 fault_localizer.setdefault("sha_fail", sha_fail)
@@ -315,7 +322,7 @@ if __name__ == "__main__":
 
     dataset = dataset_df.to_dict(orient="records")
 
-    model_key = "deepseek-chat"  # or "gpt4o"
+    model_key = "gpt-5-mini"  # or "gpt4o"
     llm = get_llm(model_key)
 
     results = process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm")

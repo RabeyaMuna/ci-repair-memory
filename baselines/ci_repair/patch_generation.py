@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-import ast
 import demjson3
 from pathlib import Path
 import json
@@ -84,11 +83,43 @@ automated_commands_available = [
     "file_pattern": "*.py"
   },
   {
+    "tool": "yapf",
+    "purpose": "Code formatter (alternative to black/autopep8)",
+    "install_command": "pip install yapf",
+    "check_command": "yapf --diff {{file_or_dir}}",
+    "fix_command": "yapf -i {{file_or_dir}}",
+    "file_pattern": "*.py"
+  },
+  {
     "tool": "pylint",
     "purpose": "Comprehensive linter for detecting code smells and logical issues",
     "install_command": "pip install pylint",
     "check_command": "pylint {{file_or_dir}}",
     "fix_command": "ruff check --fix {{file_or_dir}}",  # fixes delegated to Ruff
+    "file_pattern": "*.py"
+  },
+  {
+    "tool": "mypy",
+    "purpose": "Static type checker for Python",
+    "install_command": "pip install mypy",
+    "check_command": "mypy {{file_or_dir}}",
+    "fix_command": "",
+    "file_pattern": "*.py"
+  },
+  {
+    "tool": "pytest",
+    "purpose": "Run unit and integration tests",
+    "install_command": "pip install pytest",
+    "check_command": "pytest {{file_or_dir}}",
+    "fix_command": "",
+    "file_pattern": "tests/*.py"
+  },
+  {
+    "tool": "bandit",
+    "purpose": "Security linter (checks for hardcoded secrets, dangerous calls, etc.)",
+    "install_command": "pip install bandit",
+    "check_command": "bandit -r {{file_or_dir}}",
+    "fix_command": "",
     "file_pattern": "*.py"
   },
   {
@@ -133,7 +164,6 @@ class PatchGeneration:
         llm: ChatOpenAI = None,
         model_name: str = None,
         tracker=None,           # utilities.token_tracker.TokenTracker | None
-        changed_files_info: Optional[Dict] = None,
     ):
         self.config = load_config()
         self.bug_report = bug_report
@@ -143,7 +173,6 @@ class PatchGeneration:
         self.sha_fail = bug_report.get("sha_fail")
         self.workflow_path = workflow_path
         self.workflow = workflow
-        self.changed_files_info = changed_files_info or {}
         self.llm = llm
         self.parser = JsonOutputParser()
         self.patch_results: List[Dict[str, Any]] = []
@@ -410,7 +439,7 @@ Rules:
             return ""
 
 
-    def _try_automated_fix(self, faults: List[Dict[str, Any]], full_path: str) -> tuple:
+    def _try_automated_fix(self, faults: List[Dict[str, Any]], full_path: str) -> bool:
         """Try to fix the file automatically using appropriate tools (ruff, black, isort, etc.)"""
         pyproject_cfg = self._load_pyproject()
         TOKEN_LIMIT = get_prompt_token_budget(self.model_name)
@@ -473,7 +502,7 @@ Rules:
 
         if not results["installation_commands"] and not results["fix_commands"]:
             logger.warning(f"No automated commands returned for automated fix in {full_path}")
-            return False, []
+            return False
         
         # ---- Execute install commands (with trusted-host fallback) ----
                 # ---- Execute install commands (no sys.executable; trusted-host fallback) ----
@@ -562,7 +591,6 @@ Rules:
 
         # ---- Execute fix commands ----
         any_success = False
-        tool_errors: list = []   # errors from each failed command; passed to LLM on fallback
         for cmd in results["fix_commands"]:
             try:
                 logger.info(f"Running automated fix command: {cmd}")
@@ -581,47 +609,15 @@ Rules:
                     any_success = True
                 else:
                     logger.warning(f"Command failed: {cmd}\n{fix_proc.stderr}")
-                    tool_errors.append({
-                        "cmd": cmd,
-                        "returncode": fix_proc.returncode,
-                        "output": (fix_proc.stdout or "") + (fix_proc.stderr or ""),
-                    })
             except Exception as e:
                 self._save_interrupted_patch_error("_try_automated_fix:fix", full_path, e, extra={"cmd": cmd})
                 logger.error(f"Failed running command {cmd}: {e}")
-                tool_errors.append({"cmd": cmd, "returncode": -1, "output": str(e)})
 
-        # Return (success_flag, error_details) so caller can pass errors to LLM
-        return any_success, tool_errors
+        # If automated fix succeeded, return True so caller skips LLM fallback
+        return any_success
 
 
-    def _llm_patch_prompt(
-        self,
-        *,
-        full_path: str,
-        faults_payload: Any,
-        outline: str,
-        tool_errors: list | None = None,
-    ) -> str:
-        tool_errors_section = ""
-        if tool_errors:
-            lines = []
-            for e in tool_errors:
-                lines.append(f"  Command : {e['cmd']}")
-                lines.append(f"  Exit code: {e['returncode']}")
-                output = (e.get("output") or "").strip()
-                if output:
-                    lines.append(f"  Output:\n{output}")
-                lines.append("")
-            tool_errors_section = f"""
-    ### AUTOMATED FIX FAILED — use this output as extra context for the real fix
-    The automated tool was tried first but could not fix the problem.
-    Understand WHY it failed and generate a correct patch that addresses the root cause:
-
-{chr(10).join(lines)}
-    ---
-"""
-
+    def _llm_patch_prompt(self, *, full_path: str, faults_payload: Any, outline: str) -> str:
         return f"""
     You are a Senior Software Engineer responsible for repairing code faults by fixing any kind of issues in the code.
     Each fault entry describes a specific issue detected by CI validation tools.
@@ -640,24 +636,14 @@ Rules:
     ### Failed Job
     {json.dumps(self.error_details.get("failed_job", {}), indent=2)}
 
-    ### COMMIT DIFF — what the developer changed in this failing commit
-    These are the exact file changes that introduced the CI failure.
-    Use them to understand the root cause and generate a fix that addresses it:
-    {json.dumps(self.changed_files_info.get("changed_files", []), indent=2)}
-
-{tool_errors_section}
     ---
 
     ### INSTRUCTIONS
     - For each issue, identify the **exact original snippet** to fix.
-    - `original_snippet` MUST be copied verbatim from the provided code/file content.
-    - `fixed_snippet` MUST be complete replacement code for `original_snippet`, not a diff.
     - ALWAYS return full, syntactically valid code blocks so that we can replace the given one with updated one.
     - Do NOT remove or modify unrelated code.
     - Keep indentation and structure consistent with the original code.
     - Do NOT return the entire file content, only the minimally necessary blocks which is given with fixation.
-    - Do NOT include markdown fences, unified-diff markers, line numbers, or explanations inside snippets.
-    - If you cannot provide an exact matchable `original_snippet`, return [].
     - IMPORTANT: If there is **no required modification** in the provided `code_snippet`, return an **empty JSON list**: [].
 
     ---
@@ -690,7 +676,6 @@ Rules:
     file_path: str,
     full_path: str,
     original_content: str,
-    tool_errors: list | None = None,
     ) -> bool:
         """
         Generate snippet-level patches using LLM and apply them to the file.
@@ -708,8 +693,7 @@ Rules:
         # 1) Combined faults prompt
         # --------------------------
         full_prompt = self._llm_patch_prompt(
-            full_path=full_path, faults_payload=faults, outline=outline,
-            tool_errors=tool_errors,
+            full_path=full_path, faults_payload=faults, outline=outline
         )
 
         try:
@@ -732,19 +716,12 @@ Rules:
                     "proceeding per-fault."
                 )
 
-            if not collected_patches:
-                logger.info(
-                    f"{file_path}: combined LLM prompt produced no usable patches; "
-                    "trying per-fault fallback."
-                )
-
                 # --------------------------
                 # 2) Per-fault prompts
                 # --------------------------
                 for i, fault in enumerate(faults):
                     fault_prompt = self._llm_patch_prompt(
-                        full_path=full_path, faults_payload=[fault], outline=outline,
-                        tool_errors=tool_errors,
+                        full_path=full_path, faults_payload=fault, outline=outline
                     )
 
                     fault_tokens = self._estimate_tokens(fault_prompt)
@@ -797,10 +774,7 @@ Rules:
                         }
 
                         chunk_prompt = self._llm_patch_prompt(
-                            full_path=full_path,
-                            faults_payload=[fault_piece],
-                            outline=outline,
-                            tool_errors=tool_errors,
+                            full_path=full_path, faults_payload=fault_piece, outline=outline
                         )
 
                         chunk_tokens = self._estimate_tokens(chunk_prompt)
@@ -839,14 +813,6 @@ Rules:
                     logger.warning(f"Patch {idx} missing snippet data, skipping.")
                     continue
 
-                if original_snippet == fixed_snippet:
-                    logger.warning(f"Patch {idx} is a no-op, skipping.")
-                    continue
-
-                if self._snippet_has_artifacts(original_snippet) or self._snippet_has_artifacts(fixed_snippet):
-                    logger.warning(f"Patch {idx} contains diff/markdown artifacts, skipping.")
-                    continue
-
                 replaced_content = self._replace_snippet_in_code(
                     updated_content, original_snippet, fixed_snippet
                 )
@@ -863,10 +829,6 @@ Rules:
                 logger.warning(
                     f"{file_path}: patches were generated but none applied (snippets not found)."
                 )
-                return False
-
-            if not self._is_updated_content_valid(full_path, updated_content):
-                logger.warning(f"{file_path}: generated patch produced invalid file content; skipping write.")
                 return False
 
             # Write once
@@ -904,26 +866,6 @@ Rules:
         logger.debug("Snippet not found after normalization.")
         return code
 
-    def _snippet_has_artifacts(self, snippet: str) -> bool:
-        stripped = snippet.strip()
-        if "```" in stripped:
-            return True
-        artifact_prefixes = ("diff --git ", "+++", "---", "@@")
-        return any(stripped.startswith(prefix) for prefix in artifact_prefixes)
-
-    def _is_updated_content_valid(self, full_path: str, content: str) -> bool:
-        if Path(full_path).suffix != ".py":
-            return True
-        try:
-            ast.parse(content, filename=full_path)
-            return True
-        except SyntaxError as e:
-            logger.warning(
-                f"Generated Python content failed syntax validation for {full_path}: "
-                f"line {e.lineno}: {e.msg}"
-            )
-            return False
-
     def _write_updated_file(self, full_path: str, content: str) -> bool:
         """Write updated content to disk with newline normalization."""
         try:
@@ -935,38 +877,6 @@ Rules:
         except Exception as e:
             logger.error(f"Failed to write updated file {full_path}: {e}")
             return False
-
-    def _generate_llm_patch_for_tool_errors(
-        self,
-        file_path: str,
-        full_path: str,
-        tool_errors: list,
-    ) -> bool:
-        """Use the current file and tool diagnostics for one generic LLM fallback."""
-        current_content = self._read_file(full_path)
-        if not current_content:
-            logger.warning(f"Could not read file for tool-error LLM fallback: {full_path}")
-            return False
-
-        fault_payload = [
-            {
-                "issue_type": "remaining_tool_errors_after_automated_fix",
-                "reason": (
-                    "Automated repair/cleanup left validation or lint errors. "
-                    "Fix only the errors shown in tool_errors."
-                ),
-                "line_range": [],
-                "code_snippet": current_content,
-            }
-        ]
-
-        return self._generate_llm_patch(
-            fault_payload,
-            file_path,
-            full_path,
-            current_content,
-            tool_errors=tool_errors,
-        )
 
     # =========================================================
     # -------------------- PATCH PROCESS ----------------------
@@ -993,85 +903,18 @@ Rules:
                 logger.warning(f"Could not read file: {full_path}")
                 continue
 
-            # ------------------------------------------------------------------
-            # STEP 1 — Decide: automated fix or LLM?
-            #   _try_automated_fix asks the LLM if an automated tool (ruff,
-            #   yapf, …) can deterministically fix this. If yes it runs the
-            #   commands. Returns (success, errors_from_failed_commands).
-            # ------------------------------------------------------------------
-            automated_ok, tool_errors = self._try_automated_fix(faults, full_path)
+            # 1) Try automated fix first
+            automated_ok = self._try_automated_fix(faults, full_path)
 
             if not automated_ok:
-                # ------------------------------------------------------------------
-                # STEP 2a — Automated fix failed (or wasn't applicable).
-                #   • Revert any partial file changes the tool may have written.
-                #   • Pass the tool's error output + fault data to the LLM so it
-                #     can understand WHY the automated approach failed and generate
-                #     a correct patch from scratch.
-                # ------------------------------------------------------------------
-                post_auto = self._read_file(full_path)
-                if post_auto != original:
-                    logger.info(
-                        f"Reverting partial automated-fix changes for {file_path} "
-                        "before LLM fallback."
-                    )
-                    self._write_updated_file(full_path, original)
-
-                if tool_errors:
-                    logger.info(
-                        f"Passing {len(tool_errors)} automated-fix error(s) to LLM "
-                        f"as extra context for {file_path}."
-                    )
-
+                logger.info(f"Falling back to LLM patch for {file_path}")
                 patched_applied = self._generate_llm_patch(
-                    faults, file_path, full_path, original,
-                    tool_errors=tool_errors or None,
+                    faults, file_path, full_path, original
                 )
 
-                if not patched_applied:
-                    # LLM also produced nothing — nothing left to do for this file
-                    modified_content = self._read_file(full_path)
-                    if modified_content != original:
-                        self.patch_results.append({
-                            "file_path": file_path,
-                            "full_file_path": full_path,
-                            "original_content": original,
-                            "fixed_content": modified_content,
-                            "fix_method": "automated_or_llm",
-                        })
-                    continue
-            else:
-                # ------------------------------------------------------------------
-                # STEP 2b — Automated fix succeeded.
-                #   Fall through to STEP 3 so ruff still runs to clean up any
-                #   formatting issues the automated tool may have left behind
-                #   (e.g. yapf fixes style but doesn't sort imports).
-                # ------------------------------------------------------------------
-                logger.info(f"Automated fix succeeded for {file_path} — running ruff cleanup.")
-
-            # ------------------------------------------------------------------
-            # STEP 3 — Post-patch formatting (runs after BOTH paths).
-            #   ruff check --fix  → fixes safe auto-fixable issues
-            #   ruff format       → normalizes whitespace / indentation
-            # If cleanup still reports errors, make one generic LLM fallback and
-            # then one final cleanup pass. No retry loops.
-            # ------------------------------------------------------------------
-            cleanup_result = self._safe_format_python(full_path)
-            if not cleanup_result.get("ok", True):
-                cleanup_errors = cleanup_result.get("tool_errors", [])
-                logger.info(
-                    f"Post-repair cleanup reported {len(cleanup_errors)} error(s) "
-                    f"for {file_path}; trying one LLM fallback."
-                )
-                llm_cleanup_applied = self._generate_llm_patch_for_tool_errors(
-                    file_path,
-                    full_path,
-                    cleanup_errors,
-                )
-                if llm_cleanup_applied:
+                # Only if LLM actually changed the file do we consider running Ruff
+                if patched_applied:
                     self._safe_format_python(full_path)
-                else:
-                    logger.warning(f"LLM cleanup fallback did not apply changes for {file_path}.")
 
             modified_content = self._read_file(full_path)
 
@@ -1105,33 +948,13 @@ Rules:
             timeout=timeout,
         )
 
-    def _safe_format_python(self, full_path: str) -> Dict[str, Any]:
-        """
-        Format/check a Python file safely and report remaining errors.
-
-        This is intentionally Ruff-focused cleanup, not the primary automated
-        repair strategy. Primary repair can use any deterministic tool selected
-        by _try_automated_fix.
-        """
-        result: Dict[str, Any] = {"ok": True, "tool_errors": []}
+    def _safe_format_python(self, full_path: str) -> None:
+        """Format a Python file respecting project settings when possible; never hard-fail."""
         if Path(full_path).suffix != ".py":
-            return result
+            return
 
         tools_dir = os.path.join(self.repo_path, ".ci_tools")
         os.makedirs(tools_dir, exist_ok=True)
-
-        def _error(cmd: List[str], proc_or_output: Any, returncode: int | None = None) -> Dict[str, Any]:
-            if hasattr(proc_or_output, "returncode"):
-                output = (proc_or_output.stdout or "") + (proc_or_output.stderr or "")
-                rc = proc_or_output.returncode
-            else:
-                output = str(proc_or_output or "")
-                rc = -1 if returncode is None else returncode
-            return {
-                "cmd": " ".join(cmd),
-                "returncode": rc,
-                "output": output,
-            }
 
         def _run_py_module(module: str, args: List[str], timeout: int = 300) -> subprocess.CompletedProcess:
             """Run `python -m module ...` with repo-local PYTHONPATH and cwd=self.repo_path."""
@@ -1190,8 +1013,6 @@ Rules:
                     f"Repo-local pip install failed for {pkgs}\n"
                     f"STDERR:\n{proc2.stderr}\nSTDOUT:\n{proc2.stdout}"
                 )
-                result["ok"] = False
-                result["tool_errors"].append(_error(cmd_retry, proc2))
                 return False
 
             return True
@@ -1212,31 +1033,25 @@ Rules:
                         "Skipping Ruff due to Ruff config/pyproject parse error:\n"
                         f"{check.stderr}"
                     )
-                    result["ok"] = False
-                    result["tool_errors"].append(_error(["python", "-m", "ruff", "check", full_path], check))
-                    return result
                 else:
                     # 0) Never run formatters on invalid Python (prevents "corruption" cases)
                     try:
                         py_compile.compile(full_path, doraise=True)
                     except Exception as e:
                         logger.warning(f"Skipping formatting; invalid Python: {full_path}\n{e}")
-                        result["ok"] = False
-                        result["tool_errors"].append(
-                            _error(["python", "-m", "py_compile", full_path], e)
-                        )
-                        return result
+                        return
 
-                    # 1) Safe autofixes — ruff fixes what it can deterministically
+                    # 1) OPTIONAL: attempt safe autofixes (won't rename vars; may still return 1)
                     _t0 = time.time()
                     fix = _run_py_module(
                         "ruff", ["check", "--force-exclude", "--fix", full_path], timeout=300
                     )
                     self._record_tool_call(["python", "-m", "ruff", "check", "--fix", full_path], "lint_fix", fix, time.time() - _t0)
                     if fix.returncode != 0 and (fix.stdout or fix.stderr):
+                        # Not fatal for formatting; Ruff puts diagnostics in STDOUT.
                         logger.info(
-                            f"Ruff check --fix reported remaining issues for {full_path} "
-                            f"(rc={fix.returncode}):\nSTDOUT:\n{fix.stdout}\nSTDERR:\n{fix.stderr}"
+                            f"Ruff check --fix reported remaining issues for {full_path} (rc={fix.returncode}):\n"
+                            f"STDOUT:\n{fix.stdout}\nSTDERR:\n{fix.stderr}"
                         )
 
                     # 2) Format (this is what fixes indentation/line breaks)
@@ -1249,9 +1064,7 @@ Rules:
                         logger.warning(
                             f"Ruff format failed for {full_path}:\nSTDOUT:\n{fmt.stdout}\nSTDERR:\n{fmt.stderr}"
                         )
-                        result["ok"] = False
-                        result["tool_errors"].append(_error(["python", "-m", "ruff", "format", full_path], fmt))
-                        return result
+                        return
 
                     # 3) Imports-only fix (keeps imports grouped at top; doesn't touch variables)
                     _t0 = time.time()
@@ -1275,51 +1088,15 @@ Rules:
                         logger.warning(
                             f"Ruff format (second pass) failed for {full_path}:\nSTDOUT:\n{fmt2.stdout}\nSTDERR:\n{fmt2.stderr}"
                         )
-                        result["ok"] = False
-                        result["tool_errors"].append(_error(["python", "-m", "ruff", "format", full_path], fmt2))
-                        return result
-
-                    # 5) Final lint check. This is the source of truth for
-                    # whether cleanup left non-auto-fixable errors behind.
-                    _t0 = time.time()
-                    final = _run_py_module("ruff", ["check", "--force-exclude", full_path], timeout=300)
-                    self._record_tool_call(
-                        ["python", "-m", "ruff", "check", full_path],
-                        "lint_check",
-                        final,
-                        time.time() - _t0,
-                    )
-                    if final.returncode != 0:
-                        logger.info(
-                            f"Ruff final check still reports issues for {full_path} "
-                            f"(rc={final.returncode}):\nSTDOUT:\n{final.stdout}\nSTDERR:\n{final.stderr}"
-                        )
-                        result["ok"] = False
-                        result["tool_errors"].append(_error(["python", "-m", "ruff", "check", full_path], final))
+                        return
 
                     print(f"[FORMAT] Ruff format + import ordering completed for {full_path}")
-                    return result
+                    return
 
             else:
                 logger.warning("Failed to install Ruff repo-locally; falling back to isort/black.")
-                result["ok"] = False
-                result["tool_errors"].append(
-                    {
-                        "cmd": "python -m pip install --target .ci_tools ruff",
-                        "returncode": -1,
-                        "output": "Failed to install Ruff repo-locally.",
-                    }
-                )
         except Exception as e:
             logger.warning(f"Ruff formatting attempt errored; falling back: {e}")
-            result["ok"] = False
-            result["tool_errors"].append(
-                {
-                    "cmd": "python -m ruff cleanup",
-                    "returncode": -1,
-                    "output": str(e),
-                }
-            )
 
                         # --------------------
         # 2) Fallback: isort + black
@@ -1340,40 +1117,23 @@ Rules:
         # except Exception as e:
         #     logger.warning(f"isort/black fallback failed for {full_path}: {e}")
 
-        return result
-
     # =========================================================
     # ---------------------- DIFF CREATION --------------------
     # =========================================================
 
     def _format_diff(self, patch_results) -> Optional[DiffOutput]:
-        valid_files = set()
+        if not patch_results:
+            raise RuntimeError("No valid files after patching.")
+
+        valid_files = []
         for r in patch_results:
             try:
                 rel = os.path.relpath(r["full_file_path"], self.repo_path)
-                valid_files.add(rel)
+                valid_files.append(rel)
             except Exception as e:
                 logger.warning(f"Could not compute relative path: {e}")
 
-        # Some automated repair commands can edit a different tracked file than
-        # the current FL target. Use git's view of tracked changes as the source
-        # of truth so those valid edits are not dropped from the final diff.
-        changed_proc = subprocess.run(
-            ["git", "diff", "--name-only"],
-            cwd=self.repo_path,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        for rel in changed_proc.stdout.splitlines():
-            rel = rel.strip()
-            if rel:
-                valid_files.add(rel)
-
-        if not valid_files:
-            raise RuntimeError("No valid files after patching.")
-
-        subprocess.run(["git", "add"] + sorted(valid_files), cwd=self.repo_path, check=True)
+        subprocess.run(["git", "add"] + valid_files, cwd=self.repo_path, check=True)
         proc = subprocess.run(
             ["git", "diff", "--cached"],
             cwd=self.repo_path,
@@ -1436,9 +1196,7 @@ Rules:
     # 2) ADD these methods inside PatchGeneration (e.g., under CORE METHODS)
 
     def _interrupted_dir(self) -> str:
-        base = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "exceptions", "interrupted_patches")
-        )
+        base = "/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines/exceptions/interrupted_patches"
         os.makedirs(base, exist_ok=True)
         return base
 
@@ -1481,7 +1239,6 @@ Rules:
                 type(inner).__name__,
                 inner,
             )
-
 
     # =========================================================
     # ---------------------- MAIN ENTRY -----------------------

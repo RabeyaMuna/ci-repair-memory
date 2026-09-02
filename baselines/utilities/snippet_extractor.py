@@ -3,6 +3,25 @@ from typing import Dict, List, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
+
+def clamp_line_range(
+    line_range: Optional[Tuple[int, int]],
+    total_lines: int,
+) -> Optional[Tuple[int, int]]:
+    """Return a valid 1-based inclusive range bounded by the source file."""
+    if not line_range or len(line_range) != 2 or total_lines < 1:
+        return None
+    start, end = line_range
+    if not isinstance(start, int) or isinstance(start, bool):
+        return None
+    if not isinstance(end, int) or isinstance(end, bool):
+        return None
+    if end < start:
+        start, end = end, start
+    start = max(1, min(start, total_lines))
+    end = max(1, min(end, total_lines))
+    return (start, end) if start <= end else None
+
 def extract_snippet_from_line_range(
     original_file_content: str,
     line_range: Optional[Tuple[int, int]],
@@ -23,13 +42,20 @@ def extract_snippet_from_line_range(
         logger.debug("No line_range provided, skipping fault extraction.")
         return
 
-    start, end = line_range
     lines = original_file_content.splitlines()
-
-    # Validate range
-    if not (1 <= start <= end <= len(lines)):
+    bounded_range = clamp_line_range(line_range, len(lines))
+    if bounded_range is None:
         logger.warning(f"Invalid line range {line_range} for file with {len(lines)} lines.")
         return
+    start, end = bounded_range
+
+    if tuple(line_range) != bounded_range:
+        logger.info(
+            "Clamped line range %s to %s for file with %d lines.",
+            line_range,
+            bounded_range,
+            len(lines),
+        )
 
     # Extract snippet
     snippet = "\n".join(lines[start - 1:end])
