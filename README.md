@@ -60,7 +60,50 @@ python run_benchmark.py
 python scripts/analysis/calculate_success_rate.py
 ```
 
-### 5. Generate Dataset Overview (Optional)
+### 5. Evaluate Results
+
+Run all analysis scripts to get comprehensive metrics:
+
+```bash
+# Run all evaluations (file localization + CI success)
+python analyze_results.py
+
+# Or run with detailed 3-level evaluation (slower)
+python analyze_results.py --detailed
+
+# Or run specific evaluations separately:
+
+# File localization metrics only
+python scripts/analysis/evaluate_file_localization.py \
+  --preds results/preds.json \
+  --dataset dataset/lca_dataset.parquet \
+  --output results/file_localization_metrics.json
+
+# CI success rate evaluation
+python scripts/analysis/calculate_success_rate.py
+```
+
+### 6. Update Failure Types in Dataset
+
+Classify and update failure types for all instances:
+
+```bash
+# Step 1: Classify failures (if not done yet)
+python data_managment/failure_type/classify_failure_types.py \
+  --dataset dataset/lca_dataset.parquet \
+  --output results/failure_classifications_12types.json
+
+# Step 2: Update dataset with failure types
+python scripts/clean_and_update_failure_types.py \
+  --classifications results/failure_classifications_12types.json \
+  --dataset dataset/lca_dataset.parquet \
+  --backup
+
+# Step 3: Verify the update
+python scripts/verify_failure_types.py
+```
+
+### 7. Generate Dataset Overview (Optional)
 
 Get comprehensive dataset statistics:
 
@@ -73,15 +116,6 @@ This generates:
 - Validation steps overview
 - Failure type distribution
 - Language and repository statistics
-
-### 6. Evaluate Results
-
-```bash
-python evaluate.py \
-  --preds results/preds.json \
-  --ci-results results/success_rate_evaluation.json \
-  --output results/evaluation_summary.json
-```
 
 ## Dataset Statistics
 
@@ -105,22 +139,50 @@ Run `python scripts/analysis/dataset_overview.py` for detailed statistics.
 - **L1 (Step-Level)**: Of originally failed steps, percentage that now pass
 - **L3 (Workflow-Level)**: Overall workflow pass/fail status
 
+### Failure Type Taxonomy
+
+The dataset includes 12 failure types, classified from CI logs and ground truth diffs:
+
+1. **Code Formatting** - Style issues, indentation, line length
+2. **Linting** - Code quality issues (unused imports, undefined vars)
+3. **Syntax Error** - Python syntax errors, invalid code structure
+4. **Runtime Error** - Execution errors (AttributeError, KeyError, etc.)
+5. **Test Failure** - Unit/integration tests that fail
+6. **Assertion Error** - Failed assertions in tests
+7. **Type Checking** - Type annotation errors, mypy issues
+8. **Dependency Issues** - Missing dependencies, version conflicts
+9. **Package Install Error** - Failed package installation
+10. **Configuration Error** - Invalid config files, wrong settings
+11. **Environment Error** - Platform-specific issues, missing env vars
+12. **Doc/Docstring** - Documentation format issues, missing docstrings
+
+Each instance can have multiple failure types (avg: 3.38 types per instance).
+
 ## Project Structure
 
 ```
 CI-REPAIR-BENCH/
 ├── dataset/
-│   ├── lca_dataset.parquet          # Main dataset
+│   ├── lca_dataset.parquet          # Main dataset with failure types
 │   └── jobs_*.jsonl                 # Workflow run data
 ├── results/
 │   ├── preds.json                   # Your model's predictions
-│   ├── success_rate_evaluation.json # CI validation results
-│   └── evaluation_summary.json      # Final metrics
-├── scripts/analysis/
-│   ├── calculate_success_rate.py    # L1/L3 evaluation
-│   ├── fetch_validation_steps.py    # Fetch from GitHub API
-│   ├── dataset_overview.py          # Dataset statistics
-│   └── generate_plots.py            # Visualization
+│   ├── file_localization_metrics.json       # File localization results
+│   ├── success_rate_evaluation.json         # CI validation results
+│   ├── failure_classifications_12types.json # Failure type classifications
+│   └── evaluation_summary.json              # Final metrics
+├── scripts/
+│   ├── analysis/
+│   │   ├── evaluate_file_localization.py    # File localization metrics
+│   │   ├── calculate_success_rate.py        # L1/L3 evaluation
+│   │   └── dataset_overview.py              # Dataset statistics
+│   ├── clean_and_update_failure_types.py    # Update dataset with failure types
+│   ├── update_instance_failure_types.py     # Manual instance updates
+│   └── verify_failure_types.py              # Verify failure type updates
+├── data_managment/
+│   └── failure_type/
+│       └── classify_failure_types.py        # Classify failure types
+├── analyze_results.py               # Master analysis runner
 ├── evaluate.py                      # Unified evaluation script
 ├── run_benchmark.py                 # Push patches to GitHub
 └── README.md
@@ -129,16 +191,27 @@ CI-REPAIR-BENCH/
 ## Example Results
 
 ```
- File Localization:
-   Exact Match: 15.2%
-   Precision: 42.8%
-   Top-1: 38.5%
-   Top-5: 61.3%
+📊 File Localization (408 issues evaluated):
+   Exact Match:     12.25%
+   Avg Precision:   55.10%
+   Top-1 Accuracy:  34.07%
+   Top-3 Accuracy:  77.21%
+   Top-5 Accuracy:  80.39%
+   Top-10 Accuracy: 80.88%
 
- CI Success:
-   Overall: 14.3%
-   L1 Step Success: 26.3%
-   L3 Workflow Pass: 14.3%
+📈 Failure Type Distribution (565 instances):
+   Linting:                53.8% (304 instances)
+   Code Formatting:        52.0% (294 instances)
+   Test Failure:           49.4% (279 instances)
+   Type Checking:          43.0% (243 instances)
+   Dependency Issues:      43.0% (243 instances)
+   Runtime Error:          31.9% (180 instances)
+   Configuration Error:    30.4% (172 instances)
+
+🔧 CI Success (when evaluated):
+   Overall Success Rate: Varies by pushed instances
+   L1 (Step-Level): Percentage of failed steps that now pass
+   L3 (Workflow-Level): Overall workflow pass/fail status
 ```
 
 ## Citation
