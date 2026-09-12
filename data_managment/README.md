@@ -4,46 +4,46 @@
 
 ---
 
-## 📁 Folder Structure
+##  Folder Structure
 
 ```
 data_managment/
 │
-├── 📖 docs/                    # All documentation
+├──  docs/                    # All documentation
 │   ├── README.md                  # Complete user guide
 │   ├── GETTING_STARTED.md         # Quick start guide
 │   ├── UNIFIED_SCRIPT.md          # Unified script documentation
 │   └── FOLDER_ORGANIZATION.md     # This folder structure explained
 │
-├── 🔧 scripts/                 # Main executable scripts
+├──  scripts/                 # Main executable scripts
 │   ├── run_approach_b.sh          # ⭐ One-command execution (Approach B)
 │   ├── fetch_and_trigger_metadata.py  # Unified fetch+trigger
 │   ├── setup_benchmark_branches.py    # Create permanent branches
 │   ├── monitor_ci_health.py       # CI health monitoring
 │   └── workflow_manager.py        # Orchestration tool
 │
-├── 🛠️  utils/                  # Utility scripts
+├── ️  utils/                  # Utility scripts
 │   ├── fetch_commit_metadata.py   # Fetch metadata only
 │   ├── trigger_ci_for_commits.py  # Trigger CI only
 │   ├── fetch_logs.py              # Fetch logs
 │   └── update_failed_logs.py      # Update dataset
 │
-├── ⚙️  config/                 # Configuration files
+├── ️  config/                 # Configuration files
 │   └── config.yaml                # All settings (Approach B default)
 │
-├── 📊 results/                 # All outputs (organized)
+├──  results/                 # All outputs (organized)
 │   ├── branches/                  # Benchmark branch tracking
 │   ├── metadata/                  # Commit metadata + failed jobs
 │   ├── health/                    # CI health reports
 │   ├── logs/                      # Fetched logs
 │   └── archives/                  # Historical backups
 │
-└── 🔬 failure_type/            # Failure classification (existing)
+└──  failure_type/            # Failure classification (existing)
 ```
 
 ---
 
-## 🚀 Quick Start (Approach B)
+##  Quick Start (Approach B)
 
 ### Complete Data Collection
 
@@ -60,16 +60,16 @@ cd /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/data_managment
 ```
 
 That's it! Script will:
-1. ✅ Setup benchmark branches (if needed)
-2. ✅ For each commit: fetch OR trigger
-3. ✅ Save complete metadata + overall failed jobs list
-4. ✅ Checkpoint every 10 issues
+1.  Setup benchmark branches (if needed)
+2.  For each commit: fetch OR trigger
+3.  Save complete metadata + overall failed jobs list
+4.  Checkpoint every 10 issues
 
 **Time:** 10-20 hours for 567 issues
 
 ---
 
-## 📋 Step-by-Step
+##  Step-by-Step
 
 ### 1. Setup (Required)
 
@@ -118,7 +118,7 @@ python scripts/workflow_manager.py run-all
 
 ---
 
-## 📊 Outputs
+##  Outputs
 
 All results saved in organized `results/` folders:
 
@@ -147,14 +147,14 @@ All results saved in organized `results/` folders:
 ```
 
 **Perfect for:**
-- ✅ Understanding failure progression
-- ✅ Adding to dataset
-- ✅ Training models
-- ✅ Analysis
+-  Understanding failure progression
+-  Adding to dataset
+-  Training models
+-  Analysis
 
 ---
 
-## 📖 Documentation
+##  Documentation
 
 ### Start Here
 
@@ -172,7 +172,7 @@ All results saved in organized `results/` folders:
 
 ---
 
-## 🎯 Common Tasks
+##  Common Tasks
 
 ### Check Status
 ```bash
@@ -203,7 +203,7 @@ python utils/update_failed_logs.py
 
 ---
 
-## 🔄 Approach B Details
+##  Approach B Details
 
 **What is Approach B?**
 
@@ -215,14 +215,14 @@ For EACH commit between sha_fail and sha_success:
 **Result:** 100% complete metadata
 
 **Benefits:**
-- ✅ Complete data for ALL commits
-- ✅ Only triggers when needed (saves CI minutes)
-- ✅ Automatic - no manual intervention
-- ✅ Optimal balance of speed and completeness
+-  Complete data for ALL commits
+-  Only triggers when needed (saves CI minutes)
+-  Automatic - no manual intervention
+-  Optimal balance of speed and completeness
 
 ---
 
-## 🛠️ Scripts Overview
+## ️ Scripts Overview
 
 ### Main Scripts (`scripts/`)
 
@@ -245,7 +245,7 @@ For EACH commit between sha_fail and sha_success:
 
 ---
 
-## ⚙️ Configuration
+## ️ Configuration
 
 ### Environment Variables (`.env`)
 
@@ -277,7 +277,7 @@ github:
 
 ---
 
-## 📈 Expected Timeline
+##  Expected Timeline
 
 ### Full Run (567 issues)
 
@@ -295,7 +295,7 @@ github:
 
 ---
 
-## 🔍 Verification
+##  Verification
 
 ### After Completion
 
@@ -315,7 +315,7 @@ python scripts/workflow_manager.py status
 
 ---
 
-## 🚨 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues
 
@@ -341,7 +341,7 @@ ci_trigger:
 
 ---
 
-## 📊 Folder Details
+##  Folder Details
 
 ### `scripts/` - Main Scripts
 Executable scripts for data collection and management.
@@ -365,7 +365,7 @@ Complete documentation for all features.
 
 ---
 
-## 🎯 Use Cases
+##  Use Cases
 
 ### 1. Initial Setup
 ```bash
@@ -389,33 +389,33 @@ python utils/update_failed_logs.py
 
 ---
 
-## ✅ Summary
+##  Summary
 
 **You have a complete system for:**
 
-1. ✅ **Permanent benchmark infrastructure**
+1.  **Permanent benchmark infrastructure**
    - Branches persist across runs
    - No data loss
 
-2. ✅ **Complete metadata collection**
+2.  **Complete metadata collection**
    - 100% data with Approach B
    - Failed jobs + steps
 
-3. ✅ **Organized structure**
+3.  **Organized structure**
    - Clean folder organization
    - Easy to navigate
 
-4. ✅ **One-command execution**
+4.  **One-command execution**
    - `./scripts/run_approach_b.sh`
    - Fully automated
 
-5. ✅ **Configuration-driven**
+5.  **Configuration-driven**
    - `.env` for credentials
    - `config.yaml` for settings
 
 ---
 
-## 🚀 Get Started
+##  Get Started
 
 ```bash
 # 1. Add token
@@ -427,12 +427,12 @@ cd /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/data_managment
 
 # 3. Wait ~10-20 hours
 
-# 4. Get complete benchmark dataset! 🎉
+# 4. Get complete benchmark dataset! 
 ```
 
 ---
 
-## 📚 More Information
+##  More Information
 
 - **Complete Guide:** [docs/README.md](docs/README.md)
 - **Quick Start:** [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)

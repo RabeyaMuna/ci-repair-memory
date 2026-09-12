@@ -25,7 +25,7 @@ def run_command(cmd, description):
     result = subprocess.run(cmd, capture_output=False, text=True)
 
     if result.returncode != 0:
-        print(f"⚠️  Warning: Command failed with code {result.returncode}")
+        print(f"️  Warning: Command failed with code {result.returncode}")
 
     return result.returncode == 0
 
@@ -48,18 +48,18 @@ def main():
 
     analyses_to_run = []
 
-    # 1. Unified Evaluation (always run unless skipped)
+    # 1. File Localization Metrics (always run unless skipped)
     if not args.skip_stats:
         analyses_to_run.append({
-            'cmd': ['python3', 'evaluate.py'],
-            'description': 'Unified Evaluation (Top-K, Precision, Exact Match, L1, L3)'
+            'cmd': ['python3', 'scripts/analysis/evaluate_file_localization.py'],
+            'description': 'File Localization (Top-K, Precision, Exact Match)'
         })
 
-    # 2. 3-Level Evaluation (optional, slower)
+    # 2. CI Success Rate Evaluation (optional, requires step metadata)
     if args.detailed and not args.skip_multilevel:
         analyses_to_run.append({
             'cmd': ['python3', 'scripts/analysis/calculate_success_rate.py'],
-            'description': '3-Level Evaluation (L1: Failed Jobs, L2: All Jobs, L3: Workflow)'
+            'description': 'CI Success Rate (L1: Step-Level, L3: Workflow-Level)'
         })
 
     # Run all analyses
@@ -72,7 +72,7 @@ def main():
     print("\n" + "="*80)
     print("ANALYSIS COMPLETE")
     print("="*80)
-    print(f"\n✓ Ran {success_count}/{len(analyses_to_run)} analyses successfully\n")
+    print(f"\n Ran {success_count}/{len(analyses_to_run)} analyses successfully\n")
 
     # Show quick stats from results
     print("Quick Stats from Files:")
@@ -98,7 +98,7 @@ def main():
     # Check if summary exists
     summary_file = 'results/summary_stats.json'
     if os.path.exists(summary_file):
-        print(f"📊 Detailed statistics saved to: {summary_file}")
+        print(f" Detailed statistics saved to: {summary_file}")
         print()
 
 

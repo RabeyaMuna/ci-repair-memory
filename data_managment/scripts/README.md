@@ -1,6 +1,6 @@
 # Dataset Management Scripts
 
-## 📊 Dataset Enrichment (Main Scripts)
+##  Dataset Enrichment (Main Scripts)
 
 ### ⭐ enrich_and_structure_dataset.py
 **The main comprehensive script for dataset enrichment.**
@@ -23,7 +23,7 @@ python enrich_and_structure_dataset.py
 - `results/filtered_validation/instance_validation_summary.json`
 - `results/enriched_dataset.json` (final)
 
-### 📈 analyze_jobs_summaries.py
+###  analyze_jobs_summaries.py
 **Analysis script for enriched dataset.**
 
 ```bash
@@ -36,7 +36,7 @@ python analyze_jobs_summaries.py
 - Most common failed job/step names
 - Execution multipliers
 
-### 📝 example_usage.py
+###  example_usage.py
 **Example code showing how to use the enriched dataset.**
 
 ```bash
@@ -53,7 +53,7 @@ python example_usage.py
 
 ---
 
-## 🔧 CI Management Scripts
+##  CI Management Scripts
 
 ### fetch_and_trigger_metadata.py
 Fetches metadata and triggers CI workflows for benchmark instances.
@@ -84,7 +84,7 @@ Shell script for running approach B workflow.
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 For dataset enrichment, you only need:
 
@@ -103,7 +103,7 @@ That's it! One command enriches everything.
 
 ---
 
-## 📚 Documentation
+##  Documentation
 
 - **[../DATASET_ENRICHMENT_GUIDE.md](../DATASET_ENRICHMENT_GUIDE.md)** - Quick start guide
 - **[../results/ENRICHMENT_SUMMARY.md](../results/ENRICHMENT_SUMMARY.md)** - Complete documentation
@@ -111,15 +111,15 @@ That's it! One command enriches everything.
 
 ---
 
-## 🗂️ Script Organization
+## ️ Script Organization
 
 ```
 scripts/
 ├── enrich_and_structure_dataset.py  ⭐ Main enrichment script
-├── analyze_jobs_summaries.py        📈 Analysis
-├── example_usage.py                 📝 Examples
+├── analyze_jobs_summaries.py         Analysis
+├── example_usage.py                  Examples
 │
-├── fetch_and_trigger_metadata.py    🔧 CI management
+├── fetch_and_trigger_metadata.py     CI management
 ├── fetch_logs_for_failed.py
 ├── fetch_triggered_results.py
 ├── monitor_ci_health.py
@@ -132,7 +132,7 @@ scripts/
 
 ---
 
-## ✨ Notes
+##  Notes
 
 - **All old/duplicate enrichment scripts have been removed**
 - The comprehensive script `enrich_and_structure_dataset.py` replaces:

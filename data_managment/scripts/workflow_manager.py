@@ -44,7 +44,7 @@ class WorkflowManager:
     def run_command(self, cmd: list, description: str) -> bool:
         """Run a command and return success status."""
         print(f"\n{'='*80}")
-        print(f"🚀 {description}")
+        print(f" {description}")
         print(f"{'='*80}")
 
         try:
@@ -55,7 +55,7 @@ class WorkflowManager:
             )
             return result.returncode == 0
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f" Error: {e}")
             return False
 
     def check_prerequisites(self) -> bool:
@@ -63,16 +63,16 @@ class WorkflowManager:
         dataset_file = self.dataset_dir / "lca_dataset.parquet"
 
         if not dataset_file.exists():
-            print(f"❌ Dataset not found: {dataset_file}")
+            print(f" Dataset not found: {dataset_file}")
             return False
 
-        print(f"✓ Dataset found: {dataset_file}")
+        print(f" Dataset found: {dataset_file}")
         return True
 
     def setup_branches(self) -> bool:
         """Setup permanent benchmark branches."""
         if not self.setup_script.exists():
-            print(f"❌ Setup script not found: {self.setup_script}")
+            print(f" Setup script not found: {self.setup_script}")
             return False
 
         return self.run_command(
@@ -83,7 +83,7 @@ class WorkflowManager:
     def fetch_metadata(self, ids: Optional[list] = None) -> bool:
         """Fetch commit metadata."""
         if not self.fetch_script.exists():
-            print(f"❌ Fetch script not found: {self.fetch_script}")
+            print(f" Fetch script not found: {self.fetch_script}")
             return False
 
         return self.run_command(
@@ -94,11 +94,11 @@ class WorkflowManager:
     def trigger_missing_commits(self) -> bool:
         """Trigger CI for commits without metadata."""
         if not self.trigger_script.exists():
-            print(f"❌ Trigger script not found: {self.trigger_script}")
+            print(f" Trigger script not found: {self.trigger_script}")
             return False
 
         if not self.missing_ids_file.exists():
-            print("✓ No missing metadata - skipping trigger")
+            print(" No missing metadata - skipping trigger")
             return True
 
         # Check if there are any missing IDs
@@ -106,7 +106,7 @@ class WorkflowManager:
             missing_ids = json.load(f)
 
         if not missing_ids:
-            print("✓ No missing metadata - skipping trigger")
+            print(" No missing metadata - skipping trigger")
             return True
 
         print(f"Found {len(missing_ids)} issues with missing metadata")
@@ -119,11 +119,11 @@ class WorkflowManager:
     def update_dataset(self) -> bool:
         """Update dataset with metadata."""
         if not self.update_dataset_script.exists():
-            print(f"❌ Update script not found: {self.update_dataset_script}")
+            print(f" Update script not found: {self.update_dataset_script}")
             return False
 
         if not self.metadata_file.exists():
-            print(f"❌ Metadata file not found: {self.metadata_file}")
+            print(f" Metadata file not found: {self.metadata_file}")
             print("   Run 'fetch-metadata' first")
             return False
 
@@ -135,9 +135,9 @@ class WorkflowManager:
     def monitor_ci_health(self) -> bool:
         """Monitor CI workflow health."""
         print("\n{'='*80}")
-        print("🔍 CI Health Monitoring")
+        print(" CI Health Monitoring")
         print("{'='*80}")
-        print("\n⚠️  Monitoring feature coming soon!")
+        print("\n️  Monitoring feature coming soon!")
         print("   This will check:")
         print("   - Workflow still exists")
         print("   - Same failure patterns")
@@ -147,7 +147,7 @@ class WorkflowManager:
     def status(self):
         """Show current status of all components."""
         print(f"\n{'='*80}")
-        print("📊 CI Benchmark Data Management Status")
+        print(" CI Benchmark Data Management Status")
         print(f"{'='*80}\n")
 
         # Check branches
@@ -155,9 +155,9 @@ class WorkflowManager:
             with open(self.branches_file) as f:
                 branches = json.load(f)
             created = sum(1 for b in branches if b.get("status") == "created")
-            print(f"✓ Benchmark Branches: {created}/{len(branches)} created")
+            print(f" Benchmark Branches: {created}/{len(branches)} created")
         else:
-            print("❌ Benchmark Branches: Not setup (run 'setup')")
+            print(" Benchmark Branches: Not setup (run 'setup')")
 
         # Check metadata
         if self.metadata_file.exists():
@@ -166,17 +166,17 @@ class WorkflowManager:
             with_meta = sum(1 for issue in metadata if any(
                 len(c.get('metadata', [])) > 0 for c in issue.get('commits', [])
             ))
-            print(f"✓ Metadata: {len(metadata)} issues, {with_meta} with metadata")
+            print(f" Metadata: {len(metadata)} issues, {with_meta} with metadata")
         else:
-            print("❌ Metadata: Not fetched (run 'fetch-metadata')")
+            print(" Metadata: Not fetched (run 'fetch-metadata')")
 
         # Check missing IDs
         if self.missing_ids_file.exists():
             with open(self.missing_ids_file) as f:
                 missing = json.load(f)
-            print(f"⚠️  Missing Metadata: {len(missing)} issues need triggering")
+            print(f"️  Missing Metadata: {len(missing)} issues need triggering")
         else:
-            print("❓ Missing IDs: No data yet")
+            print(" Missing IDs: No data yet")
 
         # Check dataset
         dataset_file = self.dataset_dir / "lca_dataset.parquet"
@@ -184,16 +184,16 @@ class WorkflowManager:
             import pandas as pd
             df = pd.read_parquet(dataset_file)
             has_logs = 'logs' in df.columns
-            print(f"✓ Dataset: {len(df)} issues, logs column: {has_logs}")
+            print(f" Dataset: {len(df)} issues, logs column: {has_logs}")
         else:
-            print("❌ Dataset: Not found")
+            print(" Dataset: Not found")
 
         print(f"\n{'='*80}\n")
 
     def run_all(self) -> bool:
         """Run complete pipeline."""
         print("\n" + "="*80)
-        print("🚀 Running Complete CI Benchmark Pipeline")
+        print(" Running Complete CI Benchmark Pipeline")
         print("="*80 + "\n")
 
         steps = [
@@ -213,13 +213,13 @@ class WorkflowManager:
             success = step_func()
 
             if not success:
-                print(f"\n❌ Pipeline failed at: {step_name}")
+                print(f"\n Pipeline failed at: {step_name}")
                 return False
 
-            print(f"✓ {step_name} completed")
+            print(f" {step_name} completed")
 
         print(f"\n{'='*80}")
-        print("✅ Complete pipeline finished successfully!")
+        print(" Complete pipeline finished successfully!")
         print(f"{'='*80}\n")
 
         # Show final status
@@ -286,7 +286,7 @@ def main():
     }
 
     if command not in commands:
-        print(f"❌ Unknown command: {command}")
+        print(f" Unknown command: {command}")
         print_usage()
         return
 

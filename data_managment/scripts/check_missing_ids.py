@@ -84,14 +84,14 @@ def main():
         with open(missing_file, 'w') as f:
             for instance_id in missing_sorted:
                 f.write(f"{instance_id}\n")
-        print(f"\n✓ Saved missing IDs to: {missing_file}")
+        print(f"\n Saved missing IDs to: {missing_file}")
 
         # Show command to fetch them
         print(f"\nTo fetch missing IDs, run:")
         print(f"  python data_managment/scripts/fetch_and_trigger_metadata.py {' '.join(missing_sorted[:5])} ...")
         print(f"  OR: python data_managment/scripts/fetch_and_trigger_metadata.py --all --trigger")
     else:
-        print("\n✓ No missing IDs - all instances either complete or triggered!")
+        print("\n No missing IDs - all instances either complete or triggered!")
 
     # Show pending IDs
     if pending_ids:

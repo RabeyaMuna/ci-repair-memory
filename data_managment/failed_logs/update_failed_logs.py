@@ -67,7 +67,9 @@ def update_logs_with_failed_jobs_in_place(
 
 if __name__ == "__main__":
     base_dir = Path(__file__).parent
-    dataset_path = base_dir.parent / "dataset" / "lca_dataset.parquet"
-    failed_logs_path = base_dir / "results" / "logs" / "failed_job_logs.json"
+    # Go up to CI-REPAIR-BENCH root: failed_logs -> data_managment -> CI-REPAIR-BENCH
+    repo_root = base_dir.parent.parent
+    dataset_path = repo_root / "dataset" / "lca_dataset.parquet"
+    failed_logs_path = repo_root / "dataset" / "failed_job_logs.json"
 
     update_logs_with_failed_jobs_in_place(dataset_path, failed_logs_path)

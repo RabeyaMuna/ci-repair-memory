@@ -381,7 +381,7 @@ def main():
             if computed % 5000 == 0:
                 print(f"  Progress: {computed:,}/{total_pairs:,} ({100*computed/total_pairs:.1f}%)")
 
-    print(f"✓ Structural similarity matrix computed")
+    print(f" Structural similarity matrix computed")
 
     # ========================================================================
     # LEXICAL SIMILARITY MATRIX
@@ -412,7 +412,7 @@ def main():
     print("Computing pairwise lexical similarity...")
     lexical_sim_matrix = sklearn_cosine(tfidf_matrix)
 
-    print(f"✓ Lexical similarity matrix computed")
+    print(f" Lexical similarity matrix computed")
 
     # ========================================================================
     # RECURRENCE METRICS
@@ -433,14 +433,14 @@ def main():
     with open(output_file, 'w') as f:
         json.dump(metrics, f, indent=2)
 
-    print(f"\n✓ Results saved to: {output_file}")
+    print(f"\n Results saved to: {output_file}")
 
     # Print LaTeX table
     print_latex_table(metrics)
 
     # Summary
     print("\n" + "="*70)
-    print("✅ ANALYSIS COMPLETE!")
+    print(" ANALYSIS COMPLETE!")
     print("="*70)
     print(f"\nInstances analyzed: {n:,}")
     print(f"\nWithin-repository recurrence:")

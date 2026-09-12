@@ -21,7 +21,7 @@ from urllib3.util.retry import Retry
 # -----------------------------
 # Paths / Config
 # -----------------------------
-INPUT_JSONL = Path("/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/jobs_failure_diff.jsonl")
+INPUT_JSONL = Path("/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/results/jobs_failure_diff.jsonl")
 OUTPUT_JSON = Path("/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset/failed_job_logs.json")
 
 # -----------------------------

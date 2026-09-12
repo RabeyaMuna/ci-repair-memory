@@ -66,7 +66,7 @@ def clone_or_get_repo(owner: str, repo: str) -> Optional[str]:
     success, output = run_git_command(["git", "clone", clone_url, str(repo_path)])
 
     if not success:
-        print(f"    ❌ Failed to clone: {output}")
+        print(f"     Failed to clone: {output}")
         return None
 
     return str(repo_path)
@@ -108,7 +108,7 @@ def create_benchmark_branch(
 
     # Check if branch already exists
     if not force and branch_exists_remote(repo_path, branch_name):
-        print(f"  ✓ Branch already exists (use --force to recreate)")
+        print(f"   Branch already exists (use --force to recreate)")
         return {
             "id": issue_id,
             "owner": owner,
@@ -123,7 +123,7 @@ def create_benchmark_branch(
     # Fetch the commit if not available locally
     success, _ = run_git_command(["git", "fetch", "origin", sha_fail], cwd=repo_path)
     if not success:
-        print(f"  ⚠️  Fetching commit {sha_fail[:8]}...")
+        print(f"  ️  Fetching commit {sha_fail[:8]}...")
 
     # Create branch locally
     print(f"  Creating branch at {sha_fail[:8]}...")
@@ -137,7 +137,7 @@ def create_benchmark_branch(
     )
 
     if not success:
-        print(f"  ❌ Failed to create branch: {output}")
+        print(f"   Failed to create branch: {output}")
         return None
 
     # Push branch to remote
@@ -151,12 +151,12 @@ def create_benchmark_branch(
     success, output = run_git_command(push_cmd, cwd=repo_path)
 
     if not success:
-        print(f"  ❌ Failed to push: {output}")
+        print(f"   Failed to push: {output}")
         # Clean up local branch
         run_git_command(["git", "branch", "-D", branch_name], cwd=repo_path)
         return None
 
-    print(f"  ✓ Branch created successfully")
+    print(f"   Branch created successfully")
 
     return {
         "id": issue_id,
@@ -177,8 +177,8 @@ def main():
         print("[ERROR] No GitHub token found. Set GH_TOKEN or GITHUB_TOKEN in .env")
         return
 
-    print(f"✓ GitHub token loaded")
-    print(f"✓ Benchmark owner: {BENCHMARK_OWNER}")
+    print(f" GitHub token loaded")
+    print(f" Benchmark owner: {BENCHMARK_OWNER}")
 
     # Load dataset
     print(f"\nLoading dataset from: {DATASET_FILE}")
@@ -188,7 +188,7 @@ def main():
     # Load existing branches if any
     existing_branches = {}
     if OUTPUT_FILE.exists():
-        print(f"\n✓ Found existing branches file")
+        print(f"\n Found existing branches file")
         with open(OUTPUT_FILE, "r") as f:
             existing_data = json.load(f)
             existing_branches = {b["id"]: b for b in existing_data}
@@ -226,7 +226,7 @@ def main():
         try:
             # Skip if already exists
             if issue_id in existing_branches:
-                print(f"  ⏭️  Skipping - branch already created")
+                print(f"  ️  Skipping - branch already created")
                 results.append(existing_branches[issue_id])
                 skipped_count += 1
                 continue
@@ -251,7 +251,7 @@ def main():
                 })
 
         except Exception as e:
-            print(f"  ❌ Error: {e}")
+            print(f"   Error: {e}")
             failed_count += 1
 
         # Save intermediate results every 10 issues
@@ -259,7 +259,7 @@ def main():
             OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
             with open(OUTPUT_FILE, "w") as f:
                 json.dump(results, f, indent=2)
-            print(f"\n  💾 Saved checkpoint ({len(results)} branches)")
+            print(f"\n   Saved checkpoint ({len(results)} branches)")
 
     # Save final results
     print(f"\n{'='*80}")
@@ -276,7 +276,7 @@ def main():
     print(f"  Newly created: {created_count}")
     print(f"  Already existed: {skipped_count}")
     print(f"  Failed: {failed_count}")
-    print(f"\n✓ Benchmark branches setup complete!")
+    print(f"\n Benchmark branches setup complete!")
     print(f"  Results saved to: {OUTPUT_FILE}")
     print(f"{'='*80}")
 

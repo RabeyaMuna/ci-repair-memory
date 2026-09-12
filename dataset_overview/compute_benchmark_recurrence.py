@@ -405,7 +405,7 @@ def verify_feature_extraction(df: pd.DataFrame):
     # Show within-repo example
     if within_repo_example:
         row_a, row_b = within_repo_example
-        print(f"\n✓ WITHIN-REPOSITORY EXAMPLE:")
+        print(f"\n WITHIN-REPOSITORY EXAMPLE:")
         print(f"  Repo: {row_a['repo_owner']}/{row_a['repo_name']}")
         print(f"  Instance A (ID: {row_a['id']})")
         print(f"  Instance B (ID: {row_b['id']})")
@@ -427,7 +427,7 @@ def verify_feature_extraction(df: pd.DataFrame):
     # Show cross-repo example
     if cross_repo_example:
         row_a, row_b = cross_repo_example
-        print(f"\n✓ CROSS-REPOSITORY EXAMPLE:")
+        print(f"\n CROSS-REPOSITORY EXAMPLE:")
         print(f"  Repo A: {row_a['repo_owner']}/{row_a['repo_name']} (ID: {row_a['id']})")
         print(f"  Repo B: {row_b['repo_owner']}/{row_b['repo_name']} (ID: {row_b['id']})")
 
@@ -539,15 +539,15 @@ def main():
     csv_file = OUTPUT_DIR / "recurrence_pairs.csv"
     df_results.to_csv(csv_file, index=False)
 
-    print(f"\n✓ Results saved to: {output_file}")
-    print(f"✓ Pairs saved to: {csv_file}")
+    print(f"\n Results saved to: {output_file}")
+    print(f" Pairs saved to: {csv_file}")
 
     # Print outputs
     print_latex_table(paper_metrics)
     print_repository_analysis(paper_metrics)
 
     print("\n" + "="*70)
-    print("✅ ANALYSIS COMPLETE!")
+    print(" ANALYSIS COMPLETE!")
     print("="*70)
     print(f"\nMetrics:")
     print(f"  Same-repo pairs: {paper_metrics['within_repository']['pairs']:,}")

@@ -140,9 +140,9 @@ def update_dataset_with_unique_jobs(df: pd.DataFrame, unique_jobs_lookup: Dict[s
             df.at[idx, 'total_failed_steps'] = 0
             not_matched += 1
 
-    print(f"✓ Matched {matched} instances")
+    print(f" Matched {matched} instances")
     if not_matched > 0:
-        print(f"⚠️  {not_matched} instances without validation data (set to empty)")
+        print(f"️  {not_matched} instances without validation data (set to empty)")
 
     return df
 
@@ -203,7 +203,7 @@ def main():
     tmp_path = str(DATASET_PATH) + ".tmp"
     df_updated.to_parquet(tmp_path, index=False)
     os.replace(tmp_path, DATASET_PATH)
-    print(f"   ✓ Saved to {DATASET_PATH}")
+    print(f"    Saved to {DATASET_PATH}")
 
     # Show sample
     print(f"\n7. Sample instance:")
@@ -218,7 +218,7 @@ def main():
         print(f"   Failed steps: {sample['total_failed_steps']}")
 
     print("\n" + "=" * 70)
-    print("✅ COMPLETE!")
+    print(" COMPLETE!")
     print("=" * 70)
     print()
     print("Updated columns (now with UNIQUE counts):")

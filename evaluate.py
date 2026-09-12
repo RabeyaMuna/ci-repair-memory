@@ -30,7 +30,8 @@ def extract_files_from_diff(diff_text: str) -> list:
     for line in diff_text.split('\n'):
         if line.startswith('diff --git'):
             # Extract file path from "diff --git a/file b/file"
-            match = re.search(r'b/(.+?)(?:\s|$)', line)
+            # Use space before b/ to match the second occurrence (destination path)
+            match = re.search(r' b/(.+?)(?:\s|$)', line)
             if match:
                 files.append(match.group(1))
 
@@ -45,8 +46,15 @@ def extract_files_from_diff(diff_text: str) -> list:
     return unique_files
 
 
-def compute_file_localization_metrics(preds_file: Path, dataset_file: Path) -> Dict:
-    """Compute file localization metrics: Top-K accuracy, Precision, Exact Match."""
+def compute_file_localization_metrics(preds_file: Path, dataset_file: Path, pushed_ids: set = None) -> Dict:
+    """Compute file localization metrics: Top-K accuracy, Precision, Exact Match.
+
+    Args:
+        preds_file: Path to predictions JSON
+        dataset_file: Path to dataset parquet
+        pushed_ids: Set of IDs that were actually pushed/validated. If provided,
+                   only evaluate against these IDs (not the full dataset).
+    """
     with open(preds_file, 'r') as f:
         preds = json.load(f)
 
@@ -55,6 +63,11 @@ def compute_file_localization_metrics(preds_file: Path, dataset_file: Path) -> D
     gt_files = {}
     for _, row in df.iterrows():
         issue_id = str(row['id'])
+
+        # Only include IDs that were pushed/validated if filter is provided
+        if pushed_ids is not None and issue_id not in pushed_ids:
+            continue
+
         changed_files = row.get('changed_files', [])
         if changed_files is not None and len(changed_files) > 0:
             gt_files[issue_id] = set(changed_files)
@@ -139,18 +152,18 @@ def compute_ci_success_metrics(results_file: Path, pred_ids: set) -> Dict:
         "overall_ci_success": {
             "description": "Percentage of workflows that passed after patch",
             "passed": summary['workflow_level']['passed'],
-            "total": summary['total_issues'],
+            "total": summary['evaluated_issues'],
             "rate": summary['workflow_level']['pass_rate']
         },
         "level_1_step_success": {
-            "description": "Of originally failed steps, how many now pass",
+            "description": "Originally failed steps (from logs) now pass",
             "fully_fixed": summary['step_level']['fully_fixed'],
             "partially_fixed": summary['step_level']['partially_fixed'],
             "not_fixed": summary['step_level']['not_fixed'],
-            "average_success_rate": summary['step_level']['average_success_rate']
+            "success_rate": summary['step_level']['success_rate']
         },
         "level_3_workflow": {
-            "description": "Workflow-level pass/fail",
+            "description": "Overall workflow status after patch",
             "passed": summary['workflow_level']['passed'],
             "failed": summary['workflow_level']['failed'],
             "pass_rate": summary['workflow_level']['pass_rate']
@@ -176,45 +189,59 @@ def main():
     print("="*80)
     print()
 
-    print("📊 Computing file localization metrics...")
+    print(" Computing file localization metrics...")
     pred_ids = set()
+    pushed_ids = None
+
     if Path(args.preds).exists():
-        loc_metrics = compute_file_localization_metrics(Path(args.preds), Path(args.dataset))
-        print(f"   ✓ Evaluated {loc_metrics['total_issues']} issues")
-        # Get prediction IDs for validation check
+        # Get prediction IDs
         with open(args.preds, 'r') as f:
             pred_ids = set(json.load(f).keys())
+
+        # Get pushed IDs from CI results
+        if Path(args.ci_results).exists():
+            with open(args.ci_results, 'r') as f:
+                ci_data = json.load(f)
+                pushed_ids = {str(r['id']) for r in ci_data.get('results', [])}
+                print(f"    Evaluating against {len(pushed_ids)} pushed IDs (not full dataset)")
+
+        loc_metrics = compute_file_localization_metrics(
+            Path(args.preds),
+            Path(args.dataset),
+            pushed_ids=pushed_ids
+        )
+        print(f"    Evaluated {loc_metrics['total_issues']} issues")
     else:
-        print(f"   ⚠️  Predictions file not found")
+        print(f"   ️  Predictions file not found")
         loc_metrics = None
 
-    print("\n📊 Computing CI success metrics...")
+    print("\n Computing CI success metrics...")
     if Path(args.ci_results).exists():
         ci_metrics = compute_ci_success_metrics(Path(args.ci_results), pred_ids)
         if ci_metrics:
-            print(f"   ✓ Loaded {ci_metrics['overall_ci_success']['total']} issues")
-            print(f"   ✓ Coverage: {ci_metrics['validation_coverage']['coverage_rate']}%")
+            print(f"    Loaded {ci_metrics['overall_ci_success']['total']} issues")
+            print(f"    Coverage: {ci_metrics['validation_coverage']['coverage_rate']}%")
         else:
-            print(f"   ⚠️  Validation data doesn't match predictions")
-            print(f"   ⚠️  Run: python scripts/analysis/calculate_success_rate.py to refresh")
+            print(f"   ️  Validation data doesn't match predictions")
+            print(f"   ️  Run: python scripts/analysis/calculate_success_rate.py to refresh")
     else:
-        print(f"   ⚠️  Run: python scripts/analysis/calculate_success_rate.py first")
+        print(f"   ️  Run: python scripts/analysis/calculate_success_rate.py first")
         ci_metrics = None
 
     evaluation = {"file_localization": loc_metrics, "ci_success": ci_metrics}
 
-    print(f"\n💾 Saving...")
+    print(f"\n Saving...")
     Path(args.output).parent.mkdir(exist_ok=True, parents=True)
     with open(args.output, 'w') as f:
         json.dump(evaluation, f, indent=2)
-    print(f"   ✓ {args.output}")
+    print(f"    {args.output}")
 
     print("\n" + "="*80)
     print("SUMMARY")
     print("="*80)
 
     if loc_metrics:
-        print("\n📁 File Localization:")
+        print("\n File Localization:")
         print(f"   Exact Match: {loc_metrics['exact_match']['rate']}%")
         print(f"   Precision: {loc_metrics['precision']['average']}%")
         print(f"   Top-1: {loc_metrics['top_k_accuracy']['top_1']}%")
@@ -223,16 +250,17 @@ def main():
         print(f"   Top-10: {loc_metrics['top_k_accuracy']['top_10']}%")
         print(f"   Top-15: {loc_metrics['top_k_accuracy']['top_15']}%")
 
-    print("\n🔧 CI Success:")
+    print("\n CI Success:")
     if ci_metrics:
         print(f"   Overall: {ci_metrics['overall_ci_success']['rate']}%")
-        print(f"   L1 Step Success: {ci_metrics['level_1_step_success']['average_success_rate']}%")
+        print(f"   L1 Step Success (Failed Steps in Logs): {ci_metrics['level_1_step_success']['success_rate']}%")
         print(f"   L3 Workflow Pass: {ci_metrics['level_3_workflow']['pass_rate']}%")
     else:
         print(f"   Overall: N/A")
         print(f"   L1 Step Success: N/A")
         print(f"   L3 Workflow Pass: N/A")
-        print(f"   (Run validation first: python scripts/analysis/calculate_success_rate.py)")
+        print(f"   (Fetch step metadata first: python scripts/analysis/fetch_step_metadata.py)")
+        print(f"   (Then run: python scripts/analysis/calculate_success_rate.py)")
 
     print("="*80)
 

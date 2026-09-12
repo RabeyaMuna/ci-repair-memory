@@ -223,13 +223,13 @@ def print_summary(stats: Dict[str, Any]):
     print("VALIDATION JOBS AND STEPS ANALYSIS")
     print("="*70)
 
-    print(f"\n📊 OVERALL STATISTICS (from fail→success commits)")
+    print(f"\n OVERALL STATISTICS (from fail→success commits)")
     print("-" * 70)
     print(f"Instances with validation data: {summary['total_instances_with_validation']}")
     print(f"Total commits analyzed: {summary['total_commits_analyzed']}")
     print(f"Avg commits per instance: {summary['avg_commits_per_instance']}")
 
-    print(f"\n⚙️  VALIDATION JOBS AND STEPS")
+    print(f"\n️  VALIDATION JOBS AND STEPS")
     print("-" * 70)
     print(f"Total Validation Jobs: {summary['total_validation_jobs']:,}")
     print(f"Total Validation Steps: {summary['total_validation_steps']:,}")
@@ -237,7 +237,7 @@ def print_summary(stats: Dict[str, Any]):
     print(f"Avg Steps per Instance: {summary['avg_steps_per_instance']}")
     print(f"Avg Steps per Job: {summary['avg_steps_per_job']}")
 
-    print(f"\n❌ FAILED JOBS AND STEPS")
+    print(f"\n FAILED JOBS AND STEPS")
     print("-" * 70)
     print(f"Total Failed Jobs: {summary['total_failed_jobs']:,}")
     print(f"Total Failed Steps: {summary['total_failed_steps']:,}")
@@ -246,7 +246,7 @@ def print_summary(stats: Dict[str, Any]):
     print(f"Failed Jobs Percentage: {summary['failed_jobs_percentage']}%")
     print(f"Failed Steps Percentage: {summary['failed_steps_percentage']}%")
 
-    print(f"\n📈 DISTRIBUTIONS")
+    print(f"\n DISTRIBUTIONS")
     print("-" * 70)
     print(f"Jobs per Instance: median={dists['jobs_per_instance']['median']}, "
           f"mean={dists['jobs_per_instance']['mean']}, "
@@ -261,19 +261,19 @@ def print_summary(stats: Dict[str, Any]):
           f"mean={dists['failed_steps_per_instance']['mean']}, "
           f"max={dists['failed_steps_per_instance']['max']}")
 
-    print(f"\n🏷️  UNIQUE NAMES")
+    print(f"\n️  UNIQUE NAMES")
     print("-" * 70)
     print(f"Unique Job Names: {stats['unique_names']['unique_job_names']}")
     print(f"Unique Step Names: {stats['unique_names']['unique_step_names']}")
     print(f"Unique Failed Job Names: {stats['unique_names']['unique_failed_job_names']}")
     print(f"Unique Failed Step Names: {stats['unique_names']['unique_failed_step_names']}")
 
-    print(f"\n🔝 TOP 5 FAILED JOB NAMES")
+    print(f"\n TOP 5 FAILED JOB NAMES")
     print("-" * 70)
     for i, (name, count) in enumerate(list(stats['top_failed_job_names'].items())[:5], 1):
         print(f"  {i}. {name}: {count} failures")
 
-    print(f"\n🔝 TOP 5 FAILED STEP NAMES")
+    print(f"\n TOP 5 FAILED STEP NAMES")
     print("-" * 70)
     for i, (name, count) in enumerate(list(stats['top_failed_step_names'].items())[:5], 1):
         print(f"  {i}. {name}: {count} failures")
@@ -297,7 +297,7 @@ def main():
     with open(output_file, 'w') as f:
         json.dump(stats, f, indent=2)
 
-    print(f"\n✅ Analysis saved to: {output_file}")
+    print(f"\n Analysis saved to: {output_file}")
 
     # Print summary
     print_summary(stats)

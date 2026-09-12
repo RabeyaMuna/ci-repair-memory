@@ -50,7 +50,7 @@ def main():
         sha_original = id_to_sha_original.get(instance_id)
 
         if sha_original is None:
-            print(f"  ✗ ID {instance_id}: no sha_original mapping in {FAILURE_DIFF_FILE}")
+            print(f"   ID {instance_id}: no sha_original mapping in {FAILURE_DIFF_FILE}")
             skipped_count += 1
             continue
 
@@ -58,21 +58,21 @@ def main():
         matched_indices = df.index[mask]
 
         if len(matched_indices) == 0:
-            print(f"  ✗ ID {instance_id}: no dataset row matches sha_fail {sha_original[:7]}")
+            print(f"   ID {instance_id}: no dataset row matches sha_fail {sha_original[:7]}")
             skipped_count += 1
             continue
 
         row_index = matched_indices[0]
         df.at[row_index, 'logs'] = entry['logs']
-        print(f"  ✓ ID {instance_id}: updated {len(entry['logs'])} log(s)")
+        print(f"   ID {instance_id}: updated {len(entry['logs'])} log(s)")
         updated_count += 1
 
     print('=' * 80)
     print(f"Saving dataset to {DATASET_FILE}...")
     df.to_parquet(DATASET_FILE, index=False)
 
-    print(f"✓ Updated {updated_count} dataset row(s)")
-    print(f"✗ Skipped {skipped_count} entry(ies)")
+    print(f" Updated {updated_count} dataset row(s)")
+    print(f" Skipped {skipped_count} entry(ies)")
 
 
 if __name__ == '__main__':

@@ -731,7 +731,7 @@ Workflow YAML:
             
 
         print(
-            f"Filtered from {n_chunks} ➝ {len(filtered_chunks)} chunks "
+            f"Filtered from {n_chunks}  {len(filtered_chunks)} chunks "
             f"(checked first {cutoff}, always kept last 4)"
         )
 

@@ -211,12 +211,12 @@ def monitor_all_branches(quick: bool = False) -> Dict:
     Returns health report dict
     """
     print(f"\n{'='*80}")
-    print("🔍 CI Workflow Health Monitoring")
+    print(" CI Workflow Health Monitoring")
     print(f"{'='*80}\n")
 
     # Load branches
     if not BRANCHES_FILE.exists():
-        print("❌ No benchmark branches found. Run setup first.")
+        print(" No benchmark branches found. Run setup first.")
         return {}
 
     with open(BRANCHES_FILE) as f:
@@ -232,7 +232,7 @@ def monitor_all_branches(quick: bool = False) -> Dict:
             baseline_data = {item["id"]: item for item in baseline_list}
         print(f"Loaded baseline for {len(baseline_data)} issues")
     else:
-        print("⚠️  No baseline found - will only report current status")
+        print("️  No baseline found - will only report current status")
 
     # Filter to successful branches
     active_branches = [b for b in branches if b.get("status") in ["created", "existing"]]
@@ -260,7 +260,7 @@ def monitor_all_branches(quick: bool = False) -> Dict:
         current_status = check_branch_ci_status(BENCHMARK_OWNER, repo, branch_name)
 
         if not current_status:
-            print(f"  ❌ Failed to check CI status")
+            print(f"   Failed to check CI status")
             results.append({
                 "id": issue_id,
                 "status": "error",
@@ -278,15 +278,15 @@ def monitor_all_branches(quick: bool = False) -> Dict:
             )
 
             if comparison["status"] == "ok":
-                print(f"  ✓ OK - matches baseline")
+                print(f"   OK - matches baseline")
                 ok_count += 1
             elif comparison["status"] == "warning":
-                print(f"  ⚠️  Warning - {len(comparison['changes'])} changes")
+                print(f"  ️  Warning - {len(comparison['changes'])} changes")
                 for change in comparison["changes"]:
                     print(f"      {change['message']}")
                 warning_count += 1
             else:
-                print(f"  ❌ Error - critical changes detected")
+                print(f"   Error - critical changes detected")
                 for change in comparison["changes"]:
                     print(f"      {change['message']}")
                 error_count += 1
@@ -331,12 +331,12 @@ def monitor_all_branches(quick: bool = False) -> Dict:
         json.dump(report, f, indent=2)
 
     print(f"\n{'='*80}")
-    print("📊 Summary")
+    print(" Summary")
     print(f"{'='*80}")
-    print(f"  ✓ OK: {ok_count}")
-    print(f"  ⚠️  Warnings: {warning_count}")
-    print(f"  ❌ Errors: {error_count}")
-    print(f"\n✓ Report saved to: {HEALTH_REPORT_FILE}")
+    print(f"   OK: {ok_count}")
+    print(f"  ️  Warnings: {warning_count}")
+    print(f"   Errors: {error_count}")
+    print(f"\n Report saved to: {HEALTH_REPORT_FILE}")
     print(f"{'='*80}\n")
 
     return report
@@ -347,7 +347,7 @@ def main():
     import sys
 
     if not GITHUB_TOKEN:
-        print("❌ No GitHub token found. Set GH_TOKEN in .env")
+        print(" No GitHub token found. Set GH_TOKEN in .env")
         return
 
     quick = "--quick" in sys.argv

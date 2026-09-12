@@ -63,10 +63,10 @@ def fetch_logs_for_failed_jobs(repo_owner: str, repo_name: str, run_id: int):
     failed_jobs = [j for j in jobs if j['conclusion'] == 'failure']
 
     if not failed_jobs:
-        print(f"    ✗ No failed jobs")
+        print(f"     No failed jobs")
         return []
 
-    print(f"    ✓ Found {len(failed_jobs)} failed job(s), fetching logs...")
+    print(f"     Found {len(failed_jobs)} failed job(s), fetching logs...")
 
     logs_data = []
     for job in failed_jobs:
@@ -75,7 +75,7 @@ def fetch_logs_for_failed_jobs(repo_owner: str, repo_name: str, run_id: int):
         job_log = fetch_job_logs(repo_owner, repo_name, job['id'])
 
         if job_log:
-            print(f"✓ ({len(job_log)} chars)")
+            print(f" ({len(job_log)} chars)")
 
             # Add log for each failed step
             failed_steps = [s for s in job.get('steps', []) if s.get('conclusion') == 'failure']
@@ -93,7 +93,7 @@ def fetch_logs_for_failed_jobs(repo_owner: str, repo_name: str, run_id: int):
                     'step_name': job['name']
                 })
         else:
-            print(f"✗ (logs unavailable)")
+            print(f" (logs unavailable)")
 
     return logs_data
 
@@ -120,7 +120,7 @@ def process_instance(record):
     )
 
     if logs:
-        print(f"    ✓ Collected {len(logs)} log(s)")
+        print(f"     Collected {len(logs)} log(s)")
         return {
             'id': record['id'],
             'sha_fail': record['commit'],
@@ -169,9 +169,9 @@ def main():
     with open(OUTPUT_FILE, 'w') as f:
         json.dump(results, f, indent=2)
 
-    print(f"✓ Collected logs for {success_count} instances")
-    print(f"✗ Failed to fetch logs for {failed_count} instances")
-    print(f"✓ Saved to {OUTPUT_FILE}")
+    print(f" Collected logs for {success_count} instances")
+    print(f" Failed to fetch logs for {failed_count} instances")
+    print(f" Saved to {OUTPUT_FILE}")
 
 if __name__ == '__main__':
     main()

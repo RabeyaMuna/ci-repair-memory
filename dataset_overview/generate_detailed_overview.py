@@ -367,13 +367,13 @@ def print_paper_summary(stats: Dict[str, Any]):
     print("="*70)
 
     # Dataset summary
-    print("\n📊 DATASET SUMMARY")
+    print("\n DATASET SUMMARY")
     print("-" * 70)
     print(f"Total Instances: {stats['dataset_summary']['total_instances']}")
 
     # Repositories
     repo = stats['repositories']['overall']
-    print(f"\n📁 REPOSITORIES")
+    print(f"\n REPOSITORIES")
     print("-" * 70)
     print(f"Unique Repository Names: {repo['unique_repo_names']}")
     print(f"Unique Owner/Repo Pairs: {repo['unique_owner_repo_pairs']}")
@@ -383,7 +383,7 @@ def print_paper_summary(stats: Dict[str, Any]):
 
     # Failure types
     ft = stats['failure_types']
-    print(f"\n🔴 FAILURE TYPES")
+    print(f"\n FAILURE TYPES")
     print("-" * 70)
     print(f"Unique Error Types: {ft['unique_error_types']}")
     print(f"Multi-Problem Instances: {ft['multi_problem_stats']['multi_problem_instances']} "
@@ -397,7 +397,7 @@ def print_paper_summary(stats: Dict[str, Any]):
     # Jobs and steps
     jobs = stats['jobs_and_steps']['overall_jobs']
     filtered = stats['jobs_and_steps']['filtered_jobs']
-    print(f"\n⚙️  JOBS AND STEPS")
+    print(f"\n️  JOBS AND STEPS")
     print("-" * 70)
     print(f"Total Jobs (all instances): {jobs['total_jobs_all_instances']:,}")
     print(f"Total Steps (all instances): {jobs['total_steps_all_instances']:,}")
@@ -410,7 +410,7 @@ def print_paper_summary(stats: Dict[str, Any]):
 
     # Failed jobs and steps
     failed = stats['failed_jobs_and_steps']['failed_jobs_overview']
-    print(f"\n❌ FAILED JOBS AND STEPS")
+    print(f"\n FAILED JOBS AND STEPS")
     print("-" * 70)
     print(f"Instances with Failures: {failed['instances_with_failed_jobs']}")
     print(f"Total Failed Jobs: {failed['total_failed_jobs']:,}")
@@ -423,7 +423,7 @@ def print_paper_summary(stats: Dict[str, Any]):
     changes = stats['code_changes']['aggregate']
     dist = stats['code_changes']['distribution']
     sizes = stats['code_changes']['size_categories']
-    print(f"\n📝 CODE CHANGES")
+    print(f"\n CODE CHANGES")
     print("-" * 70)
     print(f"Total Lines Added: {changes['total_lines_added']:,}")
     print(f"Total Lines Deleted: {changes['total_lines_deleted']:,}")
@@ -456,7 +456,7 @@ def main():
     with open(output_file, "w") as f:
         json.dump(stats, f, indent=2)
 
-    print(f"\n✅ Detailed statistics saved to: {output_file}")
+    print(f"\n Detailed statistics saved to: {output_file}")
 
     # Print formatted summary
     print_paper_summary(stats)

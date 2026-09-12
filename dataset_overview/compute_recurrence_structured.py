@@ -515,14 +515,14 @@ def main():
     csv_file = OUTPUT_DIR / "recurrence_pairs_structured.csv"
     df_results.to_csv(csv_file, index=False)
 
-    print(f"\n✓ Results saved to: {output_file}")
-    print(f"✓ Pairs saved to: {csv_file}")
+    print(f"\n Results saved to: {output_file}")
+    print(f" Pairs saved to: {csv_file}")
 
     # Print outputs
     print_latex_table(paper_metrics)
 
     print("\n" + "="*70)
-    print("✅ ANALYSIS COMPLETE!")
+    print(" ANALYSIS COMPLETE!")
     print("="*70)
     print(f"\nMetrics:")
     print(f"  Instances analyzed: {len(df):,}")
@@ -530,9 +530,9 @@ def main():
     print(f"  Cross-repo pairs: {paper_metrics['cross_repository']['pairs']:,}")
     print(f"  Instances with historical precedent: {paper_metrics['historical_predecessor']['instances_with_predecessor']:,}")
 
-    print("\n📋 Pipeline:")
+    print("\n Pipeline:")
     print("  Raw CI Evidence → Structured CI Context (LLM) → Similarity Analysis")
-    print("\n🔍 Key distinction:")
+    print("\n Key distinction:")
     print("  - affected_files (from CI) = failure localization")
     print("  - changed_files (from patch) = actual repair")
 

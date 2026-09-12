@@ -135,8 +135,8 @@ def add_validation_to_dataset(df: pd.DataFrame, validation_lookup: Dict[str, Dic
         else:
             not_matched += 1
 
-    print(f"✓ Matched {matched} instances with validation data")
-    print(f"✗ {not_matched} instances without validation data")
+    print(f" Matched {matched} instances with validation data")
+    print(f" {not_matched} instances without validation data")
 
     return df
 
@@ -184,7 +184,7 @@ def main():
     # Save
     print(f"\n6. Saving to {OUTPUT_PATH}...")
     df_updated.to_parquet(OUTPUT_PATH, index=False)
-    print(f"   ✓ Saved successfully!")
+    print(f"    Saved successfully!")
 
     # Show sample
     print(f"\n7. Sample data (first instance with validation):")
@@ -198,7 +198,7 @@ def main():
     print(f"   Failed Steps: {sample['validation_failed_steps_count']}")
 
     print("\n" + "="*70)
-    print("✅ COMPLETE!")
+    print(" COMPLETE!")
     print("="*70)
     print(f"\nNew dataset saved to: {OUTPUT_PATH}")
     print(f"\nNew columns added:")

@@ -4,7 +4,7 @@
 
 ---
 
-## 🎯 Overview
+##  Overview
 
 This system provides:
 
@@ -16,19 +16,19 @@ This system provides:
 
 ---
 
-## 📁 Architecture
+##  Architecture
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed design.
 
 ```
 data_managment/
-├── workflow_manager.py          # 🎮 Main orchestrator
-├── setup_benchmark_branches.py  # 🌿 Create permanent branches
-├── fetch_commit_metadata.py     # 📥 Fetch jobs/steps metadata
-├── trigger_ci_for_commits.py    # 🚀 Trigger missing CI runs
-├── monitor_ci_health.py         # 🔍 Monitor CI health
-├── update_failed_logs.py        # 💾 Update dataset
-└── results/                     # 📊 All outputs
+├── workflow_manager.py          #  Main orchestrator
+├── setup_benchmark_branches.py  #  Create permanent branches
+├── fetch_commit_metadata.py     #  Fetch jobs/steps metadata
+├── trigger_ci_for_commits.py    #  Trigger missing CI runs
+├── monitor_ci_health.py         #  Monitor CI health
+├── update_failed_logs.py        #  Update dataset
+└── results/                     #  All outputs
     ├── benchmark_branches.json
     ├── commit_job_metadata.json
     ├── missing_metadata_ids.json
@@ -37,7 +37,7 @@ data_managment/
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Initial Setup (One-time)
 
@@ -76,7 +76,7 @@ python workflow_manager.py run-all
 
 ---
 
-## 📖 Detailed Usage
+##  Detailed Usage
 
 ### Workflow Manager (Recommended)
 
@@ -198,9 +198,9 @@ python monitor_ci_health.py --quick
 **Output:** `results/ci_workflow_health.json`
 
 **Report includes:**
-- ✓ OK - matches baseline
-- ⚠️ Warning - non-critical changes
-- ❌ Error - critical changes (ground truth may need update)
+-  OK - matches baseline
+- ️ Warning - non-critical changes
+-  Error - critical changes (ground truth may need update)
 
 ---
 
@@ -218,7 +218,7 @@ python update_failed_logs.py
 
 ---
 
-## 📊 Data Files
+##  Data Files
 
 ### Input
 - `dataset/lca_dataset.parquet` - Main benchmark dataset (567 issues)
@@ -235,7 +235,7 @@ python update_failed_logs.py
 
 ---
 
-## 🔄 Workflows
+##  Workflows
 
 ### Initial Data Collection
 
@@ -284,7 +284,7 @@ python workflow_manager.py status
 
 ---
 
-## 🔧 Configuration
+##  Configuration
 
 ### Environment Variables
 
@@ -316,7 +316,7 @@ REQUEST_DELAY = 0.5         # Seconds between API requests
 
 ---
 
-## 🎯 Use Cases
+##  Use Cases
 
 ### 1. Initial Benchmark Setup
 **Goal:** Collect metadata for all 567 issues
@@ -350,7 +350,7 @@ python monitor_ci_health.py --quick
 
 ---
 
-## 📈 Status Checking
+##  Status Checking
 
 ```bash
 # Quick status
@@ -367,7 +367,7 @@ cat results/ci_workflow_health.json | jq '.summary'
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### No metadata found for commits
 
@@ -411,7 +411,7 @@ python workflow_manager.py fetch-metadata
 
 ---
 
-## 🚨 Important Notes
+##  Important Notes
 
 ### Permanent Branches
 - Branches are **NOT deleted** after use
@@ -435,7 +435,7 @@ python workflow_manager.py fetch-metadata
 
 ---
 
-## 📚 References
+##  References
 
 - **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md)
 - **GitHub API:** https://docs.github.com/en/rest
@@ -443,7 +443,7 @@ python workflow_manager.py fetch-metadata
 
 ---
 
-## 🔮 Future Enhancements
+##  Future Enhancements
 
 - [ ] Parallel processing for faster collection
 - [ ] Incremental updates (only changed issues)
@@ -454,16 +454,16 @@ python workflow_manager.py fetch-metadata
 
 ---
 
-## ✅ Summary
+##  Summary
 
 **This system enables:**
 
-1. ✅ **Persistent testing** via permanent branches
-2. ✅ **Complete metadata** collection (jobs + steps)
-3. ✅ **Automated monitoring** of CI health
-4. ✅ **Change detection** for ground truth validation
-5. ✅ **Dataset enrichment** with failure details
-6. ✅ **Reusable infrastructure** without breaking changes
+1.  **Persistent testing** via permanent branches
+2.  **Complete metadata** collection (jobs + steps)
+3.  **Automated monitoring** of CI health
+4.  **Change detection** for ground truth validation
+5.  **Dataset enrichment** with failure details
+6.  **Reusable infrastructure** without breaking changes
 
 **Key Benefits:**
 

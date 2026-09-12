@@ -143,7 +143,7 @@ def get_commits_between(repo_owner: str, repo_name: str, sha_fail: str, sha_succ
     data = response.json()
     commits = [c['sha'] for c in data.get('commits', [])]
     if data.get('total_commits', len(commits)) > len(commits):
-        print(f"    ⚠ compare truncated: {data.get('total_commits')} commits, only {len(commits)} returned")
+        print(f"     compare truncated: {data.get('total_commits')} commits, only {len(commits)} returned")
 
     if not commits or commits[-1] != sha_success:
         commits.append(sha_success)
@@ -257,7 +257,7 @@ def trigger_workflow_in_fork(repo_owner: str, repo_name: str, sha: str,
     """
     # Ensure commit exists in fork before attempting trigger
     if not ensure_commit_in_fork(repo_owner, repo_name, sha, fork_user):
-        print(f"✗ Commit {sha[:7]} not available in fork")
+        print(f" Commit {sha[:7]} not available in fork")
         return {'branch_name': None, 'trigger_commit': None, 'error': f'Commit {sha[:7]} not in fork or upstream'}
 
     print(f"→ Trigger...", end=' ', flush=True)
@@ -341,13 +341,13 @@ def trigger_workflow_in_fork(repo_owner: str, repo_name: str, sha: str,
         ).stdout.strip()
 
         os.chdir(original_dir)
-        print(f"✓")
+        print(f"")
         return {'branch_name': branch_name, 'trigger_commit': trigger_commit, 'error': None}
 
     except Exception as e:
         os.chdir(original_dir)
         detail = e.stderr.decode(errors='replace').strip() if isinstance(e, subprocess.CalledProcessError) and e.stderr else str(e)
-        print(f"✗ {detail}")
+        print(f" {detail}")
         return {'branch_name': None, 'trigger_commit': None, 'error': detail}
 
 def process_jobs_to_json_format(jobs: List[Dict]) -> Dict:
@@ -405,7 +405,7 @@ def fetch_metadata_for_commit(repo_owner: str, repo_name: str, sha: str,
     # Get commit info
     commit_info = fetch_commit_metadata(repo_owner, repo_name, sha)
     if not commit_info:
-        print("✗ Commit not found")
+        print(" Commit not found")
         return {
             'original_commit': sha,
             'commit_type': commit_type,
@@ -447,7 +447,7 @@ def fetch_metadata_for_commit(repo_owner: str, repo_name: str, sha: str,
                     'trigger_error': trigger_result['error']
                 }
 
-            print(f"✓ pushed, pending")
+            print(f" pushed, pending")
             return {
                 'original_commit': sha,
                 'commit_type': commit_type,
@@ -467,7 +467,7 @@ def fetch_metadata_for_commit(repo_owner: str, repo_name: str, sha: str,
                 'no_failed_jobs': 0
             }
         else:
-            print("✗ No run")
+            print(" No run")
             return {
                 'original_commit': sha,
                 'commit_type': commit_type,
@@ -486,7 +486,7 @@ def fetch_metadata_for_commit(repo_owner: str, repo_name: str, sha: str,
     # Fetch jobs
     jobs = fetch_jobs_for_run(repo_owner, repo_name, run['id'])
     if not jobs:
-        print("✗ No jobs")
+        print(" No jobs")
         return {
             'original_commit': sha,
             'commit_type': commit_type,
@@ -501,7 +501,7 @@ def fetch_metadata_for_commit(repo_owner: str, repo_name: str, sha: str,
         }
 
     jobs_data = process_jobs_to_json_format(jobs)
-    print(f"✓ {len(jobs)} jobs, {len(jobs_data['failed_jobs'])} failed")
+    print(f" {len(jobs)} jobs, {len(jobs_data['failed_jobs'])} failed")
 
     return {
         'original_commit': sha,
@@ -729,14 +729,14 @@ def main():
                 else:
                     # Trigger/commit fetch failed outright (e.g. permission error) —
                     # don't persist as done; next run will retry it from scratch.
-                    print(f"    ⚠ ID {instance_id}: unresolved failure(s), will retry next run")
+                    print(f"     ID {instance_id}: unresolved failure(s), will retry next run")
                     retry_count += 1
 
             except Exception as e:
-                print(f"\n  ✗ ID {instance_id}: Error - {e}")
+                print(f"\n   ID {instance_id}: Error - {e}")
     except KeyboardInterrupt:
         interrupted = True
-        print("\n\n⚠️  Interrupted by user — progress already saved, resume later to continue.")
+        print("\n\n️  Interrupted by user — progress already saved, resume later to continue.")
 
     # Final save (redundant safety net; loop already saves after each instance)
     save_all_metadata(list(metadata_by_id.values()), output_path)
@@ -744,17 +744,17 @@ def main():
 
     print("\n" + "="*80)
     if interrupted:
-        print("⚠️  Run was interrupted — rerun the same command to resume remaining instances.")
-    print(f"✓ Processed: {new_count} new instances")
-    print(f"✓ Total: {len(metadata_by_id)} instances")
+        print("️  Run was interrupted — rerun the same command to resume remaining instances.")
+    print(f" Processed: {new_count} new instances")
+    print(f" Total: {len(metadata_by_id)} instances")
     if retry_count > 0:
-        print(f"⚠️  Unresolved (will retry next run): {retry_count} instances")
+        print(f"️  Unresolved (will retry next run): {retry_count} instances")
     if triggered_count > 0:
-        print(f"⏱️  Triggered (pending): {triggered_count} instances")
-        print(f"✓ Saved pending list to: {trigger_path}")
+        print(f"️  Triggered (pending): {triggered_count} instances")
+        print(f" Saved pending list to: {trigger_path}")
         print(f"\nOnce their workflow runs finish, run:")
         print(f"  python data_managment/scripts/fetch_triggered_results.py")
-    print(f"✓ Saved to: {output_path}")
+    print(f" Saved to: {output_path}")
 
 if __name__ == '__main__':
     main()

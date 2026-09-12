@@ -312,10 +312,10 @@ def process_issue(row: pd.Series) -> Dict:
         metadata["is_fail_commit"] = (commit_sha == sha_fail)
 
         if metadata.get("has_metadata"):
-            print(f"✓ [{metadata['overall_conclusion']}] {metadata['total_jobs']} jobs, {metadata['failed_jobs_count']} failed")
+            print(f" [{metadata['overall_conclusion']}] {metadata['total_jobs']} jobs, {metadata['failed_jobs_count']} failed")
         else:
             reason = metadata.get('reason', 'unknown')
-            print(f"✗ No metadata ({reason})")
+            print(f" No metadata ({reason})")
 
             # If no metadata available, skip fetching details and just mark as empty
             if reason in ['no_check_runs', 'not_found_404']:
@@ -339,9 +339,9 @@ def process_issue(row: pd.Series) -> Dict:
     success_metadata["is_success_commit"] = True
 
     if success_metadata.get("has_metadata"):
-        print(f"✓ [{success_metadata['overall_conclusion']}] {success_metadata['total_jobs']} jobs")
+        print(f" [{success_metadata['overall_conclusion']}] {success_metadata['total_jobs']} jobs")
     else:
-        print(f"✗ No metadata")
+        print(f" No metadata")
 
     # Build cleaner output structure
     commits_list = []
@@ -493,7 +493,7 @@ def main():
         if response.lower() != 'y':
             return
     else:
-        print(f"✓ GitHub token loaded from .env file (ends with ...{GITHUB_TOKEN[-4:]})")
+        print(f" GitHub token loaded from .env file (ends with ...{GITHUB_TOKEN[-4:]})")
 
     # Load dataset
     print(f"\nLoading dataset from: {DATASET_FILE}")
@@ -539,7 +539,7 @@ def main():
         json.dump(results, f, indent=2, ensure_ascii=False)
 
     elapsed = datetime.now() - start_time
-    print(f"✓ Successfully saved metadata for {len(results)} issues")
+    print(f" Successfully saved metadata for {len(results)} issues")
     print(f"  Total time: {elapsed}")
 
     # Collect and save IDs with missing metadata
@@ -568,7 +568,7 @@ def main():
     with open(missing_ids_file, "w", encoding="utf-8") as f:
         json.dump(missing_metadata_ids, f, indent=2, ensure_ascii=False)
 
-    print(f"✓ Saved {len(missing_metadata_ids)} issues with missing metadata to: {missing_ids_file}")
+    print(f" Saved {len(missing_metadata_ids)} issues with missing metadata to: {missing_ids_file}")
 
     # Print summary
     total_commits = sum(r.get("total_commits_between", 0) for r in results)

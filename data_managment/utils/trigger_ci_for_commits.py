@@ -145,7 +145,7 @@ def trigger_ci_for_commit(owner: str, repo: str, commit_sha: str, repo_path: str
         run_git_command(["git", "branch", "-D", branch_name], cwd=repo_path)
         return False
 
-    print(f"  ✓ Branch pushed successfully")
+    print(f"   Branch pushed successfully")
 
     # Wait for CI to complete if enabled
     if WAIT_FOR_CI:
@@ -176,7 +176,7 @@ def trigger_ci_for_commit(owner: str, repo: str, commit_sha: str, repo_path: str
     run_git_command(["git", "push", "origin", "--delete", branch_name], cwd=repo_path)
     run_git_command(["git", "branch", "-D", branch_name], cwd=repo_path)
 
-    print(f"  ✓ Cleanup complete")
+    print(f"   Cleanup complete")
     return True
 
 
@@ -260,13 +260,13 @@ def main():
         print("[ERROR] No GitHub token found. Set GH_TOKEN or GITHUB_TOKEN in .env")
         return
 
-    print(f"✓ GitHub token loaded")
+    print(f" GitHub token loaded")
 
     # Load commits without metadata
     commits = load_commits_without_metadata()
 
     if not commits:
-        print("\n✓ All commits have metadata!")
+        print("\n All commits have metadata!")
         return
 
     print(f"\nFound {len(commits)} commits without metadata")

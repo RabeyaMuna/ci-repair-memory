@@ -64,7 +64,7 @@ def stratified_sample(
             by_category[category] = []
         by_category[category].append(ctx)
 
-    print(f"\n📊 Distribution by {stratify_by}:")
+    print(f"\n Distribution by {stratify_by}:")
     for cat, items in sorted(by_category.items(), key=lambda x: len(x[1]), reverse=True):
         print(f"  {cat}: {len(items)}")
 
@@ -155,9 +155,9 @@ def generate_validation_sheet(sample: List[Dict[str, Any]], output_path: Path):
     with open(output_path, 'w') as f:
         json.dump(validation_data, f, indent=2)
 
-    print(f"\n✅ Validation sheet saved to: {output_path}")
+    print(f"\n Validation sheet saved to: {output_path}")
     print(f"   Total instances: {len(validation_data)}")
-    print("\n📝 Manual validation steps:")
+    print("\n Manual validation steps:")
     print("   1. Open the validation JSON file")
     print("   2. For each instance, compare LLM extraction with raw logs")
     print("   3. Fill in validation fields:")
@@ -194,7 +194,7 @@ def analyze_validation_results(annotated_path: Path):
     print(f"\nTotal validated instances: {len(annotations)}")
 
     # Per-field accuracy
-    print("\n📊 Per-Field Accuracy:")
+    print("\n Per-Field Accuracy:")
     for field in fields:
         counts = Counter([ann.get(field, "").strip() for ann in annotations if ann.get(field)])
 
@@ -216,7 +216,7 @@ def analyze_validation_results(annotated_path: Path):
         print(f"    Weighted accuracy: {100*accuracy:.1f}%")
 
     # Overall quality
-    print("\n📈 Overall Quality Distribution:")
+    print("\n Overall Quality Distribution:")
     quality_counts = Counter([ann.get("overall_quality", "").strip() for ann in annotations if ann.get("overall_quality")])
     total_quality = sum(quality_counts.values())
 
@@ -226,7 +226,7 @@ def analyze_validation_results(annotated_path: Path):
             print(f"  {quality}: {count}/{total_quality} ({100*count/total_quality:.1f}%)")
 
     # Error patterns
-    print("\n🔍 Common Issues (from notes):")
+    print("\n Common Issues (from notes):")
     notes = [ann.get("notes", "").strip() for ann in annotations if ann.get("notes", "").strip()]
 
     if notes:
@@ -254,7 +254,7 @@ def analyze_validation_results(annotated_path: Path):
     with open(summary_path, 'w') as f:
         json.dump(summary, f, indent=2)
 
-    print(f"\n✅ Summary saved to: {summary_path}")
+    print(f"\n Summary saved to: {summary_path}")
 
 
 def main():

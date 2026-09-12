@@ -144,23 +144,19 @@ def push_repo(repo, credentials, benchmark_owner, user_branch_name):
     except Exception:
         origin = repo.create_remote("origin", origin_url)
 
-    # Check if remote branch exists and push accordingly
-    branch_exists = False
+    # Push with force to reset the branch if it exists, or create if not
     try:
-        # Check if branch exists on remote
-        repo.git.ls_remote("--heads", origin, repo.head.ref)
-        branch_exists = True
-        print(f"[INFO] Remote branch {repo.head.ref} exists - will force push to update it")
-    except Exception:
-        print(f"[INFO] Remote branch {repo.head.ref} doesn't exist - will create it")
-
-    # Push: force if exists (to update), normal if new
-    if branch_exists:
-        # Force push to existing branch (triggers workflow)
-        repo.git.push("--force", origin, repo.head.ref)
-    else:
-        # Create new branch
-        repo.git.push("--set-upstream", origin, repo.head.ref)
+        repo.git.push("--force", "--set-upstream", origin, repo.head.ref)
+    except git.exc.GitCommandError as e:
+        # Check if error is due to large files
+        error_msg = str(e.stderr) if e.stderr else str(e)
+        if 'Large files detected' in error_msg or 'file size limit' in error_msg or 'GH001' in error_msg:
+            print(f"[SKIP] Push failed: Large files exceed GitHub limit")
+            # Return special marker to indicate large file error
+            return "LARGE_FILE_ERROR"
+        else:
+            # Re-raise other git errors
+            raise
 
     # Get commit hash directly from git to ensure we get the latest commit
     # (repo.head.commit.hexsha may be stale after repo.git.commit())
@@ -209,14 +205,22 @@ def get_repo(datapoint, repos_folder, test_username, benchmark_owner, credential
         repo.git.checkout(commit_hash)
     # remove excessive files
     repo.git.clean("-fdx")
-    if not any((h for h in repo.heads if h.name == new_branch_name)):
-        # repo.delete_head("test_user", force=True)
-        repo.create_head(new_branch_name, force=True)
+
+    # Force delete the branch if it exists to ensure clean state
+    # This prevents large files from previous runs from persisting
+    try:
+        repo.delete_head(new_branch_name, force=True)
+    except:
+        pass  # Branch doesn't exist, which is fine
+
+    # Create fresh branch from current (clean) state
+    repo.create_head(new_branch_name, force=True)
     # TODO note that you should ban usage of the .git folder.
     # You need flag "-B" to checkout to the current state. Otherwise, the old brach state would be used
-    repo.git.checkout("-B", new_branch_name)
+    repo.git.checkout(new_branch_name)  # Use regular checkout since branch is fresh
+
     repo.name, repo.owner = repo_name, repo_owner
-    
+
     return repo, new_branch_name
 
 
@@ -421,12 +425,20 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
         credentials,
     )
 
-    # Prepares workflow file Moves target workflow file to the .github/workflows
-    copy_and_edit_workflow_file(datapoint, repo)
-
-    # Fixing the repo. fix_repo_function is provided by user.
-    # Returns True if patch applied, None if no patch or patch failed (still push in both cases)
+    # IMPORTANT: Apply patch BEFORE modifying workflow
+    # This ensures the patch applies to the original file state (sha_fail)
+    # and avoids "corrupt patch" errors when patch also modifies the workflow
+    #
+    # The fix_repo_function will:
+    # 1. Validate workflow changes (if any)
+    # 2. Filter out invalid workflow changes
+    # 3. Apply the remaining patch
     fix_result = fix_repo_function(datapoint, repo.working_dir, repo, config.out_folder)
+
+    # Prepares workflow file: Moves target workflow file to .github/workflows
+    # and adds 'push' trigger so the workflow runs on our test push
+    # NOTE: This happens AFTER applying the patch to avoid conflicts
+    copy_and_edit_workflow_file(datapoint, repo)
 
     # IMPORTANT: Ensure workflow is enabled before pushing. This is performed
     # only for datapoints that will actually be submitted.
@@ -436,6 +448,27 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
 
     # Push the corrected repo
     commit_sha = push_repo(repo, credentials, config.benchmark_owner, user_branch_name)
+
+    # Handle large file error
+    if commit_sha == "LARGE_FILE_ERROR":
+        from datetime import datetime, timezone
+        error_record = {
+            "repo_name": repo.name,
+            "id": datapoint["id"],
+            "sha_original": datapoint["sha_fail"],
+            "branch_name": user_branch_name,
+            "error": "large_files",
+            "error_message": "Push failed: Repository contains files exceeding GitHub size limits",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+        # Log to skipped issues file
+        skipped_file = os.path.join(config.out_folder, "skipped_large_files.jsonl")
+        with open(skipped_file, "a") as f:
+            f.write(json.dumps(error_record) + "\n")
+
+        print(f"[SKIP] Issue {datapoint['id']} logged to {skipped_file}")
+        return None  # Return None to skip this issue
 
     # Create initial job identificator with timestamp
     from datetime import datetime, timezone
@@ -656,18 +689,52 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
 
     temp_diff_path = os.path.join(out_folder, f"temp_{current_id}.diff")
 
+    # === WORKFLOW VALIDATION: Filter out invalid workflow changes ===
+    # Only validates the SPECIFIC workflow from the dataset (datapoint['workflow_path'])
+    # Other workflows in the diff are left as-is
+    try:
+        from .workflow_patch_validator import validate_and_filter_workflow_changes
+
+        print(f"[VALIDATION] Checking for workflow changes in patch for ID {current_id}")
+        original_diff = patch_data["diff"]
+        filtered_diff, validation_report = validate_and_filter_workflow_changes(
+            original_diff,
+            datapoint
+        )
+
+        if validation_report.get('dataset_workflow_in_diff'):
+            if validation_report['filtered_diff_modified']:
+                print(f"[VALIDATION] Removed invalid workflow changes for {datapoint.get('workflow_path')}")
+                print(f"[VALIDATION] Dataset workflow will be used as-is (via copy_and_edit_workflow_file)")
+                diff_content = filtered_diff
+            else:
+                print(f"[VALIDATION] Workflow changes are valid (formatting-only)")
+                diff_content = filtered_diff
+        else:
+            # No dataset workflow in diff, use original
+            diff_content = original_diff
+
+    except ImportError:
+        print("[WARN] Workflow validator not available, skipping validation")
+        diff_content = patch_data["diff"]
+    except Exception as e:
+        print(f"[WARN] Workflow validation failed: {e}, using original diff")
+        import traceback
+        traceback.print_exc()
+        diff_content = patch_data["diff"]
+
     # Write patch to temp file
     # Ensure trailing newline — git apply requires it; missing \n → "corrupt patch"
-    diff_content = patch_data["diff"]
     if not diff_content.endswith("\n"):
         diff_content += "\n"
 
     with open(temp_diff_path, "w", encoding="utf-8") as f:
         f.write(diff_content)
 
-    # Pre-check patch validity using the same 3-way mode used for apply.
+    # Pre-check patch validity
+    # NOTE: NOT using --3way because it pulls in large files from git history
     check = subprocess.run(
-        ["git", "apply", "--check", "--3way", temp_diff_path],
+        ["git", "apply", "--check", temp_diff_path],
         cwd=repo_path,
         capture_output=True,
         text=True
@@ -687,8 +754,10 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
 
     # Apply patch if valid
     try:
+        # Apply patch WITHOUT --3way to prevent pulling in files from git history
+        # The --3way flag was causing 4000+ large files to be merged in
         subprocess.run(
-            ["git", "apply", "--3way", temp_diff_path],
+            ["git", "apply", temp_diff_path],
             cwd=repo_path,
             capture_output=True,
             text=True,

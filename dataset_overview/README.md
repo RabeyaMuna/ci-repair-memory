@@ -4,7 +4,7 @@
 
 ---
 
-## 📄 **Main Document** (START HERE!)
+##  **Main Document** (START HERE!)
 
 **`DATASET_OVERVIEW_FOR_PAPER.md`** ⭐
 - All statistics, tables, and text for paper
@@ -15,7 +15,7 @@
 
 ---
 
-## 🔧 **Scripts** (Run These to Generate Data)
+##  **Scripts** (Run These to Generate Data)
 
 ### 1. **`generate_detailed_overview.py`**
 Generate complete dataset statistics.
@@ -74,7 +74,7 @@ python compute_benchmark_recurrence.py --sample-size 100
 
 ---
 
-## 📊 **Generated Data**
+##  **Generated Data**
 
 ### 1. **`detailed_paper_statistics.json`**
 Complete dataset statistics including:
@@ -93,7 +93,7 @@ Validation metrics including:
 
 ---
 
-## ⚡ **Quick Start**
+##  **Quick Start**
 
 ```bash
 cd /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset_overview
@@ -110,7 +110,7 @@ python analyze_validation_jobs_steps.py
 
 ---
 
-## 📋 **Workflow**
+##  **Workflow**
 
 ```
 1. Extract validation (from data_managment)
@@ -125,7 +125,7 @@ python analyze_validation_jobs_steps.py
 
 ---
 
-## 🎯 **For Your Paper**
+##  **For Your Paper**
 
 1. Open `DATASET_OVERVIEW_FOR_PAPER.md`
 2. Copy Table 1 (Dataset Overview) → paper

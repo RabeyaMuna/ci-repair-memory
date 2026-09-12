@@ -168,8 +168,9 @@ Return ONLY a JSON object with this exact format:
   "failures": [
     {{
       "failure_type": "<one of the 12 taxonomy types above>",
-      "failure_subtype": "<specific issue, e.g., 'missing import', 'wrong indentation'>",
-      "confidence": "<high|medium|low>"
+      "sub_type": "<specific issue, e.g., 'missing import', 'wrong indentation'>",
+      "evidence": "<WHY this problem matches the chosen taxonomy category - explain which category it falls under and the reasoning>",
+      "note": "<WHAT is the problem - detailed explanation of what went wrong based on CI logs/diff>"
     }},
     ... (return ALL distinct failure types, not just primary)
   ]
@@ -177,6 +178,8 @@ Return ONLY a JSON object with this exact format:
 
 REQUIREMENTS:
 - failure_type MUST be exactly one of the 12 taxonomy types
+- evidence field: Explain WHY this matches the chosen taxonomy (e.g., "This is Code Linting because flake8 static analysis detected unused import, not a runtime or formatting issue")
+- note field: Explain WHAT the problem is (e.g., "Module 'pandas' imported on line 5 but never used in the code, causing flake8 F401 error")
 - Return ALL distinct failure types found (CI shows FIRST, diff fixes ALL)
 - If only one failure type, return array with one element
 - Base on what diff shows was fixed (complete repair), not just CI error
@@ -256,7 +259,7 @@ def classify_chunk_with_llm(issue_id: str, ci_logs: str, diff_chunk: str,
         return failures
 
     except Exception as e:
-        print(f"   ⚠️  Error in chunk {chunk_idx}: {str(e)}")
+        print(f"   ️  Error in chunk {chunk_idx}: {str(e)}")
         return []
 
 
@@ -273,7 +276,7 @@ def classify_with_llm(issue_id: str, ci_logs: str, diff: str, validation_steps: 
     try:
         chunk_data = chunk_diff_with_dependencies(diff, max_chars=8000)
     except Exception as e:
-        print(f"   ⚠️  Dependency chunking failed, using simple chunking: {str(e)}")
+        print(f"   ️  Dependency chunking failed, using simple chunking: {str(e)}")
         # Fallback to simple chunking
         simple_chunks = chunk_diff(diff, max_chars=8000)
         chunk_data = [{'content': c, 'files': [], 'has_dependencies': False} for c in simple_chunks]
@@ -303,34 +306,44 @@ def classify_with_llm(issue_id: str, ci_logs: str, diff: str, validation_steps: 
     if not all_failures:
         return {
             "issue_id": issue_id,
-            "failure_types": ["Unknown"],
-            "failure_subtypes": ["classification_failed"],
-            "confidences": ["low"],
-            "num_failure_types": 1,
-            "num_chunks": len(chunk_data)
+            "failure_type": ["Unknown"],
+            "sub_type": ["classification_failed"],
+            "detail": [
+                {
+                    "failure_type": "Unknown",
+                    "evidence": "LLM classification failed or returned no results",
+                    "note": "Unable to classify this instance"
+                }
+            ]
         }
 
-    # Deduplicate failures (same type + subtype)
+    # Deduplicate failures (same type + sub_type)
     seen = set()
     unique_failures = []
     for f in all_failures:
-        key = (f['failure_type'], f['failure_subtype'])
+        key = (f['failure_type'], f.get('sub_type', f.get('failure_subtype', '')))
         if key not in seen:
             seen.add(key)
             unique_failures.append(f)
 
-    # Extract as arrays
+    # Extract top-level arrays for quick overview
     failure_types = [f['failure_type'] for f in unique_failures]
-    failure_subtypes = [f['failure_subtype'] for f in unique_failures]
-    confidences = [f['confidence'] for f in unique_failures]
+    sub_types = [f.get('sub_type', f.get('failure_subtype', '')) for f in unique_failures]
+
+    # Build detail array for manual inspection
+    detail = []
+    for f in unique_failures:
+        detail.append({
+            "failure_type": f['failure_type'],
+            "evidence": f.get('evidence', ''),  # WHY it matches this taxonomy
+            "note": f.get('note', '')  # WHAT the problem is
+        })
 
     return {
         "issue_id": issue_id,
-        "failure_types": failure_types,
-        "failure_subtypes": failure_subtypes,
-        "confidences": confidences,
-        "num_failure_types": len(unique_failures),
-        "num_chunks": len(chunk_data)
+        "failure_type": failure_types,
+        "sub_type": sub_types,
+        "detail": detail
     }
 
 
@@ -350,6 +363,10 @@ def main():
                         help='Output file')
     parser.add_argument('--limit', type=int, default=None,
                         help='Limit number of issues to classify (for testing)')
+    parser.add_argument('--checkpoint', type=str, default='results/classification_checkpoint.json',
+                        help='Checkpoint file for resuming (auto-saves every 10 instances)')
+    parser.add_argument('--save-interval', type=int, default=10,
+                        help='Save checkpoint every N instances (default: 10)')
     args = parser.parse_args()
 
     print("="*80)
@@ -360,53 +377,74 @@ def main():
     # Initialize OpenAI client
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
-        print("❌ Error: OPENAI_API_KEY not found in .env file")
+        print(" Error: OPENAI_API_KEY not found in .env file")
         return 1
 
     client = OpenAI(api_key=api_key)
-    print("✓ OpenAI client initialized")
+    print(" OpenAI client initialized")
 
     # Load dataset
-    print("\n📂 Loading dataset...")
+    print("\n Loading dataset...")
     df = pd.read_parquet(args.dataset)
-    print(f"   ✓ Loaded {len(df)} issues")
+    print(f"    Loaded {len(df)} issues")
 
     # Load structured log details if available
-    print("\n📋 Loading structured log details...")
+    print("\n Loading structured log details...")
     log_details_map = {}
     if Path(args.log_details).exists():
         with open(args.log_details, 'r') as f:
             log_details_list = json.load(f)
             log_details_map = {str(item['id']): item for item in log_details_list if 'id' in item}
-        print(f"   ✓ Loaded {len(log_details_map)} log details")
+        print(f"    Loaded {len(log_details_map)} log details")
     else:
-        print(f"   ⚠️  Log details not found, using raw logs")
+        print(f"   ️  Log details not found, using raw logs")
 
     # Load selected IDs from predictions or use all
-    print("\n📋 Loading selected IDs...")
+    print("\n Loading selected IDs...")
     if args.all:
-        print("   ✓ Using ALL issues from dataset")
+        print("    Using ALL issues from dataset")
         df_filtered = df
     elif Path(args.preds).exists():
         with open(args.preds, 'r') as f:
             selected_ids = list(json.load(f).keys())
-        print(f"   ✓ {len(selected_ids)} IDs from predictions")
+        print(f"    {len(selected_ids)} IDs from predictions")
         df_filtered = df[df['id'].astype(str).isin(selected_ids)]
-        print(f"   ✓ Filtered to {len(df_filtered)} issues")
+        print(f"    Filtered to {len(df_filtered)} issues")
     else:
-        print("   ⚠️  No predictions file, using all issues")
+        print("   ️  No predictions file, using all issues")
         df_filtered = df
 
     if args.limit:
         df_filtered = df_filtered.head(args.limit)
-        print(f"   ⚠️  Limited to {args.limit} issues for testing")
+        print(f"   ️  Limited to {args.limit} issues for testing")
+
+    # Load checkpoint if exists
+    print("\n Checking for checkpoint...")
+    checkpoint_path = Path(args.checkpoint)
+    processed_ids = set()
+    classifications = []
+
+    if checkpoint_path.exists():
+        with open(checkpoint_path, 'r') as f:
+            checkpoint_data = json.load(f)
+            classifications = checkpoint_data.get('classifications', [])
+            processed_ids = set(c['issue_id'] for c in classifications)
+        print(f"    Loaded checkpoint: {len(classifications)} already processed")
+        print(f"    Resuming from instance {len(classifications)+1}/{len(df_filtered)}")
+    else:
+        print("    No checkpoint found, starting from scratch")
 
     # Classify each issue
-    print("\n🔍 Classifying failure types...")
-    classifications = []
+    print("\n Classifying failure types...")
+    start_count = len(classifications)
 
     for idx, row in df_filtered.iterrows():
         issue_id = str(row['id'])
+
+        # Skip if already processed
+        if issue_id in processed_ids:
+            continue
+
         print(f"   [{len(classifications)+1}/{len(df_filtered)}] Processing {issue_id}...", end='', flush=True)
 
         # Extract data (handle potential arrays/None/pandas types)
@@ -452,14 +490,34 @@ def main():
                                    log_details, workflow_info)
         classifications.append(result)
 
-        # Show all failure types found
-        types_str = ", ".join(result['failure_types'][:3])
-        if result['num_failure_types'] > 3:
-            types_str += f" +{result['num_failure_types']-3} more"
-        print(f" ✓ [{result['num_failure_types']}] {types_str}")
+        # Show all failure types found (no truncation)
+        num_types = len(result['failure_type'])
+        types_str = ", ".join(result['failure_type'])
+        print(f"  [{num_types}] {types_str}")
+
+        # Save checkpoint incrementally
+        if len(classifications) % args.save_interval == 0:
+            checkpoint_path.parent.mkdir(exist_ok=True, parents=True)
+            with open(checkpoint_path, 'w') as f:
+                json.dump({
+                    'total_processed': len(classifications),
+                    'last_processed_id': issue_id,
+                    'classifications': classifications
+                }, f, indent=2)
+            print(f"    💾 Checkpoint saved: {len(classifications)} instances")
+
+    # Final checkpoint save
+    if len(classifications) > start_count:
+        checkpoint_path.parent.mkdir(exist_ok=True, parents=True)
+        with open(checkpoint_path, 'w') as f:
+            json.dump({
+                'total_processed': len(classifications),
+                'classifications': classifications
+            }, f, indent=2)
+        print(f"\n 💾 Final checkpoint saved: {len(classifications)} instances")
 
     # Add classifications to dataset
-    print(f"\n📝 Adding classifications to dataset...")
+    print(f"\n Adding classifications to dataset...")
 
     # Make a copy to avoid SettingWithCopyWarning
     df_filtered = df_filtered.copy()
@@ -469,21 +527,21 @@ def main():
 
     # Add columns to dataframe (as lists)
     df_filtered['failure_types'] = df_filtered['id'].astype(str).map(
-        lambda x: classification_map.get(x, {}).get('failure_types', ['Unknown'])
+        lambda x: classification_map.get(x, {}).get('failure_type', ['Unknown'])
     )
     df_filtered['failure_subtypes'] = df_filtered['id'].astype(str).map(
-        lambda x: classification_map.get(x, {}).get('failure_subtypes', ['unknown'])
+        lambda x: classification_map.get(x, {}).get('sub_type', ['unknown'])
     )
     df_filtered['num_failure_types'] = df_filtered['id'].astype(str).map(
-        lambda x: classification_map.get(x, {}).get('num_failure_types', 1)
+        lambda x: len(classification_map.get(x, {}).get('failure_type', []))
     )
 
     # Get unique lists (flatten arrays)
     all_types = []
     all_subtypes = []
     for c in classifications:
-        all_types.extend(c['failure_types'])
-        all_subtypes.extend(c['failure_subtypes'])
+        all_types.extend(c['failure_type'])
+        all_subtypes.extend(c['sub_type'])
 
     unique_types = sorted(set(all_types))
     unique_subtypes = sorted(set(all_subtypes))
@@ -491,10 +549,10 @@ def main():
     # Save enriched dataset
     enriched_dataset_path = args.dataset.replace('.parquet', '_with_failure_types.parquet')
     df_filtered.to_parquet(enriched_dataset_path, index=False)
-    print(f"   ✓ Saved enriched dataset: {enriched_dataset_path}")
+    print(f"    Saved enriched dataset: {enriched_dataset_path}")
 
     # Save detailed results
-    print(f"\n💾 Saving detailed results to {args.output}...")
+    print(f"\n Saving detailed results to {args.output}...")
     Path(args.output).parent.mkdir(exist_ok=True, parents=True)
 
     output_data = {
@@ -515,11 +573,11 @@ def main():
 
     # Count total failure types (can be > number of issues)
     type_counts = {}
-    multi_type_issues = sum(1 for c in classifications if c['num_failure_types'] > 1)
-    total_failure_instances = sum(c['num_failure_types'] for c in classifications)
+    multi_type_issues = sum(1 for c in classifications if len(c['failure_type']) > 1)
+    total_failure_instances = sum(len(c['failure_type']) for c in classifications)
 
     for c in classifications:
-        for ftype in c['failure_types']:
+        for ftype in c['failure_type']:
             type_counts[ftype] = type_counts.get(ftype, 0) + 1
 
     print(f"\nTotal issues classified: {len(classifications)}")
@@ -530,18 +588,25 @@ def main():
     for ftype, count in sorted(type_counts.items(), key=lambda x: -x[1]):
         print(f"   {ftype}: {count}")
 
-    print(f"\n📊 Unique failure types ({len(unique_types)}):")
+    print(f"\n Unique failure types ({len(unique_types)}):")
     print(f"   {unique_types}")
 
-    print(f"\n📊 Unique failure subtypes ({len(unique_subtypes)}):")
+    print(f"\n Unique failure subtypes ({len(unique_subtypes)}):")
     for subtype in unique_subtypes[:10]:
         print(f"   - {subtype}")
     if len(unique_subtypes) > 10:
         print(f"   ... and {len(unique_subtypes) - 10} more")
 
     print("\n" + "="*80)
-    print(f"✓ Enriched dataset: {enriched_dataset_path}")
-    print(f"✓ Detailed results: {args.output}")
+    print(f" Enriched dataset: {enriched_dataset_path}")
+    print(f" Detailed results: {args.output}")
+    print(f" Checkpoint file: {args.checkpoint} (can be deleted or kept for resume)")
+
+    # Optionally clean up checkpoint on successful completion
+    # Uncomment to auto-delete checkpoint after success:
+    # if checkpoint_path.exists():
+    #     checkpoint_path.unlink()
+    #     print(f" Checkpoint deleted (all instances completed)")
 
     return 0
 

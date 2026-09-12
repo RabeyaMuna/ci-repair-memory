@@ -129,13 +129,13 @@ CI-REPAIR-BENCH/
 ## Example Results
 
 ```
-📁 File Localization:
+ File Localization:
    Exact Match: 15.2%
    Precision: 42.8%
    Top-1: 38.5%
    Top-5: 61.3%
 
-🔧 CI Success:
+ CI Success:
    Overall: 14.3%
    L1 Step Success: 26.3%
    L3 Workflow Pass: 14.3%

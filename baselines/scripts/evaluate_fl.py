@@ -265,7 +265,7 @@ def evaluate(result_dir: str) -> None:
 
         print(f"  FL PREDICTED  ({len(pred_norm)} file(s))")
         for pd in predicted_details:
-            verdict = "HIT  ✓" if pd["file"] in gt_norm else "EXTRA ✗"
+            verdict = "HIT  " if pd["file"] in gt_norm else "EXTRA "
             print(f"    [{verdict}]  {pd['file']}")
             for fault in pd["faults"]:
                 lr   = fault["line_range"]
@@ -280,18 +280,18 @@ def evaluate(result_dir: str) -> None:
             gf_n  = norm(gf)
             hunks = patch_hunks.get(gf, patch_hunks.get(gf_n, []))
             hunks_s = ", ".join(f"lines {s}-{e}" for s, e in hunks) if hunks else "?"
-            found = "✓" if gf_n in set(pred_norm) else "✗ missed"
+            found = "" if gf_n in set(pred_norm) else " missed"
             print(f"    [{found}]  {gf_n}   patched at: {hunks_s}")
 
         if missed:
             print(f"\n  MISSED FILES (in patch but not predicted by FL):")
             for mf in missed:
-                print(f"    ✗  {norm(mf)}")
+                print(f"      {norm(mf)}")
 
         if line_overlap_results:
             print(f"\n  LINE OVERLAP (among hit files):")
             for lo in line_overlap_results:
-                overlap_s = "YES ✓" if lo["line_overlap"] else "NO  ✗"
+                overlap_s = "YES " if lo["line_overlap"] else "NO  "
                 predicted_s = (
                     f"lines {lo['predicted_range'][0]}-{lo['predicted_range'][1]}"
                     if lo["predicted_range"] else "unknown"

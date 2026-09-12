@@ -107,7 +107,7 @@ def main():
     # Thresholds
     thresholds = [0.5, 0.6, 0.7, 0.8, 0.9]
 
-    print("\n📊 WITHIN-REPOSITORY RECURRENCE")
+    print("\n WITHIN-REPOSITORY RECURRENCE")
     print("-" * 70)
     print(f"Total instances with same-repo precedents: {len(within_struct)}\n")
 
@@ -123,7 +123,7 @@ def main():
         pct = 100 * count / len(within_lex) if within_lex else 0
         print(f"  ≥{thresh:.1f}: {count:3d}/{len(within_lex)} ({pct:.1f}%)")
 
-    print("\n📊 OVERALL BENCHMARK RECURRENCE")
+    print("\n OVERALL BENCHMARK RECURRENCE")
     print("-" * 70)
     print(f"Total instances: {len(overall_struct)}\n")
 
@@ -140,7 +140,7 @@ def main():
         print(f"  ≥{thresh:.1f}: {count:3d}/{len(overall_lex)} ({pct:.1f}%)")
 
     # Quartiles
-    print("\n📈 QUARTILE ANALYSIS")
+    print("\n QUARTILE ANALYSIS")
     print("-" * 70)
 
     def print_quartiles(values, name):
@@ -203,10 +203,10 @@ def main():
     with open(output_file, 'w') as f:
         json.dump(results, f, indent=2)
 
-    print(f"\n✅ Results saved to: {output_file}")
+    print(f"\n Results saved to: {output_file}")
 
     print("\n" + "="*70)
-    print("💡 INTERPRETATION FOR PAPER")
+    print(" INTERPRETATION FOR PAPER")
     print("="*70)
     print("\nSample text:")
     print(f"""

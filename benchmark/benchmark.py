@@ -363,7 +363,7 @@ class CIFixBenchmark:
         with open(summary_file, "w") as f:
             json.dump(summary, f, indent=2)
 
-        print(f"\n✓ Detailed evaluation saved to: {output_file}")
-        print(f"✓ Summary saved to: {summary_file}\n")
+        print(f"\n Detailed evaluation saved to: {output_file}")
+        print(f" Summary saved to: {summary_file}\n")
 
         return summary

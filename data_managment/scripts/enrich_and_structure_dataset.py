@@ -593,19 +593,19 @@ def main() -> None:
             'provenance': provenance,
             'instances': processed_instances,
         }, f, indent=2)
-    print(f"  ✓ {output_file}")
+    print(f"   {output_file}")
 
     # Write overall jobs by issue
     output_file = args.output_dir / "overall_jobs_by_issue.json"
     with output_file.open('w') as f:
         json.dump(overall_jobs_summaries, f, indent=2)
-    print(f"  ✓ {output_file}")
+    print(f"   {output_file}")
 
     # Write failed jobs by issue
     output_file = args.output_dir / "failed_jobs_by_issue.json"
     with output_file.open('w') as f:
         json.dump(failed_jobs_summaries, f, indent=2)
-    print(f"  ✓ {output_file}")
+    print(f"   {output_file}")
 
     # Write instance validation summary
     output_file = args.output_dir / "instance_validation_summary.json"
@@ -614,7 +614,7 @@ def main() -> None:
             'provenance': provenance,
             'instances': instance_validation_summaries,
         }, f, indent=2)
-    print(f"  ✓ {output_file}")
+    print(f"   {output_file}")
 
     # Write final enriched dataset
     output_file = args.output_dir.parent / "enriched_dataset.json"
@@ -630,7 +630,7 @@ def main() -> None:
             },
             'instances': enriched_instances,
         }, f, indent=2)
-    print(f"  ✓ {output_file}")
+    print(f"   {output_file}")
 
     # Print summary statistics
     total_validation_jobs = sum(
@@ -655,7 +655,7 @@ def main() -> None:
     total_failed_steps = sum(item['no_of_failed_steps'] for item in failed_jobs_summaries)
 
     print(f"\n{'='*80}")
-    print("✓ Enrichment complete!")
+    print(" Enrichment complete!")
     print(f"{'='*80}")
     print(f"Total instances: {len(enriched_instances)}")
     print()

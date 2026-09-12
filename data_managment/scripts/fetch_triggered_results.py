@@ -102,9 +102,9 @@ def main():
         print(f"\n  ID {entry['id']}: {entry['repo_owner']}/{entry['repo_name']}")
         for item in entry['commit_metadata']:
             if resolve_commit_item(entry, item):
-                print(f"    {item['commit_type'].upper()} ({item['original_commit'][:7]})... ✓ {item['workflow_conclusion']}")
+                print(f"    {item['commit_type'].upper()} ({item['original_commit'][:7]})...  {item['workflow_conclusion']}")
             elif item.get('pending'):
-                print(f"    {item['commit_type'].upper()} ({item['original_commit'][:7]})... ⏳ still running")
+                print(f"    {item['commit_type'].upper()} ({item['original_commit'][:7]})...  still running")
 
         completed = build_completed_metadata(entry)
         if is_instance_valid(completed):
@@ -121,8 +121,8 @@ def main():
     still_pending = [e for e in trigger_entries if e['id'] not in metadata_by_id]
 
     print("\n" + "=" * 80)
-    print(f"✓ Resolved: {resolved_count} instance(s) → merged into {output_path}")
-    print(f"⏳ Still pending: {len(still_pending)} instance(s) in {trigger_path}")
+    print(f" Resolved: {resolved_count} instance(s) → merged into {output_path}")
+    print(f" Still pending: {len(still_pending)} instance(s) in {trigger_path}")
 
 
 if __name__ == '__main__':

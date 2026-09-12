@@ -84,11 +84,11 @@ def print_instance_details(results, sort_by='precision'):
     print("-" * 120)
 
     for _, row in df_sorted.iterrows():
-        em_mark = '✓' if row['exact_match'] else '✗'
-        t1_mark = '✓' if row['top_1'] else '✗'
-        t3_mark = '✓' if row['top_3'] else '✗'
-        t5_mark = '✓' if row['top_5'] else '✗'
-        t10_mark = '✓' if row['top_10'] else '✗'
+        em_mark = '' if row['exact_match'] else ''
+        t1_mark = '' if row['top_1'] else ''
+        t3_mark = '' if row['top_3'] else ''
+        t5_mark = '' if row['top_5'] else ''
+        t10_mark = '' if row['top_10'] else ''
 
         print(f"{row['id']:<6} {row['num_predicted']:<6} {row['num_ground_truth']:<6} "
               f"{row['num_matched']:<7} {row['precision']:<8.4f} "
