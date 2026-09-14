@@ -50,14 +50,57 @@ def extract_files_from_diff(diff_text: str) -> list:
 
 def get_pushed_ids(results_dir: Path) -> Optional[set]:
     """Get IDs that were actually pushed/validated from CI results."""
+    # First try jobs_ids file (most accurate)
+    jobs_ids_file = results_dir / 'jobs_ids_diff.jsonl'
+    if jobs_ids_file.exists():
+        pushed_ids = set()
+        with open(jobs_ids_file, 'r') as f:
+            for line in f:
+                if line.strip():
+                    job = json.loads(line)
+                    issue_id = str(job.get('id', job.get('issue_id', '')))
+                    if issue_id:
+                        pushed_ids.add(issue_id)
+        if pushed_ids:
+            return pushed_ids
+
+    # Fallback to success_rate_evaluation.json
     success_rate_file = results_dir / 'success_rate_evaluation.json'
+    if success_rate_file.exists():
+        with open(success_rate_file, 'r') as f:
+            data = json.load(f)
+            return {str(r['id']) for r in data.get('results', [])}
 
-    if not success_rate_file.exists():
-        return None
+    return None
 
-    with open(success_rate_file, 'r') as f:
-        data = json.load(f)
-        return {str(r['id']) for r in data.get('results', [])}
+
+def load_predictions(preds_file: Path) -> Dict:
+    """Load predictions from either dict or list format.
+
+    Handles two formats:
+    1. Dict: {id: {diff, predicted_files, ...}, ...}
+    2. List: [{id, diff, predicted_files, ...}, ...]
+
+    Returns dict format.
+    """
+    with open(preds_file, 'r') as f:
+        preds_data = json.load(f)
+
+    # If already dict, return as-is
+    if isinstance(preds_data, dict):
+        return preds_data
+
+    # If list, convert to dict keyed by id
+    if isinstance(preds_data, list):
+        preds_dict = {}
+        for item in preds_data:
+            if isinstance(item, dict):
+                item_id = str(item.get('id', item.get('issue_id', '')))
+                if item_id:
+                    preds_dict[item_id] = item
+        return preds_dict
+
+    raise ValueError(f"Unsupported predictions format: {type(preds_data).__name__}")
 
 
 def compute_file_localization_metrics(preds_file: Path, dataset_file: Path, pushed_ids: Optional[set] = None) -> Dict:
@@ -69,8 +112,7 @@ def compute_file_localization_metrics(preds_file: Path, dataset_file: Path, push
         pushed_ids: Set of IDs that were actually pushed/validated. If provided,
                    only evaluate against these IDs (not the full dataset).
     """
-    with open(preds_file, 'r') as f:
-        preds = json.load(f)
+    preds = load_predictions(preds_file)
 
     df = pd.read_parquet(dataset_file)
 
@@ -91,20 +133,24 @@ def compute_file_localization_metrics(preds_file: Path, dataset_file: Path, push
     precision_sum = 0
     topk_hits = {k: 0 for k in [1, 3, 5, 10, 15]}
 
-    for issue_id, pred_data in preds.items():
+    # If pushed_ids is provided, evaluate all of them (even those without predictions)
+    # Otherwise, only evaluate issues that have predictions
+    ids_to_evaluate = pushed_ids if pushed_ids is not None else set(preds.keys())
+
+    for issue_id in ids_to_evaluate:
         if issue_id not in gt_files:
             continue
 
         total += 1
+        ground_truth = gt_files[issue_id]
 
-        # Get predicted files - either from predicted_files or extract from diff
+        # Get predictions (empty if not in preds)
+        pred_data = preds.get(issue_id, {})
         predicted = pred_data.get('predicted_files', [])
         if not predicted and 'diff' in pred_data:
             predicted = extract_files_from_diff(pred_data['diff'])
 
-        ground_truth = gt_files[issue_id]
-
-        if not predicted or not ground_truth:
+        if not ground_truth:
             continue
 
         pred_set = set(predicted)
@@ -130,8 +176,14 @@ def compute_file_localization_metrics(preds_file: Path, dataset_file: Path, push
         for k, hits in topk_hits.items()
     }
 
+    # Count issues with/without predictions
+    issues_with_preds = len([id for id in ids_to_evaluate if id in preds and id in gt_files])
+    issues_without_preds = total - issues_with_preds
+
     return {
         "total_issues": total,
+        "issues_with_predictions": issues_with_preds,
+        "issues_without_predictions": issues_without_preds,
         "exact_match": {"count": exact_matches, "rate": round(exact_match_rate, 2)},
         "precision": {"average": round(avg_precision, 2)},
         "top_k_accuracy": topk_accuracy
@@ -140,8 +192,8 @@ def compute_file_localization_metrics(preds_file: Path, dataset_file: Path, push
 
 def main():
     parser = argparse.ArgumentParser(description='File Localization Evaluation')
-    parser.add_argument('--preds', type=str, default='results/preds.json',
-                       help='Path to predictions JSON file')
+    parser.add_argument('--preds', type=str, default=None,
+                       help='Path to predictions JSON file (dict or list format)')
     parser.add_argument('--dataset', type=str, default='dataset/lca_dataset.parquet',
                        help='Path to dataset parquet file')
     parser.add_argument('--output', type=str, default='results/file_localization_metrics.json',
@@ -152,6 +204,25 @@ def main():
     print("FILE LOCALIZATION EVALUATION")
     print("="*80)
     print()
+
+    # Auto-detect predictions file if not specified
+    if args.preds is None:
+        candidates = [
+            'results/preds.json',
+            'results/generated_patches.json',
+            'results/predictions.json',
+        ]
+        for candidate in candidates:
+            if Path(candidate).exists():
+                args.preds = candidate
+                print(f" Auto-detected predictions file: {candidate}")
+                break
+
+    if args.preds is None:
+        print(f" Error: No predictions file found. Checked:")
+        for candidate in candidates:
+            print(f"   - {candidate}")
+        return 1
 
     # Check if predictions file exists
     if not Path(args.preds).exists():
@@ -188,7 +259,10 @@ def main():
     print("SUMMARY")
     print("="*80)
     print(f"\n Total Evaluated: {metrics['total_issues']}")
-    print(f"\n Exact Match: {metrics['exact_match']['rate']}%")
+    if 'issues_with_predictions' in metrics:
+        print(f"   - With predictions: {metrics['issues_with_predictions']}")
+        print(f"   - Without predictions: {metrics['issues_without_predictions']}")
+    print(f"\n Exact Match: {metrics['exact_match']['rate']}% ({metrics['exact_match']['count']}/{metrics['total_issues']})")
     print(f" Precision: {metrics['precision']['average']}%")
     print(f"\n Top-K Accuracy:")
     print(f"   Top-1:  {metrics['top_k_accuracy']['top_1']}%")

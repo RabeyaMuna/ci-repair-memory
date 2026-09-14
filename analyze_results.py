@@ -95,6 +95,32 @@ def main():
 
     print()
 
+    # Show file localization calculation breakdown
+    import json
+    metrics_file = 'results/file_localization_metrics.json'
+    if os.path.exists(metrics_file):
+        try:
+            with open(metrics_file, 'r') as f:
+                metrics = json.load(f)
+
+            print("Calculation Breakdown:")
+            print("-" * 80)
+            total = metrics['total_issues']
+            with_preds = metrics.get('issues_with_predictions', total)
+            without_preds = metrics.get('issues_without_predictions', 0)
+            exact_count = metrics['exact_match']['count']
+
+            print(f"  Total Evaluated: {total}")
+            print(f"    - With predictions: {with_preds} (contribute actual scores)")
+            print(f"    - Without predictions: {without_preds} (counted as 0/180)")
+            print()
+            print(f"  Exact Match: {exact_count}/{total} = {metrics['exact_match']['rate']}%")
+            print(f"  Precision: Average across all {total} = {metrics['precision']['average']}%")
+            print(f"  Top-1: {metrics['top_k_accuracy']['top_1']}% of {total}")
+            print()
+        except Exception as e:
+            pass
+
     # Check if summary exists
     summary_file = 'results/summary_stats.json'
     if os.path.exists(summary_file):
