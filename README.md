@@ -81,7 +81,58 @@ python scripts/analysis/evaluate_file_localization.py \
 
 # CI success rate evaluation
 python scripts/analysis/calculate_success_rate.py
+
+# Failure type analysis - Simple (RECOMMENDED)
+python scripts/analysis/evaluate_solved_failure_types.py
+
+# Failure type analysis - Detailed (with success/failure breakdown)
+python scripts/analysis/evaluate_failure_type_performance.py
 ```
+
+#### Failure Type Analysis - Which Types Were Solved? (Simple & Recommended)
+
+Focus on successful repairs only - shows which failure types the system can solve:
+
+```bash
+python scripts/analysis/evaluate_solved_failure_types.py
+```
+
+**Output**:
+- Ranking of failure types by number of solved instances (highest to lowest)
+- Only counts the 43 successful instances
+- Clean visualizations showing what the system can actually fix
+
+**Key findings**:
+- Top 3 solved: Code Formatting (23), Linting (20), Test Failure (10)
+- 9 out of 12 failure types have successful repairs
+- 3 types unsolved: Environment Error, Package Install Error, Syntax Error
+
+#### Failure Type Performance Analysis (Detailed)
+
+Analyze repair performance across different failure types to answer **RQ3: How does CI repair performance vary across failure types?**
+
+```bash
+python scripts/analysis/evaluate_failure_type_performance.py
+```
+
+This generates:
+- **Performance metrics** for each of the 12 failure types
+- **Solvability analysis**: Which failure types have at least one successful repair
+- **Visualizations** (PNG files at 300 DPI for publication):
+  - Success/failure distribution by failure type (stacked bar chart)
+  - Success rate comparison across types
+  - Solvability pie chart showing percentage of solvable types
+  - Occurrence vs success scatter plot
+- **LaTeX table** ready for inclusion in papers
+- **Detailed JSON** with all instance IDs per failure type
+
+**Output location**: `results/paper/`
+
+**Key findings**:
+- Overall success rate: 28.7% (43/150 tested instances)
+- Solvability rate: 75% (9 out of 12 failure types show ≥1 success)
+- Best performing: Code Formatting (38.3%), Linting (28.6%)
+- Capability gaps: Package Install Error, Environment Error, Syntax Error (0% success)
 
 ### 6. Update Failure Types in Dataset
 
@@ -170,11 +221,18 @@ CI-REPAIR-BENCH/
 │   ├── file_localization_metrics.json       # File localization results
 │   ├── success_rate_evaluation.json         # CI validation results
 │   ├── failure_classifications_12types.json # Failure type classifications
-│   └── evaluation_summary.json              # Final metrics
+│   ├── evaluation_summary.json              # Final metrics
+│   ├── jobs_results_diff.jsonl              # Benchmark run results (pushed instances)
+│   └── paper/                               # Publication-ready outputs
+│       ├── failure_type_performance_analysis.json    # Detailed performance data
+│       ├── failure_type_performance_table.tex        # LaTeX table
+│       ├── RQ3_failure_type_analysis_summary.md      # RQ3 summary
+│       └── *.png                            # Visualizations (300 DPI)
 ├── scripts/
 │   ├── analysis/
 │   │   ├── evaluate_file_localization.py    # File localization metrics
 │   │   ├── calculate_success_rate.py        # L1/L3 evaluation
+│   │   ├── evaluate_failure_type_performance.py  # RQ3: Failure type analysis
 │   │   └── dataset_overview.py              # Dataset statistics
 │   ├── clean_and_update_failure_types.py    # Update dataset with failure types
 │   ├── update_instance_failure_types.py     # Manual instance updates

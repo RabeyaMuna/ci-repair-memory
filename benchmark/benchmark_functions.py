@@ -2,6 +2,7 @@ import os
 import io
 import re
 import json
+import mmap
 import git
 import requests
 import subprocess
@@ -278,7 +279,15 @@ def ensure_workflow_enabled(repo_name, workflow_path, credentials, config):
         return False
 
 
-def get_run_data(repo_name, commit_sha, credentials, config, max_retries=3, wait_time=5):
+def get_run_data(
+    repo_name,
+    commit_sha,
+    credentials,
+    config,
+    max_retries=3,
+    wait_time=5,
+    workflow_path=None,
+):
     """
     Fetch workflow run data for a commit with retry logic.
 
@@ -297,15 +306,20 @@ def get_run_data(repo_name, commit_sha, credentials, config, max_retries=3, wait
 
     token = credentials["token"]
     headers = {"Authorization": f"token {token}"}
-    jobs_url = f"https://api.github.com/repos/{config.benchmark_owner}/{repo_name}/commits/{commit_sha}/check-runs"
+    runs_url = f"https://api.github.com/repos/{config.benchmark_owner}/{repo_name}/actions/runs"
 
     for attempt in range(max_retries):
         try:
-            response = requests.get(jobs_url, headers=headers, timeout=30)
+            response = requests.get(
+                runs_url,
+                headers=headers,
+                params={"head_sha": commit_sha, "per_page": 100},
+                timeout=30,
+            )
 
             # Check for API errors
             if not response.ok:
-                print(f"[API Error {response.status_code}] {jobs_url}")
+                print(f"[API Error {response.status_code}] {runs_url}")
                 if attempt < max_retries - 1:
                     print(f"  Retrying in {wait_time}s... ({attempt + 1}/{max_retries})")
                     time.sleep(wait_time)
@@ -314,44 +328,47 @@ def get_run_data(repo_name, commit_sha, credentials, config, max_retries=3, wait
                     return "", "waiting"
 
             data = response.json()
-            check_runs = data.get("check_runs", [])
+            workflow_runs = data.get("workflow_runs", [])
 
-            # No check runs found yet - workflow may not have started
-            if not check_runs or len(check_runs) == 0:
+            # A commit can have several workflow runs, including an automatically
+            # cancelled run followed by a successful replacement. Restrict the
+            # candidates to the requested workflow and use the newest run only.
+            if workflow_path:
+                requested_path = workflow_path.lstrip("/").split("@", 1)[0]
+                matching_runs = [
+                    run
+                    for run in workflow_runs
+                    if str(run.get("path") or "").lstrip("/").split("@", 1)[0]
+                    == requested_path
+                ]
+                workflow_runs = matching_runs
+
+            # No workflow runs found yet - workflow may not have started
+            if not workflow_runs:
                 if attempt < max_retries - 1:
-                    print(f"  No check runs found yet, retrying in {wait_time}s... ({attempt + 1}/{max_retries})")
+                    print(f"  No workflow runs found yet, retrying in {wait_time}s... ({attempt + 1}/{max_retries})")
                     time.sleep(wait_time)
                     continue
                 else:
-                    print(f"  No check runs after {max_retries} attempts - workflow may not have triggered")
+                    print(f"  No workflow runs after {max_retries} attempts - workflow may not have triggered")
                     return "", "waiting"
 
-            # Extract workflow run URL from first check run
-            run_url = check_runs[0].get("html_url", "")
-            if run_url:
-                # Convert check run URL to workflow run URL
-                # From: https://github.com/owner/repo/runs/12345
-                # To:   https://github.com/owner/repo/actions/runs/67890
-                job_url = "/".join(run_url.split("/")[:-2])
-            else:
-                job_url = ""
+            latest_run = max(
+                workflow_runs,
+                key=lambda run: (str(run.get("created_at") or ""), int(run.get("id") or 0)),
+            )
+            job_url = latest_run.get("html_url", "")
+            status = str(latest_run.get("status") or "").lower()
+            run_conclusion = str(latest_run.get("conclusion") or "").lower()
 
-            # Collect all conclusions and statuses
-            conclusions = [run.get("conclusion") for run in check_runs]
-            statuses = [run.get("status") for run in check_runs]
-            completed = [status == "completed" for status in statuses]
-
-            # Determine overall conclusion
-            if not all(completed):
+            # The workflow-run conclusion is authoritative for this run. Do not
+            # mix it with checks belonging to older runs of the same commit.
+            if status != "completed":
                 conclusion = "waiting"
-            elif "failure" in conclusions:
-                conclusion = "failure"
-            elif all([c == "success" for c in conclusions if c is not None]):
-                conclusion = "success"
-            elif "cancelled" in conclusions:
-                conclusion = "cancelled"
-            elif "timed_out" in conclusions:
+            elif run_conclusion == "timed_out":
                 conclusion = "timeout"
+            elif run_conclusion in ("success", "failure", "cancelled"):
+                conclusion = run_conclusion
             else:
                 # Unexpected state - log for debugging
                 log_file_path = os.path.join(config.out_folder, "out_logs.txt")
@@ -359,9 +376,10 @@ def get_run_data(repo_name, commit_sha, credentials, config, max_retries=3, wait
                 with open(log_file_path, "a") as f:
                     f.write("--------------------DP BEGIN----------------------- \n")
                     f.write(f"Repo: {repo_name}, Commit: {commit_sha}\n")
-                    f.write(f"Statuses: {statuses}\n")
-                    f.write(f"Conclusions: {conclusions}\n")
-                    f.write(f"Data: {data}\n")
+                    f.write(f"Workflow path: {workflow_path}\n")
+                    f.write(f"Run status: {status}\n")
+                    f.write(f"Run conclusion: {run_conclusion}\n")
+                    f.write(f"Run: {latest_run}\n")
                     f.write("---------------------DP END------------------------- \n")
                 conclusion = "waiting"
 
@@ -416,6 +434,32 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
     {'token': token, 'username': username}
     """
 
+    # Avoid loading exceptionally large generated patches; still trigger CI.
+    skip_patch = False
+    if fix_repo_function is fix_apply_generated_patch:
+        prediction_file = os.path.join(config.out_folder, "preds.json")
+        if os.path.isfile(prediction_file):
+            offsets = _prediction_offsets(prediction_file)
+            key = next((key for key in (str(datapoint["id"]), str(datapoint.get("sha_fail", "")))
+                        if key in offsets), None)
+            if key is not None:
+                start, end = offsets[key]
+                patch_bytes = end - start
+                if patch_bytes > 100_000_000:
+                    from datetime import datetime, timezone
+                    fallback_file = os.path.join(config.out_folder, "large_patch_fallbacks.jsonl")
+                    with open(fallback_file, "a") as output:
+                        output.write(json.dumps({
+                            "id": datapoint["id"],
+                            "repo_name": datapoint["repo_name"],
+                            "reason": "large_prediction",
+                            "action": "push_without_patch",
+                            "patch_bytes": patch_bytes,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        }) + "\n")
+                    print(f"[FALLBACK] ID {datapoint['id']}: patch is {patch_bytes / 1_000_000:.1f} MB; pushing without patch")
+                    skip_patch = True
+
     # TODO think, what to do if test_username (which converts to a branch) is already present
     repo, user_branch_name = get_repo(
         datapoint,
@@ -433,7 +477,9 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
     # 1. Validate workflow changes (if any)
     # 2. Filter out invalid workflow changes
     # 3. Apply the remaining patch
-    fix_result = fix_repo_function(datapoint, repo.working_dir, repo, config.out_folder)
+    fix_result = None if skip_patch else fix_repo_function(
+        datapoint, repo.working_dir, repo, config.out_folder
+    )
 
     # Prepares workflow file: Moves target workflow file to .github/workflows
     # and adds 'push' trigger so the workflow runs on our test push
@@ -449,7 +495,8 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
     # Push the corrected repo
     commit_sha = push_repo(repo, credentials, config.benchmark_owner, user_branch_name)
 
-    # Handle large file error
+    # If the patch introduced files GitHub rejects, retry from the original
+    # revision with only the workflow trigger changes.
     if commit_sha == "LARGE_FILE_ERROR":
         from datetime import datetime, timezone
         error_record = {
@@ -457,18 +504,32 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
             "id": datapoint["id"],
             "sha_original": datapoint["sha_fail"],
             "branch_name": user_branch_name,
-            "error": "large_files",
-            "error_message": "Push failed: Repository contains files exceeding GitHub size limits",
+            "reason": "large_files_in_patch_push",
+            "action": "retry_without_patch",
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
-        # Log to skipped issues file
-        skipped_file = os.path.join(config.out_folder, "skipped_large_files.jsonl")
-        with open(skipped_file, "a") as f:
+        fallback_file = os.path.join(config.out_folder, "large_patch_fallbacks.jsonl")
+        with open(fallback_file, "a") as f:
             f.write(json.dumps(error_record) + "\n")
 
-        print(f"[SKIP] Issue {datapoint['id']} logged to {skipped_file}")
-        return None  # Return None to skip this issue
+        print(f"[FALLBACK] ID {datapoint['id']}: retrying push without patch")
+        repo.git.reset("--hard", datapoint["sha_fail"])
+        repo.git.clean("-fdx")
+        copy_and_edit_workflow_file(datapoint, repo)
+        commit_sha = push_repo(repo, credentials, config.benchmark_owner, user_branch_name)
+        fix_result = None
+        if commit_sha == "LARGE_FILE_ERROR":
+            skipped_file = os.path.join(config.out_folder, "skipped_large_files.jsonl")
+            with open(skipped_file, "a") as output:
+                output.write(json.dumps({
+                    "id": datapoint["id"],
+                    "repo_name": repo.name,
+                    "reason": "workflow_only_push_rejected_for_large_files",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }) + "\n")
+            print(f"[SKIP] ID {datapoint['id']}: even the workflow-only commit was rejected for large files")
+            return None
 
     # Create initial job identificator with timestamp
     from datetime import datetime, timezone
@@ -482,6 +543,7 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
         "pushed_at": datetime.now(timezone.utc).isoformat(),
         "url": "",
         "conclusion": "waiting",
+        "patch_applied": fix_result is True,
     }
 
     print(
@@ -496,7 +558,13 @@ def get_results(job_identificator, config, credentials):
     # We have to make some pause to get result or even url, unless it sees no runs
     repo_name = job_identificator["repo_name"]
     commit_sha = job_identificator["commit"]
-    job_url, conclusion = get_run_data(repo_name, commit_sha, credentials, config)
+    job_url, conclusion = get_run_data(
+        repo_name,
+        commit_sha,
+        credentials,
+        config,
+        workflow_path=job_identificator.get("workflow"),
+    )
     
     return job_url, conclusion
 
@@ -530,6 +598,86 @@ def _load_patch_records(out_folder):
     for patch_file in existing_patch_files:
         patch_records.extend(_read_patch_records_from_file(patch_file))
     return patch_records
+
+
+_prediction_index = {}
+
+
+def _prediction_offsets(patch_file):
+    """Index top-level entries in the pretty-printed preds.json without parsing 3.6 GB."""
+    patch_file = os.path.abspath(patch_file)
+    file_stat = os.stat(patch_file)
+    signature = (file_stat.st_size, file_stat.st_mtime_ns)
+    cached = _prediction_index.get(patch_file)
+    if cached and cached[0] == signature:
+        return cached[1]
+
+    offsets = {}
+    with open(patch_file, "rb") as source:
+        with mmap.mmap(source.fileno(), 0, access=mmap.ACCESS_READ) as data:
+            if data[:2] != b"{\n":
+                raise ValueError(f"Expected a pretty-printed JSON object: {patch_file}")
+            marker = b'\n  "'
+            cursor = data.find(marker)
+            previous = None
+            while cursor != -1:
+                key_end = data.find(b'":', cursor + len(marker))
+                if key_end == -1 or key_end - cursor > 256:
+                    raise ValueError(f"Invalid prediction key near byte {cursor}")
+                key = json.loads(data[cursor + 3:key_end + 1])
+                value_start = key_end + 2
+                next_cursor = data.find(marker, value_start)
+                if previous is not None:
+                    offsets[previous[0]] = (previous[1], cursor)
+                previous = (key, value_start)
+                cursor = next_cursor
+            if previous is not None:
+                closing = data.rfind(b"\n}")
+                if closing < previous[1]:
+                    raise ValueError(f"Invalid prediction object ending: {patch_file}")
+                offsets[previous[0]] = (previous[1], closing)
+
+    _prediction_index[patch_file] = (signature, offsets)
+    return offsets
+
+
+def _load_patch_for_datapoint(out_folder, current_id, sha_fail):
+    """Read only this datapoint's patch from preds.json."""
+    out_folder = os.path.abspath(out_folder)
+    env_patch_file = os.environ.get("CIBENCH_PATCH_FILE") or os.environ.get("GENERATED_PATCHES_PATH")
+    patch_files = [os.path.join(out_folder, "generated_patches.json"),
+                   os.path.join(out_folder, "preds.json")]
+    if env_patch_file:
+        patch_files.append(os.path.abspath(env_patch_file))
+    existing = [path for path in patch_files if os.path.isfile(path)]
+    if not existing:
+        raise FileNotFoundError("Patch file not found. Checked: " + ", ".join(patch_files))
+
+    for patch_file in existing:
+        if os.path.basename(patch_file) != "preds.json":
+            records = _read_patch_records_from_file(patch_file)
+        else:
+            offsets = _prediction_offsets(patch_file)
+            match = next((key for key in (str(current_id), str(sha_fail)) if key in offsets), None)
+            if match is None:
+                continue
+            start, end = offsets[match]
+            with open(patch_file, "rb") as source:
+                source.seek(start)
+                raw = source.read(end - start).strip().rstrip(b",")
+            value = json.loads(raw)
+            if isinstance(value, dict):
+                value.setdefault("id", match)
+                value.setdefault("sha_fail", match)
+                records = [value]
+            else:
+                records = [{"id": match, "sha_fail": match, "diff": str(value or "")}]
+        for record in records:
+            if ((ids_match(record.get("id"), current_id) or
+                 ids_match(record.get("sha_fail"), sha_fail)) and
+                    record.get("diff", "").strip()):
+                return record
+    return None
 
 
 def _read_patch_records_from_file(patch_file):
@@ -656,22 +804,9 @@ def _record_unapplyable_patch(datapoint, patch_data, check, out_folder):
 
 def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
     out_folder = os.path.abspath(out_folder)
-    patches = _load_patch_records(out_folder)
-
     current_id  = datapoint["id"]
     sha_fail    = datapoint.get("sha_fail", "")
-    patch_data = next(
-        (
-            p
-            for p in patches
-            if (
-                ids_match(p.get("id"), current_id)
-                or ids_match(p.get("sha_fail"), sha_fail)
-            )
-            and p.get("diff", "").strip()
-        ),
-        None,
-    )
+    patch_data = _load_patch_for_datapoint(out_folder, current_id, sha_fail)
 
     if not patch_data:
         print(f"[INFO] No patch found for ID {current_id} / sha_fail {sha_fail[:12]} - will push without patch")

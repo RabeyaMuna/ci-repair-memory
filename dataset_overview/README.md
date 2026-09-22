@@ -1,143 +1,75 @@
 # Dataset Overview
 
-**Everything you need for the CI-REPAIR-BENCH paper in 6 files.**
+This directory contains documentation and a single script to generate complete benchmark statistics.
 
----
+## 📊 Generate All Statistics
 
-##  **Main Document** (START HERE!)
-
-**`DATASET_OVERVIEW_FOR_PAPER.md`** ⭐
-- All statistics, tables, and text for paper
-- LaTeX tables ready to copy-paste
-- Citation-ready text for abstract/intro/methods
-- Complete methodology
-- **Read this first!**
-
----
-
-##  **Scripts** (Run These to Generate Data)
-
-### 1. **`generate_detailed_overview.py`**
-Generate complete dataset statistics.
+**Single command to generate everything:**
 
 ```bash
-python generate_detailed_overview.py
+python dataset_overview/generate_complete_statistics.py
 ```
 
-**Outputs:** `detailed_paper_statistics.json`  
-**Contains:** Repository stats, failure types, code changes, multi-problem analysis
+### What it generates:
+
+All outputs are saved to `results/data/`:
+
+1. **`complete_benchmark_statistics.json`** - Complete statistics in JSON format
+   - Overall benchmark statistics (565 instances, 101 repos, 12 failure types)
+   - Repository aggregate statistics
+   - Per-repository detailed statistics (all 101 repositories)
+   - Failure type distribution
+
+2. **`overall_statistics.json`** - Quick reference for paper
+   - Scale, CI validation, code changes, failure types
+   - All with total, mean, and median values
+
+3. **`repository_statistics.json`** - Per-repository breakdown
+   - Aggregate stats across all 101 repos
+   - Individual stats for each repository
+
+4. **`benchmark_overview_table.tex`** - LaTeX table for appendix
+
+5. **`STATISTICS_REPORT.txt`** - Human-readable complete report
+
+Additional failure type data saved to `results/paper/failure_type_distribution.json`
+
+## 📈 Key Statistics
+
+- **101 unique repositories** (by repo_name)
+- **565 repair instances** total
+- **12 failure categories**
+- **83.7%** multi-failure instances (mean 3.38 types per instance)
+- **10.6 files** and **243.7 lines** changed on average (median: 3 files, 24 lines)
+- **5.0 CI jobs** and **27.5 steps** on average (median: 2 jobs, 14 steps)
+- **~3.75 commits** per repair trajectory
+
+## 📁 Directory Contents
+
+### Scripts
+- **`generate_complete_statistics.py`** - Main statistics generation script
+
+### Documentation
+- **`README_STATISTICS.md`** - Detailed documentation of generated statistics
+- **`PAPER_STATISTICS_SUMMARY.md`** - Paper-ready statistics summary
+- **`DATASET_OVERVIEW_FOR_PAPER.md`** - Original dataset overview
+- **`SIMILARITY_ALGORITHM.md`** - Similarity computation details
+- **`RECURRENCE_ANALYSIS_SUMMARY.md`** - Recurrence analysis
+- **`PAPER_SECTION_RECURRENCE_FINAL.tex`** - LaTeX section on recurrence
+
+### Legacy Files (from previous analyses)
+- `detailed_paper_statistics.json`
+- `recurrence_analysis_final.json`
+- `similarity_distribution.json`
+- `validation_jobs_steps_analysis.json`
+
+## 🎯 For Your Paper
+
+See `README_STATISTICS.md` and `PAPER_STATISTICS_SUMMARY.md` for:
+- Complete statistical breakdown
+- Paper-ready text and LaTeX
+- Key numbers for abstract/introduction/results
 
 ---
 
-### 2. **`analyze_validation_jobs_steps.py`**
-Analyze validation jobs and steps from filtered data.
-
-```bash
-python analyze_validation_jobs_steps.py
-```
-
-**Outputs:** `validation_jobs_steps_analysis.json`  
-**Contains:** Jobs/steps counts, failed jobs/steps, distributions
-
-**Prerequisites:** Run `data_managment/scripts/extract_validation_jobs_and_steps.py` first
-
----
-
-### 3. **`compute_benchmark_recurrence.py`** (Optional)
-Analyze recurrence using TWO complementary views (matches paper §\ref{sec:instance-similarity}).
-
-```bash
-# Install dependencies
-pip install scikit-learn
-
-# Run full dataset (recommended for paper)
-python compute_benchmark_recurrence.py
-
-# Or sample for quick testing
-python compute_benchmark_recurrence.py --sample-size 100
-```
-
-**Outputs:** `benchmark_recurrence_analysis.json`, `recurrence_pairs.csv`, LaTeX table  
-**Contains:** Jaccard + TF-IDF similarities, per-repository statistics, chronological analysis
-
-**Two Views:**
-- **Structural** (Jaccard): failure type, tools, packages, changed files
-- **Lexical** (TF-IDF + Cosine): failure + workflow + repair text
-
-**Table Metrics:**
-- Overall nearest neighbor
-- Within repository
-- Cross repository
-- Historical predecessor (chronologically earlier only)
-
-**Note:** This is offline benchmark characterization (includes ground-truth repairs)
-
----
-
-##  **Generated Data**
-
-### 1. **`detailed_paper_statistics.json`**
-Complete dataset statistics including:
-- Dataset composition (repos, languages, instances)
-- Failure type distribution
-- Multi-problem analysis
-- Code change statistics
-- Repository distribution
-
-### 2. **`validation_jobs_steps_analysis.json`**
-Validation metrics including:
-- Total jobs/steps across all commits
-- Failed jobs/steps
-- Per-instance distributions
-- Top failed job/step names
-
----
-
-##  **Quick Start**
-
-```bash
-cd /Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/dataset_overview
-
-# 1. Read the main document
-cat DATASET_OVERVIEW_FOR_PAPER.md
-
-# 2. Generate latest statistics
-python generate_detailed_overview.py
-python analyze_validation_jobs_steps.py
-
-# 3. Done! Use numbers from the main document for your paper
-```
-
----
-
-##  **Workflow**
-
-```
-1. Extract validation (from data_managment)
-   ↓
-2. Generate statistics (this directory)
-   ↓
-3. Use DATASET_OVERVIEW_FOR_PAPER.md
-   → Copy LaTeX tables to paper
-   → Use citation-ready text
-   → Reference numbers
-```
-
----
-
-##  **For Your Paper**
-
-1. Open `DATASET_OVERVIEW_FOR_PAPER.md`
-2. Copy Table 1 (Dataset Overview) → paper
-3. Copy Table 2 (Failure Types) → paper
-4. Use citation-ready text for abstract/methods
-5. Reference validation numbers (~7,500 jobs, ~52,000 steps)
-
----
-
-**That's it! Just 6 files - clean and organized.**
-
----
-
-**Contact:** rabeya@beaverly.ai  
-**Last Updated:** August 25, 2026
+**Note**: All generated statistics files are in `results/data/` directory, not in this directory.

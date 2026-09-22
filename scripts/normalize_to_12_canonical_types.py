@@ -10,7 +10,10 @@ Fixes the dataset by mapping all variant types to their canonical forms:
 """
 
 import json
+import os
+import shutil
 import pandas as pd
+from datetime import datetime, timezone
 from pathlib import Path
 from collections import Counter, defaultdict
 import argparse
@@ -274,8 +277,8 @@ def main():
                        default='results/failure_classifications_12types.json',
                        help='Output normalized classifications')
     parser.add_argument('--output-dataset', type=str,
-                       default='dataset/lca_dataset_12types.parquet',
-                       help='Output normalized dataset')
+                       default=None,
+                       help='Optional alternate dataset output; defaults to updating --dataset in place')
     parser.add_argument('--output-stats', type=str,
                        default='results/failure_stats_12types.json',
                        help='Output statistics JSON')
@@ -283,7 +286,9 @@ def main():
                        default='results/failure_report_12types.txt',
                        help='Output text report')
     parser.add_argument('--update-original', action='store_true',
-                       help='Update original files instead of creating new ones')
+                       help='Also overwrite the input classifications JSON')
+    parser.add_argument('--no-dataset-backup', action='store_true',
+                       help='Skip the timestamped backup when updating the dataset in place')
 
     args = parser.parse_args()
 
@@ -347,20 +352,44 @@ def main():
     # Update dataset
     print(f"\n💾 Updating dataset...")
 
-    output_dataset_path = args.dataset if args.update_original else args.output_dataset
+    output_dataset_path = args.output_dataset or args.dataset
 
     classification_map = {c['issue_id']: c for c in normalized_classifications}
 
     df['failure_types'] = df['id'].astype(str).map(
         lambda x: classification_map.get(x, {}).get('failure_type', [])
     )
+    # Keep the legacy paper-facing field synchronized with the canonical labels.
+    df['error_type'] = df['failure_types'].apply(list)
     df['failure_subtypes'] = df['id'].astype(str).map(
         lambda x: classification_map.get(x, {}).get('sub_type', [])
     )
+    df['failure_details'] = df['id'].astype(str).map(
+        lambda x: classification_map.get(x, {}).get('detail', [])
+    )
     df['num_failure_types'] = df['failure_types'].apply(len)
 
-    df.to_parquet(output_dataset_path, index=False)
+    dataset_input = Path(args.dataset).resolve()
+    dataset_output = Path(output_dataset_path).resolve()
+    backup_path = None
+    if dataset_input == dataset_output:
+        if not args.no_dataset_backup:
+            timestamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+            backup_path = dataset_input.with_name(
+                f'{dataset_input.stem}.before-12type-normalization-{timestamp}{dataset_input.suffix}'
+            )
+            shutil.copy2(dataset_input, backup_path)
+        temporary_path = dataset_output.with_suffix(dataset_output.suffix + '.tmp')
+        df.to_parquet(temporary_path, index=False)
+        # Confirm the artifact is readable before atomically replacing the source.
+        pd.read_parquet(temporary_path, columns=['id'])
+        os.replace(temporary_path, dataset_output)
+    else:
+        dataset_output.parent.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(dataset_output, index=False)
     print(f"   ✓ Saved to {output_dataset_path}")
+    if backup_path:
+        print(f"   ✓ Backup saved to {backup_path}")
 
     # Save statistics
     print(f"\n💾 Saving statistics...")
@@ -399,12 +428,8 @@ def main():
               f"{pair['count']} instances ({pair['percentage']:.1f}%)")
 
     print()
-    if args.update_original:
-        print("✅ Original files updated with 12 canonical types")
-    else:
-        print(f"📊 New files created:")
-        print(f"   - {args.output_classifications}")
-        print(f"   - {args.output_dataset}")
+    print(f"✅ Dataset updated with 12 canonical types: {output_dataset_path}")
+    print(f"📊 Normalized classifications: {output_class_path}")
     print(f"📊 Statistics: {args.output_stats}")
     print(f"📊 Report: {args.output_report}")
     print("=" * 100)
