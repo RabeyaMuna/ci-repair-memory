@@ -334,7 +334,12 @@ def get_run_data(
             # cancelled run followed by a successful replacement. Restrict the
             # candidates to the requested workflow and use the newest run only.
             if workflow_path:
+                # Normalize workflow path: ensure it starts with .github/workflows/
                 requested_path = workflow_path.lstrip("/").split("@", 1)[0]
+                # If path doesn't start with '.github', add the dot
+                if requested_path.startswith("github/workflows/"):
+                    requested_path = "." + requested_path
+
                 matching_runs = [
                     run
                     for run in workflow_runs
@@ -533,13 +538,22 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
 
     # Create initial job identificator with timestamp
     from datetime import datetime, timezone
+
+    # Normalize workflow path to ensure it starts with .github/workflows/
+    workflow_path = datapoint.get("workflow_path", "")
+    if workflow_path:
+        normalized_path = workflow_path.lstrip("/")
+        if normalized_path.startswith("github/workflows/"):
+            normalized_path = "." + normalized_path
+        workflow_path = normalized_path
+
     job_identificator = {
         "repo_name": repo.name,
         "commit": commit_sha,
         "id": datapoint["id"],
         "sha_original": datapoint["sha_fail"],
         "branch_name": user_branch_name,
-        "workflow": datapoint.get("workflow_path", ""),
+        "workflow": workflow_path,
         "pushed_at": datetime.now(timezone.utc).isoformat(),
         "url": "",
         "conclusion": "waiting",
