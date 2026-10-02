@@ -20,6 +20,7 @@ from utilities.load_config import load_config
 from utilities.symbols_outline import get_outline_for_file
 from utilities.chunking_logic import chunk_lines_with_overlap
 from utilities.model_token_limits import get_prompt_token_budget, get_max_output_tokens
+from utilities.tracked_llm import TrackedLLM
 
 
 load_dotenv()
@@ -171,7 +172,8 @@ class PatchGeneration:
         self.sha_fail = bug_report.get("sha_fail")
         self.workflow_path = workflow_path
         self.workflow = workflow
-        self.llm = llm
+        # Wrap LLM with tracking
+        self.llm = TrackedLLM(llm, model_name=model_name, module="patch_generation") if llm else None
         self.parser = JsonOutputParser()
         self.patch_results: List[Dict[str, Any]] = []
         self.original_content = None

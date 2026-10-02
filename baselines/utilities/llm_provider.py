@@ -10,6 +10,8 @@ load_dotenv()
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")  # you must set this in .env
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 LOCAL_LLM_API_KEY = os.getenv("LOCAL_LLM_API_KEY", "dummy-local-key")  # fallback
 
 @dataclass
@@ -75,6 +77,14 @@ LLM_REGISTRY: Dict[str, LLMInfo] = {
         temperature=0.1,
         base_url="https://api.deepseek.com/v1",
         api_key=DEEPSEEK_API_KEY,
+    ),
+
+    "deepseek-v4-flash": LLMInfo(
+        provider="openrouter",
+        model_name="deepseek/deepseek-chat",  # DeepSeek v4 via OpenRouter
+        temperature=0.0,
+        base_url=OPENROUTER_BASE_URL,
+        api_key=OPENROUTER_API_KEY,
     ),
 
 

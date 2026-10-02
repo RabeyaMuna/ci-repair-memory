@@ -35,6 +35,7 @@ MODEL_LIMITS: Dict[str, ModelLimits] = {
     # DeepSeek (adjust if needed)
     "deepseek-chat":  ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
     "deepseek-coder": ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
+    "deepseek-v4-flash": ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
 }
 
 def get_model_limits(model_name: Optional[str]) -> ModelLimits:

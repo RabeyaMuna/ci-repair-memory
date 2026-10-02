@@ -21,6 +21,7 @@ from utilities.snippet_extractor import extract_snippet_from_line_range, find_li
 from utilities.symbols_outline import build_outline, format_outline
 from utilities.chunking_logic import chunk_log_by_tokens, chunk_lines_with_overlap, estimate_tokens
 from utilities.model_token_limits import is_large_context_model
+from utilities.tracked_llm import TrackedLLM
 
 
 load_dotenv()
@@ -87,7 +88,8 @@ class FaultLocalization:
         self.id = self.error_logs.get("id", "")
 
         self.model_name = model_name
-        self.llm = llm
+        # Wrap LLM with tracking
+        self.llm = TrackedLLM(llm, model_name=model_name, module="fault_localization") if llm else None
 
         self.parser = JsonOutputParser()
 

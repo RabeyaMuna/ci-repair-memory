@@ -14,6 +14,7 @@ from utilities.fetch_failed_commit_changed_files import (
     collect_changed_files_for_fail_and_parent,
 )
 from utilities.llm_provider import get_llm
+from utilities.llm_tracker import tracker
 from ci_repair.ci_log_analyzer_bm25 import CILogAnalyzerBM25
 from ci_repair.ci_log_analyzer_llm import CILogAnalyzerLLM
 from ci_repair.fault_localization import FaultLocalization
@@ -198,8 +199,10 @@ if __name__ == "__main__":
     dataset_df = pd.read_parquet(dataset_path)
     dataset = dataset_df.to_dict(orient="records")
 
+    log_analyzer_type = "llm"  # or "bm25"
+
     results = process_entire_dataset(
-        dataset, config, llm, model_key, log_analyzer_type="llm"
+        dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type
     )
 
     output_file = os.path.join(config.project_result_dir, "generated_patches.json")
@@ -207,3 +210,16 @@ if __name__ == "__main__":
         json.dump(results, f, indent=4)
 
     print(f"[MAIN] Results saved in {output_file}")
+
+    # Save LLM usage tracking report
+    print("\n" + "=" * 80)
+    tracker.print_summary()
+
+    result_dir = os.path.join(
+        config.project_result_dir, f"{model_key}_{log_analyzer_type}"
+    )
+    os.makedirs(result_dir, exist_ok=True)
+
+    usage_report_path = os.path.join(result_dir, "llm_usage_report.json")
+    tracker.save_report(usage_report_path, include_all_calls=True)
+    print(f"[MAIN] LLM usage tracking saved to {usage_report_path}")

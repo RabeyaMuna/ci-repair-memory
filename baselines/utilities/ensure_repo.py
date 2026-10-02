@@ -81,13 +81,17 @@ def ensure_repo_at_commit(repo_url: str, repo_path: str, commit_sha: str) -> Non
     - Only reset once per commit.
     - Skip reset if already at commit.
     """
+    # Convert to absolute path to avoid path duplication issues
+    repo_path = os.path.abspath(repo_path)
+
     # 1) Clone if missing
     if not os.path.exists(repo_path):
         parent = os.path.dirname(repo_path)
         os.makedirs(parent, exist_ok=True)
+        repo_name = os.path.basename(repo_path)
         print(f"[ensure_repo_at_commit] Cloning {repo_url} -> {repo_path}")
         run_cmd(
-            ["git", "clone", "--no-tags", "--filter=blob:none", "--depth", "100", repo_url, repo_path],
+            ["git", "clone", "--no-tags", "--filter=blob:none", "--depth", "100", repo_url, repo_name],
             cwd=parent,
             retries=3,
         )
@@ -95,7 +99,25 @@ def ensure_repo_at_commit(repo_url: str, repo_path: str, commit_sha: str) -> Non
     # 2) Ensure it is a git repo
     git_dir = os.path.join(repo_path, ".git")
     if not os.path.exists(git_dir):
-        raise RuntimeError(f"Directory exists but is not a git repository: {repo_path}")
+        print(f"[ensure_repo_at_commit] Directory exists but is not a git repo, removing and re-cloning: {repo_path}")
+        import shutil
+        # Remove the corrupted directory
+        if os.path.exists(repo_path):
+            shutil.rmtree(repo_path, ignore_errors=True)
+            time.sleep(0.5)  # Give filesystem time to catch up
+        # Double-check it's gone
+        if os.path.exists(repo_path):
+            print(f"[ensure_repo_at_commit] Warning: Directory still exists after removal attempt, forcing removal")
+            shutil.rmtree(repo_path, ignore_errors=False)
+        parent = os.path.dirname(repo_path)
+        os.makedirs(parent, exist_ok=True)
+        repo_name = os.path.basename(repo_path)
+        print(f"[ensure_repo_at_commit] Cloning {repo_url} -> {repo_path}")
+        run_cmd(
+            ["git", "clone", "--no-tags", "--filter=blob:none", "--depth", "100", repo_url, repo_name],
+            cwd=parent,
+            retries=3,
+        )
 
     # 3) Set correct origin URL
     run_cmd(["git", "remote", "set-url", "origin", repo_url], cwd=repo_path)

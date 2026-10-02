@@ -13,6 +13,7 @@ from langchain_core.messages import HumanMessage
 from utilities.constant import ERROR_KEYWORDS
 from utilities.load_config import load_config
 from utilities.chunking_logic import chunk_log_by_tokens
+from utilities.tracked_llm import TrackedLLM
 
 load_dotenv()
 
@@ -40,7 +41,8 @@ class CILogAnalyzerBM25:
         self.sha_fail = sha_fail
         self.workflow = workflow
         self.workflow_path = workflow_path
-        self.llm = llm
+        # Wrap LLM with tracking
+        self.llm = TrackedLLM(llm, model_name=model_name, module="ci_log_analyzer_bm25") if llm else None
         self. task_id= task_id
         self.model_name = model_name
         self._encoder = self._get_encoder()
