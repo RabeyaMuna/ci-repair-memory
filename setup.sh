@@ -4,7 +4,9 @@
 
 set -e  # Exit on error
 
-PROJECT_ROOT="/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH"
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$SCRIPT_DIR"
 VENV_PATH="$PROJECT_ROOT/venv"
 
 echo "=========================================="
@@ -63,12 +65,12 @@ echo ""
 
 # Verify installation
 echo "[7/8] Verifying installation..."
-python3 << 'PYEOF'
+python3 << PYEOF
 import sys
 import os
 
 # Add baselines to path
-sys.path.insert(0, '/Users/rabeyakhatunmuna/Documents/CI-REPAIR-BENCH/baselines')
+sys.path.insert(0, os.path.join('$PROJECT_ROOT', 'baselines'))
 
 print("  Checking imports...")
 try:
