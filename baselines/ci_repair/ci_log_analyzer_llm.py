@@ -67,7 +67,7 @@ class CILogAnalyzerLLM:
                 print(f"Token count for '{step_name}': {total_tokens}")
 
                 if total_tokens > THRESHOLD:
-                    raw_chunks = chunk_log_by_tokens(log_text, max_tokens=70000, overlap=200, model=self.model_name)
+                    raw_chunks = chunk_log_by_tokens(log_text, max_tokens=THRESHOLD, overlap=200, model=self.model_name)
                     print(f"Chunking activated: {len(raw_chunks)} chunks created for step '{step_name}'")
                     
                     chunk_tracker.append((step_name, len(raw_chunks)))
@@ -499,6 +499,7 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
 
             error_data = {
                 "sha_fail": self.sha_fail,
+                "id": self.task_id,
                 "error": str(e),
                 "tool": "ErrorContextExtractionAgent.run",
             }
@@ -507,7 +508,16 @@ Return a SINGLE aggregated summary for the entire failed run using this exact st
             with open(error_file, "w", encoding="utf-8") as f:
                 json.dump(error_data, f, indent=4)
 
-            return {"error": f"Failed to generate summary: {e}"}
+            # Return error dict with required fields for downstream processing
+            return {
+                "sha_fail": self.sha_fail,
+                "id": self.task_id,
+                "error": f"Failed to generate summary: {e}",
+                "error_context": [],
+                "relevant_files": [],
+                "error_types": [],
+                "failed_job": []
+            }
 
     # ------------------------------------------------------------------
     def run(self) -> Dict[str, Any]:

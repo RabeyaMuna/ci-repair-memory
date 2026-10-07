@@ -14,11 +14,9 @@ from utilities.constant import ERROR_KEYWORDS
 from utilities.load_config import load_config
 from utilities.chunking_logic import chunk_log_by_tokens
 from utilities.tracked_llm import TrackedLLM
+from utilities.model_token_limits import get_prompt_token_budget
 
 load_dotenv()
-
-MAX_TOKENS_SUMMARY = 90_000
-CHUNK_SIZE_LOG = 80_000
 CONTEXT_LINES = 5          # reduced to shrink windows
 BM25_TOP_N = 30           # reduced to avoid huge lists
 
@@ -212,9 +210,10 @@ class CILogAnalyzerBM25:
             log = self.flatten_log(step.get("log", ""))
             total_tokens = self._estimate_tokens(log)
 
-            if total_tokens > CHUNK_SIZE_LOG:
+            token_limit = get_prompt_token_budget(self.model_name)
+            if total_tokens > token_limit:
                 raw_chunks = chunk_log_by_tokens(
-                    log, max_tokens=CHUNK_SIZE_LOG, overlap=200, model=self.model_name
+                    log, max_tokens=token_limit, overlap=200, model=self.model_name
                 )
                 print(f"Chunking activated: {len(raw_chunks)} raw chunks for '{step_name}'")
                 chunks = self.filter_chunks(raw_chunks)
@@ -284,6 +283,7 @@ class CILogAnalyzerBM25:
 
             error_data = {
                 "sha_fail": self.sha_fail,
+                "id": self.task_id,
                 "error": str(e),
                 "tool": "ErrorContextExtractionAgent.run",
             }
@@ -292,7 +292,16 @@ class CILogAnalyzerBM25:
             with open(error_file, "w", encoding="utf-8") as f:
                 json.dump(error_data, f, indent=4)
 
-            return {"error": f"Failed to generate summary: {e}"}
+            # Return error dict with required fields for downstream processing
+            return {
+                "sha_fail": self.sha_fail,
+                "id": self.task_id,
+                "error": f"Failed to generate summary: {e}",
+                "error_context": [],
+                "relevant_files": [],
+                "error_types": [],
+                "failed_job": []
+            }
 
     def _summarize_log_details_if_large(
         self, log_details: List[Dict[str, Any]], workflow_details: Any
@@ -463,10 +472,11 @@ RULES:
             failures_json_str = json.dumps(relevant_failures, indent=2)
             total_tokens = self._estimate_tokens(failures_json_str)
 
-            if total_tokens > 80_000:
+            token_limit = get_prompt_token_budget(self.model_name)
+            if total_tokens > token_limit:
                 failure_chunks = chunk_log_by_tokens(
                     failures_json_str,
-                    max_tokens=80_000,
+                    max_tokens=token_limit,
                     model=self.model_name,
                 )
             else:
@@ -669,6 +679,7 @@ then produce a structured, evidence-based JSON summary that explains:
 
             error_data = {
                 "sha_fail": self.sha_fail,
+                "id": self.task_id,
                 "error": str(e),
                 "tool": "ErrorContextExtractionAgent.run",
             }
@@ -677,7 +688,16 @@ then produce a structured, evidence-based JSON summary that explains:
             with open(error_file, "w", encoding="utf-8") as f:
                 json.dump(error_data, f, indent=4)
 
-            return {"error": f"Failed to generate summary: {e}"}
+            # Return error dict with required fields for downstream processing
+            return {
+                "sha_fail": self.sha_fail,
+                "id": self.task_id,
+                "error": f"Failed to generate summary: {e}",
+                "error_context": [],
+                "relevant_files": [],
+                "error_types": [],
+                "failed_job": []
+            }
 
     # ------------------------------------------------------------------
     def run(self) -> Dict[str, Any]:

@@ -7,6 +7,7 @@ from typing import Any, List, Optional
 from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 from .llm_tracker import tracker
+from .retry_with_backoff import retry_with_backoff
 
 
 class TrackedLLM:
@@ -44,16 +45,27 @@ class TrackedLLM:
 
     def invoke(self, messages: List[BaseMessage], **kwargs) -> Any:
         """
-        Invoke the LLM with automatic tracking.
+        Invoke the LLM with automatic tracking and retry logic.
         Returns the full response object (not just .content) so usage metadata is preserved.
         """
         start_time = time.time()
         error = None
         success = True
 
+        def _invoke_with_retry():
+            """Inner function for retry wrapper"""
+            return self.llm.invoke(messages, **kwargs)
+
         try:
-            # Call the actual LLM
-            response = self.llm.invoke(messages, **kwargs)
+            # Call the actual LLM with retry logic (handles rate limits and timeouts)
+            response = retry_with_backoff(
+                func=_invoke_with_retry,
+                max_retries=15,  # Generous retries for rate limits
+                initial_delay=2.0,  # Start with 2 second delay
+                max_delay=120.0,  # Max 2 minute delay
+                retry_on_timeout=True,  # Retry on 504 timeouts
+                operation_name=f"{self.module}.{self.function}"
+            )
             duration = time.time() - start_time
 
             # Extract token usage from response metadata
@@ -79,6 +91,11 @@ class TrackedLLM:
                 duration=duration,
                 success=True
             )
+
+            # Small delay to reduce rate limiting (especially for OpenRouter shared pool)
+            # DeepSeek through OpenRouter has aggressive rate limits on shared pool
+            if "deepseek" in self.model_name.lower():
+                time.sleep(1.0)  # 1 second delay between DeepSeek requests
 
             return response
 

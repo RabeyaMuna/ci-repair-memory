@@ -1,10 +1,12 @@
-#!/usr/bin/env python3
+#!/r
+# usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
 import pandas as pd
 import json
 import subprocess
+import argparse
 from omegaconf import OmegaConf
 from dotenv import load_dotenv
 from huggingface_hub import hf_hub_download
@@ -24,18 +26,26 @@ from utilities.ensure_repo import ensure_repo_at_commit
 load_dotenv()
 
 
-def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm"):
+def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm", num_instances=None, base_dir=None):
     error_details = []
     fault_localization = []
     generated_patches = []
 
     # Folder to store one JSON per sha_fail with changed file info
     changed_files_dir = config.changed_files_folder
+    if base_dir and not os.path.isabs(changed_files_dir):
+        changed_files_dir = os.path.join(base_dir, changed_files_dir)
+    os.makedirs(changed_files_dir, exist_ok=True)  # Create directory if it doesn't exist
 
     # If your helper needs a token:
 
-    # TEMP: only one datapoint
-    subset = dataset[0:120]
+    # Determine subset based on num_instances parameter
+    if num_instances is not None:
+        subset = dataset[0:num_instances]
+        print(f"[MAIN] Processing {num_instances} instances out of {len(dataset)}")
+    else:
+        subset = dataset
+        print(f"[MAIN] Processing all {len(dataset)} instances")
     # target_ids = {241, 243, 281, 323}
     # subset = [dp for dp in dataset if dp.get("id") in target_ids]
 
@@ -43,7 +53,13 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         task_id = datapoint["id"]
         repo_name = datapoint["repo_name"]
         repo_owner = datapoint["repo_owner"]
-        repo_path = os.path.join(config.baseline_repo_folder, repo_name)
+
+        # Make paths absolute if they're relative
+        baseline_repo_folder = config.baseline_repo_folder
+        if base_dir and not os.path.isabs(baseline_repo_folder):
+            baseline_repo_folder = os.path.join(base_dir, baseline_repo_folder)
+        repo_path = os.path.join(baseline_repo_folder, repo_name)
+
         head_branch = datapoint["head_branch"]
         sha_fail = datapoint["sha_fail"]
         benchmark_owner = config.benchmark_owner
@@ -53,8 +69,12 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         workflow_path = datapoint["workflow_path"]
         sha_success = datapoint["sha_success"]
 
+        # Make result_dir absolute if it's relative
+        project_result_dir = config.project_result_dir
+        if base_dir and not os.path.isabs(project_result_dir):
+            project_result_dir = os.path.join(base_dir, project_result_dir)
         result_dir = os.path.join(
-            config.project_result_dir, f"{model_key}_{log_analyzer_type}"
+            project_result_dir, f"{model_key}_{log_analyzer_type}"
         )
         os.makedirs(result_dir, exist_ok=True)
 
@@ -76,6 +96,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     workflow_path,
                     llm=llm,
                     model_name=model_key,
+                    task_id=task_id,
                 ).run()
             else:
                 log_analysis_result = CILogAnalyzerBM25(
@@ -86,12 +107,18 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     workflow_path,
                     llm=llm,
                     model_name=model_key,
+                    task_id=task_id,
                 ).run()
 
             error_details.append(log_analysis_result)
 
             with open(os.path.join(result_dir, "log_details.json"), "w") as f:
                 json.dump(error_details, f, indent=4)
+
+            # Skip further processing if log analysis failed
+            if "error" in log_analysis_result and log_analysis_result.get("error"):
+                print(f"[MAIN] Skipping {sha_fail} due to log analysis error: {log_analysis_result.get('error')[:100]}...")
+                continue
 
         except Exception as e:
             print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
@@ -177,18 +204,51 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
 
 
 if __name__ == "__main__":
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description='Run CI Repair Baseline Pipeline')
+    parser.add_argument(
+        '--model',
+        type=str,
+        default='gpt-5-mini',
+        help='Model to use (e.g., gpt-5-mini, deepseek-v4-flash, gpt4o)'
+    )
+    parser.add_argument(
+        '--analyzer',
+        choices=['llm', 'bm25'],
+        default='llm',
+        help='Log analyzer type (default: llm)'
+    )
+    parser.add_argument(
+        '--num-instances',
+        type=int,
+        default=None,
+        help='Number of instances to process (default: all)'
+    )
+
+    args = parser.parse_args()
+
+    print(f"""
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                   CI Repair Baseline Pipeline                                ║
+║                                                                              ║
+║  Model:    {args.model:<60} ║
+║  Analyzer: {args.analyzer:<60} ║
+║  Instances: {str(args.num_instances or 'all'):<58} ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+""")
+
     # Load config
     config_path = os.path.join(os.path.dirname(__file__), "..", "config.yaml")
     config = OmegaConf.load(config_path)
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    model_key = "gpt-5-mini"  # or "gpt4o", "deepseek-chat", etc.
+    model_key = args.model
     llm = get_llm(model_key)
 
     hf_token = os.getenv("HF_TOKEN") or config.get("HUGGINGFACE_TOKEN")
 
+    print("Loading dataset...")
     dataset_path = hf_hub_download(
         repo_id="ci-benchmark-user/ci-repair-bench",
         filename="ci_repair_dataset.parquet",
@@ -198,11 +258,12 @@ if __name__ == "__main__":
 
     dataset_df = pd.read_parquet(dataset_path)
     dataset = dataset_df.to_dict(orient="records")
+    print(f"Loaded {len(dataset)} instances from dataset\n")
 
-    log_analyzer_type = "llm"  # or "bm25"
+    log_analyzer_type = args.analyzer
 
     results = process_entire_dataset(
-        dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type
+        dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type, num_instances=args.num_instances, base_dir=base_dir
     )
 
     output_file = os.path.join(config.project_result_dir, "generated_patches.json")

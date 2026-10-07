@@ -35,7 +35,7 @@ MODEL_LIMITS: Dict[str, ModelLimits] = {
     # DeepSeek (adjust if needed)
     "deepseek-chat":  ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
     "deepseek-coder": ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
-    "deepseek-v4-flash": ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
+    "deepseek-v4-flash": ModelLimits(context_window=32_768, reserved_output=8_000, max_output=8_000),  # Actual limit via OpenRouter/DeepInfra
 }
 
 def get_model_limits(model_name: Optional[str]) -> ModelLimits:
@@ -52,6 +52,14 @@ def get_chunk_threshold_simple(model_name: Optional[str]) -> int:
     limits = get_model_limits(model_name)
     ctx = limits.context_window
 
+    # DeepSeek V4 Flash: 32k context, use half as threshold
+    if model_name and "deepseek-v4-flash" in model_name.lower():
+        return 16_000  # Half of 32k context window
+
+    # Other DeepSeek models: use smaller chunks to reduce input token costs
+    if model_name and "deepseek" in model_name.lower():
+        return 30_000  # More aggressive chunking for cost efficiency
+
     # Large-context models (GPT-5-mini, GPT-5.1, GPT-4.1, etc.)
     if ctx >= 300_000:
         return 200_000
@@ -62,3 +70,28 @@ def get_chunk_threshold_simple(model_name: Optional[str]) -> int:
 def is_large_context_model(model_name: Optional[str]) -> bool:
     limits = get_model_limits(model_name)
     return limits.context_window >= 300_000
+
+def get_fl_chunk_threshold(model_name: Optional[str]) -> tuple[int, int]:
+    """
+    Get fault localization chunk size and overlap thresholds for a given model.
+
+    Returns:
+        tuple[chunk_size, overlap]: (lines per chunk, overlap lines)
+    """
+    limits = get_model_limits(model_name)
+    ctx = limits.context_window
+
+    # DeepSeek V4 Flash: smallest context, use smaller chunks
+    if model_name and "deepseek-v4-flash" in model_name.lower():
+        return (200, 30)  # Conservative for 32k context
+
+    # Other DeepSeek models: moderate chunks
+    if model_name and "deepseek" in model_name.lower():
+        return (300, 50)  # Standard for 128k context
+
+    # Large-context models (GPT-5-mini, GPT-5.1, GPT-4.1, etc.)
+    if ctx >= 300_000:
+        return (600, 50)  # Large chunks for 300k+ context
+
+    # Standard 128k models (GPT-4o, GPT-4o-mini)
+    return (300, 50)  # Default for most models

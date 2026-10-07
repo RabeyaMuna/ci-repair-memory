@@ -178,6 +178,167 @@ The dataset contains:
 
 Run `python scripts/analysis/dataset_overview.py` for detailed statistics.
 
+## Running Baselines
+
+### Setup Environment
+
+```bash
+# Activate virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Ensure .env file has required API keys
+cat .env
+```
+
+Required API keys in `.env`:
+```bash
+GITHUB_TOKEN=your_github_token_here
+HUGGINGFACE_TOKEN=your_hf_token_here
+OPENAI_API_KEY=your_openai_key_here
+DEEPSEEK_API_KEY=your_deepseek_key_here
+OPENROUTER_API_KEY=your_openrouter_key_here
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+```
+
+### MiniSWE-Agent Pipeline
+
+Run the MiniSWE-Agent baseline for patch generation:
+
+```bash
+# DeepSeek V4 Flash (150 instances, LLM analyzer)
+python baselines/run_miniswe_pipeline.py --model deepseek-v4-flash --analyzer llm --mode miniswe --num-instances 150
+
+# GPT-5 Mini (150 instances, LLM analyzer)
+python baselines/run_miniswe_pipeline.py --model gpt-5-mini --analyzer llm --mode miniswe --num-instances 150
+
+# Run all instances (omit --num-instances)
+python baselines/run_miniswe_pipeline.py --model deepseek-v4-flash --analyzer llm --mode miniswe
+
+# Use BM25 analyzer instead of LLM for log analysis
+python baselines/run_miniswe_pipeline.py --model deepseek-v4-flash --analyzer bm25 --mode miniswe --num-instances 150
+```
+
+**Output location:** `miniswe-agent/baselines/results/miniswe-agent_{model}_{analyzer}/`
+- `preds.json` - Generated patches
+- `run_metrics.json` - Execution metrics
+- `costs.json` - API costs
+- `llm_usage_{model}_{analyzer}.json` - Detailed LLM usage
+
+### Baseline Patch Generation Module
+
+Run the custom patch generation baseline:
+
+```bash
+# DeepSeek V4 Flash (150 instances)
+python baselines/main.py --model deepseek-v4-flash --analyzer llm --num-instances 150
+
+# GPT-5 Mini (150 instances)
+python baselines/main.py --model gpt-5-mini --analyzer llm --num-instances 150
+
+# Run all instances
+python baselines/main.py --model deepseek-v4-flash --analyzer llm
+
+# Use BM25 analyzer
+python baselines/main.py --model deepseek-v4-flash --analyzer bm25 --num-instances 150
+```
+
+**Output location:** `baselines/results/{model}_{analyzer}/`
+- `log_details.json` - CI log analysis results
+- `fault_localization.json` - Fault localization results
+- `generated_patches.json` - Generated patches
+- `llm_usage_report.json` - LLM usage tracking
+
+### Available Models
+
+| Model | Provider | Context Window | Chunk Threshold | Max Output |
+|-------|----------|---------------|----------------|------------|
+| `gpt-5-mini` | OpenAI | 400,000 | 200,000 | 128,000 |
+| `gpt-5.1` | OpenAI | 400,000 | 200,000 | 128,000 |
+| `gpt-4o` | OpenAI | 128,000 | 70,000 | 16,384 |
+| `deepseek-v4-flash` | OpenRouter | 32,768 | 16,000 | 8,000 |
+| `deepseek-chat` | DeepSeek | 128,000 | 30,000 | 8,000 |
+| `deepseek-coder` | DeepSeek | 128,000 | 30,000 | 8,000 |
+
+**Note:** Chunk threshold determines when CI logs are split into smaller pieces. For DeepSeek V4 Flash, logs >16k tokens are automatically chunked to fit the 32k context limit.
+
+### Monitoring Progress
+
+#### Check Processing Status
+
+```bash
+# Check how many instances have been processed
+python -c "import json; data = json.load(open('baselines/results/deepseek-v4-flash_llm/log_details.json')); print(f'Processed: {len(data)}/150')"
+
+# Check patches generated (MiniSWE-Agent)
+python -c "import json; data = json.load(open('miniswe-agent/baselines/results/miniswe-agent_deepseek-v4-flash_llm/preds.json')); print(f'Patches: {len(data)}')" 2>/dev/null || echo "No patches yet"
+
+# Check patches generated (Baseline)
+python -c "import json; data = json.load(open('baselines/results/deepseek-v4-flash_llm/generated_patches.json')); print(f'Patches: {len(data)}')" 2>/dev/null || echo "No patches yet"
+```
+
+#### Check Running Processes
+
+```bash
+# Check if MiniSWE pipeline is running
+ps aux | grep "[r]un_miniswe_pipeline.py.*deepseek-v4-flash"
+
+# Check if baseline pipeline is running
+ps aux | grep "[m]ain.py.*deepseek-v4-flash"
+
+# List all running Python processes
+ps aux | grep python
+```
+
+#### Stop Running Processes
+
+```bash
+# Stop MiniSWE pipeline
+pkill -f "run_miniswe_pipeline.py.*deepseek-v4-flash"
+
+# Stop baseline pipeline
+pkill -f "main.py.*deepseek-v4-flash"
+
+# Kill a specific process by PID
+kill <PID>
+
+# Kill all matching processes
+pkill -f "run_miniswe_pipeline.py"
+```
+
+### Troubleshooting
+
+#### Token Limit Errors
+
+If you see:
+```
+The sum of prompt length (42079.0) should not exceed max_num_tokens (32768)
+```
+
+**Cause:** Chunking threshold is too high for the model's context window.
+
+**Solution:** For DeepSeek V4 Flash, the threshold is set to 16k (half of 32k context). Restart the pipeline to apply the fix.
+
+#### Directory Not Found Errors
+
+If you see:
+```
+[Errno 2] No such file or directory: 'baselines/changed_files/...'
+```
+
+**Solution:** The directory is now created automatically. Restart the pipeline with updated code.
+
+#### Missing API Keys
+
+If you see authentication errors, verify your `.env` file has all required keys:
+
+```bash
+# Check if .env exists and has content
+cat .env
+
+# Verify keys are loaded
+python -c "from dotenv import load_dotenv; import os; load_dotenv(); print('Keys loaded:', bool(os.getenv('OPENROUTER_API_KEY')))"
+```
+
 ## Evaluation Metrics
 
 ### File Localization

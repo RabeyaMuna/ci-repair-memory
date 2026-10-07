@@ -113,6 +113,8 @@ def get_llm(model_key: str) -> ChatOpenAI:
     kwargs = {
         "model": info.model_name,
         "temperature": info.temperature,
+        "max_retries": 2,  # Reduced - we handle retries at higher level with better backoff
+        "request_timeout": 180.0,  # 3 minute timeout per request (for large contexts)
     }
 
     if api_key:

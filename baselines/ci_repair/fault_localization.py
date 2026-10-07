@@ -15,7 +15,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.output_parsers import JsonOutputParser
 
-from utilities.model_token_limits import get_prompt_token_budget
+from utilities.model_token_limits import get_prompt_token_budget, get_fl_chunk_threshold
 from utilities.load_config import load_config
 from utilities.snippet_extractor import extract_snippet_from_line_range, find_line_range
 from utilities.symbols_outline import build_outline, format_outline
@@ -107,8 +107,31 @@ class FaultLocalization:
             suspecious_files = self.select_suspecious_files()
             print("[Step 2] Running final fault localization...")
             result = self._final_fault_localization(suspecious_files)
-            result["id"] = self.id 
+            result["id"] = self.id
             return result
+
+        except ValueError as e:
+            # Catch unpacking errors specifically
+            if "unpack" in str(e):
+                print(f"[ERROR] Unpacking error in fault localization: {e}")
+                import traceback
+                traceback.print_exc()
+            base_dir = os.path.join(
+                self.config["exception_dir"],
+                "interrupted_fault_localization",
+            )
+            os.makedirs(base_dir, exist_ok=True)
+            filepath = os.path.join(base_dir, f"{self.failed_commit}_bug.json")
+            error_info = {
+                "sha_fail": self.failed_commit,
+                "id": self.id,
+                "error": str(e),
+                "tool": "FaultLocalization",
+                "fault_localization_data": []
+            }
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(error_info, f, indent=4)
+            return error_info
 
         except Exception as e:
             base_dir = os.path.join(
@@ -119,8 +142,10 @@ class FaultLocalization:
             filepath = os.path.join(base_dir, f"{self.failed_commit}_bug.json")
             error_info = {
                 "sha_fail": self.failed_commit,
+                "id": self.id,
                 "error": str(e),
                 "tool": "FaultLocalization",
+                "fault_localization_data": []  # Empty array for consistency
             }
             with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(error_info, f, indent=4)
@@ -218,22 +243,39 @@ class FaultLocalization:
         2) Add extra files from `changed_files_info["changed_files"]` if the LLM
         says the diff is suspicious for the failed jobs.
 
+        OPTIMIZED: Batches multiple files together in one LLM call instead of
+        one call per file, significantly reducing time and token usage.
+
         Returns a list of dicts that at least contain "file" so that
         _final_fault_localization can resolve paths.
         """
         suspecious_files: List[Dict[str, Any]] = []
 
+        print(f"[Selector] Starting with {len(self.relevant_files)} relevant files from error logs")
+
         # 1) Relevant files from error_logs
+        files_from_logs = 0
+
         for item in self.relevant_files:
             file_path = (item.get("file") or item.get("path") or "").strip()
             if not file_path:
                 continue
 
-            ext = Path(file_path).suffix.lower()
-            if ext not in {".py", ".txt", ".toml", ".md", ".rst", ".tsx"}:
+            # Skip URLs (bug: log analyzer sometimes extracts URLs)
+            if file_path.startswith(('http://', 'https://', 'ftp://')):
+                print(f"[Selector] Skipping '{file_path}' - URL not a file path")
+                continue
+
+            # Skip only .github/ directory files (CI workflow files)
+            if file_path.startswith('.github/'):
+                print(f"[Selector] Skipping '{file_path}' - CI workflow file in .github/")
                 continue
 
             suspecious_files.append({"file": file_path})
+            files_from_logs += 1
+            print(f"[Selector] Added from error log: {file_path}")
+
+        print(f"[Selector] Added {files_from_logs} file(s) from error logs after filtering")
 
         # Build a set of already-selected file paths from suspecious_files
         seen_paths: set[str] = set()
@@ -247,75 +289,158 @@ class FaultLocalization:
         if not changed_files_list:
             return suspecious_files
 
-        failed_jobs_text = json.dumps(self.failed_jobs, indent=2, ensure_ascii=False)
-
+        candidates = []
         for item in changed_files_list:
             file_path = (item.get("file_path") or "").strip()
-            if not file_path:
+            if not file_path or file_path in seen_paths:
                 continue
 
-            # If this file is already in suspecious_files, skip immediately
-            if file_path in seen_paths:
-                # Already included from relevant_files or earlier changed_files
+            # Skip URLs
+            if file_path.startswith(('http://', 'https://', 'ftp://')):
                 continue
 
-            ext = Path(file_path).suffix.lower()
-            if ext not in {".py", ".txt"}:
+            # Skip only .github/ directory files (CI workflow files)
+            if file_path.startswith('.github/'):
                 continue
 
-            changed_content = item.get("diff", "")
+            candidates.append({
+                "file_path": file_path,
+                "diff": item.get("diff", "")
+            })
 
-            prompt = f"""
-You are a **Suspicious File Selector** for CI failures.
+        if not candidates:
+            return suspecious_files
+
+        # Batch files together for efficient LLM processing
+        failed_jobs_text = json.dumps(self.failed_jobs, indent=2, ensure_ascii=False)
+        suspicious_results = self._batch_analyze_suspicious_files(candidates, failed_jobs_text)
+
+        # Add suspicious files to the result
+        for file_path in suspicious_results:
+            suspecious_files.append({"file": file_path})
+            seen_paths.add(file_path)
+
+        print(f"[Selector] TOTAL SELECTED: {len(suspecious_files)} file(s) ({files_from_logs} from error logs + {len(suspicious_results)} from changed files)")
+        return suspecious_files
+
+    def _batch_analyze_suspicious_files(
+        self,
+        candidates: List[Dict[str, str]],
+        failed_jobs_text: str
+    ) -> List[str]:
+        """
+        Batch analyze multiple files in one LLM call for efficiency.
+
+        Args:
+            candidates: List of dicts with "file_path" and "diff"
+            failed_jobs_text: JSON string of failed jobs
+
+        Returns:
+            List of file paths that are suspicious
+        """
+        if not candidates:
+            return []
+
+        # Estimate tokens and create batches
+        # Reserve tokens for: prompt template (~500) + failed_jobs + response (~200)
+        max_tokens = get_prompt_token_budget(self.model_name or "gpt-4")
+        reserved_tokens = 700 + estimate_tokens(failed_jobs_text)
+        available_tokens = max_tokens - reserved_tokens
+
+        batches = []
+        current_batch = []
+        current_batch_tokens = 0
+
+        for candidate in candidates:
+            file_tokens = estimate_tokens(candidate["file_path"] + candidate["diff"])
+
+            # If adding this file exceeds limit, start new batch
+            if current_batch and (current_batch_tokens + file_tokens > available_tokens):
+                batches.append(current_batch)
+                current_batch = []
+                current_batch_tokens = 0
+
+            current_batch.append(candidate)
+            current_batch_tokens += file_tokens
+
+        # Add the last batch
+        if current_batch:
+            batches.append(current_batch)
+
+        print(f"[Selector] Analyzing {len(candidates)} files in {len(batches)} batch(es)")
+
+        suspicious_files = []
+        for batch_idx, batch in enumerate(batches, 1):
+            try:
+                files_section = "\n\n".join([
+                    f"FILE {i+1}: {item['file_path']}\n"
+                    f"DIFF:\n{item['diff']}\n"
+                    f"{'='*60}"
+                    for i, item in enumerate(batch)
+                ])
+
+                prompt = f"""You are a **Suspicious File Selector** for CI failures.
 
 Goal:
-Given a file path, the unified diff of that file for a failed commit, and the CI failed jobs description, decide whether this file's changes are likely responsible for (or closely related to) the CI failure. 
-If you have strong evident of the change of code(diff) in the failed commit is the reason of failed jobs, only then set `is_suspicious` as true. Do not speculate.
+Given multiple files with their diffs from a failed commit and the CI failed jobs description,
+determine which files' changes are likely responsible for (or closely related to) the CI failure.
+Only mark a file as suspicious if you have strong evidence that the code changes in the diff
+are the reason for the failed jobs. Do not speculate.
 
-Return **only** a JSON object with this exact schema, as plain text:
+Return **only** a JSON object with this exact schema:
 
 {{
-  "is_suspicious": true or false
+  "suspicious_files": ["file_path1", "file_path2", ...]
 }}
 
+The "suspicious_files" array should contain ONLY the file paths of files that are suspicious.
+If no files are suspicious, return an empty array: {{"suspicious_files": []}}
+
 Hard rules:
-- Do NOT add any markdown fences (no ```json, no ```).
-- Do NOT add any extra keys, comments, or explanation.
-- Do NOT add any surrounding text before or after the JSON.
-- The response must be a single valid JSON object only.
+- Do NOT add markdown fences (no ```json, no ```).
+- Do NOT add extra keys, comments, or explanation.
+- Do NOT add surrounding text before or after the JSON.
+- Return a single valid JSON object only.
 
 ========================================
-FILE PATH:
-{file_path}
-
-UNIFIED DIFF FOR THIS FILE:
-{changed_content}
-
 FAILED JOBS (CI context):
 {failed_jobs_text}
+
+========================================
+FILES TO ANALYZE:
+
+{files_section}
 ========================================
 """
 
-            try:
                 raw_response = self.llm.invoke(prompt).content.strip()
+
+                # Clean response
                 if raw_response.startswith("```"):
                     raw_response = raw_response.strip("` \n")
+                    if raw_response.startswith("json"):
+                        raw_response = raw_response[4:].strip()
 
                 try:
                     parsed = json.loads(raw_response)
                 except json.JSONDecodeError:
                     parsed = demjson3.decode(raw_response)
 
-                if isinstance(parsed, dict) and parsed.get("is_suspicious") is True:
-                    suspecious_files.append({"file": file_path})
-                    seen_paths.add(file_path)  # so we never process it again
-                    print(f"[Selector] Marked '{file_path}' as suspicious based on diff.")
+                if isinstance(parsed, dict):
+                    batch_suspicious = parsed.get("suspicious_files", [])
+                    if isinstance(batch_suspicious, list):
+                        suspicious_files.extend(batch_suspicious)
+                        print(f"[Selector] Batch {batch_idx}/{len(batches)}: {len(batch_suspicious)} suspicious file(s)")
+                    else:
+                        print(f"[Selector] Batch {batch_idx}/{len(batches)}: Invalid response format")
                 else:
-                    print(f"[Selector] '{file_path}' not suspicious.")
-            except Exception as e:
-                print(f"[Selector] Error deciding for {file_path}: {e}")
+                    print(f"[Selector] Batch {batch_idx}/{len(batches)}: Response not a dict")
 
-        return suspecious_files
+            except Exception as e:
+                print(f"[Selector] Error analyzing batch {batch_idx}/{len(batches)}: {e}")
+
+        print(f"[Selector] Total suspicious files found: {len(suspicious_files)}")
+        return suspicious_files
 
 
     # ------------------------------------------------------------------ #
@@ -331,8 +456,9 @@ FAILED JOBS (CI context):
             if not file_path:
                 continue
 
-            ext = Path(file_path).suffix.lower()
-            if ext not in {".py", ".toml", ".txt"}:
+            # Skip only .github/ directory files (CI workflow files)
+            if file_path.startswith('.github/'):
+                print(f"[FL] Skipping '{file_path}' - CI workflow file")
                 continue
 
             resolved = self.find_full_file_path(file_path)
@@ -423,6 +549,8 @@ FAILED JOBS (CI context):
         return f"""
 You are a **Strict Fault Localization Agent**.
 
+⚠️ CRITICAL: Your response must be ONLY valid JSON - a JSON array. Do NOT write any text before or after the JSON. Do NOT use markdown code fences. Do NOT add comments. Just the JSON array.
+
 Your task:
 Given a numbered source-code CHUNK, CI error context, workflow jobs, and a file outline,
 identify **ALL distinct faults** in THIS chunk that are relevant to the CI failures. Analysis each line of code based CI error context and failed jobs to detect faults.
@@ -431,7 +559,7 @@ IMPORTANT:
 • Do NOT stop after the first fault.
 • Do NOT speculate beyond the shown lines.
 • Do NOT expand scope beyond numeric containment rules.
-• Output **valid JSON only** (array or empty array). No prose, no markdown.
+• Output **valid JSON only** (array or empty array). No prose, no markdown, no explanation.
 
 ==============================================================================
 INPUT
@@ -536,11 +664,14 @@ For EACH fault, "reason" MUST include ALL THREE:
 If you cannot name exact line numbers → DO NOT return the fault.
 
 ==============================================================================
-LINE RANGE RULES
+LINE RANGE RULES (CRITICAL)
 ------------------------------------------------------------------------------
-- "line_range" MUST include the faulty line(s).
-- Must stay within {valid_start}–{valid_end}.
-- Use displayed line numbers as integers (no leading zeros).
+- "line_range" MUST be an array of EXACTLY 2 integers: [start, end]
+- For a single line fault at line N: return [N, N] (NOT [N])
+- For multi-line fault from line A to B: return [A, B]
+- Both start and end MUST be within {valid_start}–{valid_end}
+- Use displayed line numbers as integers (no leading zeros)
+- NEVER return single-element arrays like [4] - always [4, 4]
 
 ==============================================================================
 FAULT MERGING RULE
@@ -554,20 +685,35 @@ FAULT MERGING RULE
 ==============================================================================
 OUTPUT CONTRACT (STRICT)
 ------------------------------------------------------------------------------
+⚠️ YOUR ENTIRE RESPONSE MUST BE VALID JSON - NOTHING ELSE!
+
 Return ONLY:
 - []  (if no new faults), OR
-- A JSON array of objects:
+- A JSON array of objects (example below):
 
 [
   {{
-    "line_range": [start, end],
+    "line_range": [start, end],  // MUST be 2 integers: [N, N] for single line, [A, B] for range
     "reason": "...",
     "issue_type": "formatting | linting | type_error | runtime_error | test_failure | dependency_error | docstring | complexity | other",
     "fault_localization_level": "line | method | class | import_block"
   }}
 ]
 
-No markdown. No comments. No extra keys. No trailing commas.
+EXAMPLE OUTPUT:
+// Single line fault at line 42:
+{{"line_range": [42, 42], "reason": "...", "issue_type": "...", "fault_localization_level": "..."}}
+
+// Multi-line fault from line 10 to 15:
+{{"line_range": [10, 15], "reason": "...", "issue_type": "...", "fault_localization_level": "..."}}
+
+HARD RULES:
+• No text before the JSON array
+• No text after the JSON array
+• No markdown code fences (no ```)
+• No comments inside JSON
+• No trailing commas
+• Just pure, valid JSON
 
 ==============================================================================
 FINAL CHECK
@@ -608,13 +754,34 @@ FINAL CHECK
 
         def _invoke_and_parse(p: str):
             raw_response = self.llm.invoke([HumanMessage(content=p)]).content.strip()
+
+            # Aggressive cleaning for DeepSeek and other models
+            # 1. Remove markdown code fences
             if raw_response.startswith("```"):
                 raw_response = raw_response.strip("` \n")
+                if raw_response.startswith("json"):
+                    raw_response = raw_response[4:].strip()
+
+            # 2. Try to extract JSON if there's text before/after
+            # Look for [ or { at the start of JSON
+            import re
+            json_match = re.search(r'(\[.*\]|\{.*\})', raw_response, re.DOTALL)
+            if json_match:
+                raw_response = json_match.group(1).strip()
 
             try:
                 parsed = json.loads(raw_response)
-            except json.JSONDecodeError:
-                parsed = demjson3.decode(raw_response)
+            except json.JSONDecodeError as e:
+                # Try demjson3 as fallback
+                try:
+                    parsed = demjson3.decode(raw_response)
+                except Exception as demjson_error:
+                    # Log first 500 chars of response for debugging
+                    print(f"[FL Debug] JSON parse failed. Response preview:")
+                    print(f"  First 300 chars: {raw_response[:300]}")
+                    print(f"  Last 100 chars: {raw_response[-100:]}")
+                    # Return empty instead of raising to continue processing
+                    return []
 
             if not isinstance(parsed, list) or not parsed:
                 return []
@@ -715,7 +882,17 @@ FINAL CHECK
             if not line_range:
                 continue
 
-            start, end = line_range
+            # Validate line_range format
+            if not isinstance(line_range, (list, tuple)) or len(line_range) != 2:
+                print(f"[Chunk {chunk_idx+1}] Skipping fault with invalid line_range format: {line_range}")
+                continue
+
+            try:
+                start, end = int(line_range[0]), int(line_range[1])
+            except (ValueError, TypeError) as e:
+                print(f"[Chunk {chunk_idx+1}] Skipping fault with non-numeric line_range: {line_range} - {e}")
+                continue
+
             if valid_start <= start and end <= valid_end:
                 extended_range = self._expand_line_range_with_outline(
                     line_range=line_range,
@@ -752,40 +929,67 @@ FINAL CHECK
     def find_full_file_path(self, file_path: str) -> dict:
         """
         Find the best matching full path for a given relative file_path inside repo_path.
-        Prioritizes the candidate whose relative path best matches the requested file_path.
+        Uses multiple strategies to find the best match even with partial paths.
         """
+        # Clean up the input path
         normalized = os.path.normpath(file_path.split(":", 1)[0].strip())
-        abs_path = os.path.join(self.repo_path, normalized)
         file_name = os.path.basename(normalized)
 
         try:
-            if os.path.exists(abs_path):
+            # Strategy 1: Try direct path from repo root
+            abs_path = os.path.join(self.repo_path, normalized)
+            if os.path.exists(abs_path) and os.path.isfile(abs_path):
                 return {"status": "found", "full_path": abs_path}
 
+            # Strategy 2: Search by filename and score by path similarity
             candidates = []
+            normalized_parts = normalized.split(os.sep)
+
             for root, _, files in os.walk(self.repo_path):
                 if file_name in files:
                     candidate = os.path.join(root, file_name)
                     rel_candidate = os.path.relpath(candidate, self.repo_path)
-                    score = len(
-                        os.path.commonprefix(
-                            [rel_candidate[::-1], normalized[::-1]]
-                        )
-                    )
-                    candidates.append((score, candidate))
+                    rel_parts = rel_candidate.split(os.sep)
+
+                    # Score based on:
+                    # 1. Suffix match (how many trailing path components match)
+                    # 2. Common path elements
+                    suffix_score = 0
+                    for i in range(1, min(len(normalized_parts), len(rel_parts)) + 1):
+                        if normalized_parts[-i] == rel_parts[-i]:
+                            suffix_score += 1
+                        else:
+                            break
+
+                    # Bonus for matching directory structure
+                    common_elements = len(set(normalized_parts) & set(rel_parts))
+
+                    # Combined score: prioritize suffix match, then common elements
+                    score = (suffix_score * 100) + common_elements
+
+                    candidates.append((score, candidate, rel_candidate))
+                    print(f"[Path Match] {rel_candidate} score={score} (suffix={suffix_score}, common={common_elements})")
 
             if candidates:
+                # Sort by score (highest first)
                 candidates.sort(key=lambda x: x[0], reverse=True)
                 best_match = candidates[0][1]
+                best_score = candidates[0][0]
+
+                print(f"[Path Resolution] Best match for '{normalized}' -> '{candidates[0][2]}' (score={best_score})")
+
                 return {
                     "status": "found",
                     "full_path": best_match,
                     "all_candidates": [c[1] for c in candidates],
+                    "match_score": best_score
                 }
 
         except Exception as e:
+            print(f"[Path Resolution Error] {e}")
             return {"status": "error", "error": str(e)}
 
+        print(f"[Path Resolution] No match found for '{normalized}'")
         return {"status": "not_found"}
 
     def _read_file_content(self, resolved_path: str) -> str:
@@ -807,7 +1011,8 @@ FINAL CHECK
     # ------------------------------------------------------------------ #
 
     def _call_llm_directly(self, prompt: str) -> dict:
-        chunks = chunk_log_by_tokens(prompt, max_tokens=90000, model=self.model_name)
+        token_limit = get_prompt_token_budget(self.model_name)
+        chunks = chunk_log_by_tokens(prompt, max_tokens=token_limit, model=self.model_name)
 
         for chunk in chunks:
             try:
@@ -865,12 +1070,9 @@ FINAL CHECK
         return mapping.get(ext, "text")
 
     def _chunk_file(self, file_content: str) -> List[Dict[str, Any]]:
-        if is_large_context_model(self.model_name):
-            chunk_size = 600
-            overlap = 50
-        else:
-            chunk_size = 300
-            overlap = 50
+        # Get model-specific chunk thresholds
+        chunk_size, overlap = get_fl_chunk_threshold(self.model_name)
+        print(f"[FL Chunking] Using chunk_size={chunk_size}, overlap={overlap} for model={self.model_name}")
         lines = file_content.splitlines()
         total_lines = len(lines)
         chunks: List[Dict[str, Any]] = []
@@ -967,8 +1169,15 @@ FINAL CHECK
         if not line_range:
             return line_range
 
-        start, end = line_range
-        if not (isinstance(start, int) and isinstance(end, int)):
+        # Validate line_range format
+        if not isinstance(line_range, (list, tuple)) or len(line_range) != 2:
+            print(f"[WARN] Invalid line_range format in _expand_line_range_with_outline: {line_range}")
+            return line_range
+
+        try:
+            start, end = int(line_range[0]), int(line_range[1])
+        except (ValueError, TypeError) as e:
+            print(f"[WARN] Non-numeric line_range in _expand_line_range_with_outline: {line_range} - {e}")
             return line_range
 
         # Normalize ordering defensively

@@ -56,7 +56,7 @@ class MiniSWEPipeline:
     Pipeline that reuses existing results and runs miniswe-agent
     """
 
-    def __init__(self, model_name, config, log_analyzer_type="llm", mode="miniswe", num_instances=None):
+    def __init__(self, model_name, config, log_analyzer_type="llm", mode="miniswe", num_instances=None, reverse=False, reload_each=False):
         """
         Args:
             model_name: 'gpt-5-mini' or 'deepseek-v4-flash'
@@ -64,12 +64,16 @@ class MiniSWEPipeline:
             log_analyzer_type: 'llm' or 'bm25'
             mode: 'miniswe' (save patches to miniswe-agent/) or 'reference' (save to baselines/results/)
             num_instances: Number of instances to process (None = all)
+            reverse: Process instances in reverse order (default: False)
+            reload_each: Reload existing results before each instance (default: False)
         """
         self.model_name = model_name
         self.config = config
         self.log_analyzer_type = log_analyzer_type
         self.mode = mode
         self.num_instances = num_instances
+        self.reverse = reverse
+        self.reload_each = reload_each
 
         # Get LLM
         self.llm = get_llm(model_name)
@@ -383,7 +387,7 @@ class MiniSWEPipeline:
         Process dataset with result reuse
         """
 
-        # Load existing results for THIS model/analyzer only
+        # Load existing results for THIS model/analyzer only (initial load)
         log_details, fault_localization, existing_patches = self.load_existing_results()
         patches = dict(existing_patches)
 
@@ -391,7 +395,13 @@ class MiniSWEPipeline:
         if self.num_instances:
             dataset = dataset[:self.num_instances]
 
-        print(f"\n[PROCESS] {len(dataset)} instances with {self.model_name}_{self.log_analyzer_type}\n")
+        # REVERSE order if requested
+        if self.reverse:
+            dataset = list(reversed(dataset))
+            print(f"\n[REVERSE MODE] Processing {len(dataset)} instances in REVERSE order")
+            print(f"               Order: Instance #{dataset[0]['id']} → #{dataset[-1]['id']}\n")
+        else:
+            print(f"\n[PROCESS] {len(dataset)} instances with {self.model_name}_{self.log_analyzer_type}\n")
 
         for idx, datapoint in enumerate(dataset, 1):
             task_id = datapoint["id"]
@@ -403,6 +413,13 @@ class MiniSWEPipeline:
             print(f"\n{'='*80}")
             print(f"[{idx}/{len(dataset)}] Instance {task_id}: {repo_name} @ {sha_fail[:8]}")
             print(f"{'='*80}")
+
+            # Reload existing results if requested (fresh read from disk)
+            if self.reload_each:
+                print("[RELOAD] Reading latest results from disk...")
+                log_details, fault_localization, existing_patches = self.load_existing_results()
+                patches = dict(existing_patches)
+                print(f"[RELOAD] Loaded: {len(log_details)} logs, {len(fault_localization)} faults, {len(patches)} patches")
 
             # Check what work needs to be done
             need_log_analysis = sha_fail not in log_details
@@ -570,6 +587,16 @@ def main():
         default=None,
         help='Number of instances to process (default: all)'
     )
+    parser.add_argument(
+        '--reverse',
+        action='store_true',
+        help='Process instances in reverse order (e.g., 150→1 instead of 1→150)'
+    )
+    parser.add_argument(
+        '--reload-each',
+        action='store_true',
+        help='Reload existing results before each instance (useful for parallel runs)'
+    )
 
     args = parser.parse_args()
 
@@ -609,7 +636,9 @@ def main():
         config=config,
         log_analyzer_type=args.analyzer,
         mode=args.mode,
-        num_instances=args.num_instances
+        num_instances=args.num_instances,
+        reverse=args.reverse,
+        reload_each=args.reload_each
     )
 
     results = pipeline.process_dataset(dataset)

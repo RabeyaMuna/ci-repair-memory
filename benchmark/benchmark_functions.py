@@ -631,14 +631,23 @@ def _prediction_offsets(patch_file):
         with mmap.mmap(source.fileno(), 0, access=mmap.ACCESS_READ) as data:
             if data[:2] != b"{\n":
                 raise ValueError(f"Expected a pretty-printed JSON object: {patch_file}")
-            marker = b'\n  "'
+            # Try 4-space indentation first, fall back to 2-space
+            marker = b'\n    "'  # 4 spaces
             cursor = data.find(marker)
+            indent_offset = 5  # newline(1) + 4 spaces
+
+            if cursor == -1:
+                # Try 2-space indentation
+                marker = b'\n  "'  # 2 spaces
+                cursor = data.find(marker)
+                indent_offset = 3  # newline(1) + 2 spaces
+
             previous = None
             while cursor != -1:
                 key_end = data.find(b'":', cursor + len(marker))
                 if key_end == -1 or key_end - cursor > 256:
                     raise ValueError(f"Invalid prediction key near byte {cursor}")
-                key = json.loads(data[cursor + 3:key_end + 1])
+                key = json.loads(data[cursor + indent_offset:key_end + 1])
                 value_start = key_end + 2
                 next_cursor = data.find(marker, value_start)
                 if previous is not None:
@@ -683,13 +692,16 @@ def _load_patch_for_datapoint(out_folder, current_id, sha_fail):
             if isinstance(value, dict):
                 value.setdefault("id", match)
                 value.setdefault("sha_fail", match)
+                # Normalize: ensure "diff" field exists (use "patch" if "diff" is missing)
+                if "diff" not in value and "patch" in value:
+                    value["diff"] = value["patch"]
                 records = [value]
             else:
                 records = [{"id": match, "sha_fail": match, "diff": str(value or "")}]
         for record in records:
             if ((ids_match(record.get("id"), current_id) or
                  ids_match(record.get("sha_fail"), sha_fail)) and
-                    record.get("diff", "").strip()):
+                    (record.get("diff", "").strip() or record.get("patch", "").strip())):
                 return record
     return None
 
@@ -712,6 +724,9 @@ def _read_patch_records_from_file(patch_file):
                 patch = dict(value)
                 patch.setdefault("id", key)
                 patch.setdefault("sha_fail", key)
+                # Normalize: ensure "diff" field exists (use "patch" if "diff" is missing)
+                if "diff" not in patch and "patch" in patch:
+                    patch["diff"] = patch["patch"]
             else:
                 patch = {"id": key, "sha_fail": key, "diff": str(value or "")}
             patch_records.append(patch)
@@ -793,7 +808,7 @@ def _record_unapplyable_patch(datapoint, patch_data, check, out_folder):
         "repo_name": datapoint.get("repo_name", ""),
         "sha_fail": datapoint.get("sha_fail", ""),
         "patch_record_id": str(patch_data.get("id", "")),
-        "diff_lines": len((patch_data.get("diff") or "").splitlines()),
+        "diff_lines": len((patch_data.get("diff") or patch_data.get("patch", "")).splitlines()),
         "returncode": check.returncode,
         "git_error": stderr,
         "is_corrupt_patch_error": _is_corrupt_patch_error(stderr),
@@ -845,7 +860,8 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
         from .workflow_patch_validator import validate_and_filter_workflow_changes
 
         print(f"[VALIDATION] Checking for workflow changes in patch for ID {current_id}")
-        original_diff = patch_data["diff"]
+        # Use "patch" field if "diff" doesn't exist
+        original_diff = patch_data.get("diff") or patch_data.get("patch", "")
         filtered_diff, validation_report = validate_and_filter_workflow_changes(
             original_diff,
             datapoint
@@ -865,12 +881,12 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
 
     except ImportError:
         print("[WARN] Workflow validator not available, skipping validation")
-        diff_content = patch_data["diff"]
+        diff_content = patch_data.get("diff") or patch_data.get("patch", "")
     except Exception as e:
         print(f"[WARN] Workflow validation failed: {e}, using original diff")
         import traceback
         traceback.print_exc()
-        diff_content = patch_data["diff"]
+        diff_content = patch_data.get("diff") or patch_data.get("patch", "")
 
     # Write patch to temp file
     # Ensure trailing newline — git apply requires it; missing \n → "corrupt patch"
@@ -894,7 +910,7 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
         print(f"[DEBUG] Git Error:\n{check.stderr.strip()}")
         _record_unapplyable_patch(datapoint, patch_data, check, out_folder)
         # Numbered lines so "corrupt patch at line N" can be pinpointed
-        diff_lines = patch_data["diff"].splitlines()
+        diff_lines = (patch_data.get("diff") or patch_data.get("patch", "")).splitlines()
         print(f"[DEBUG] Patch ({len(diff_lines)} lines):")
         for lineno, line in enumerate(diff_lines, 1):
             print(f"  {lineno:4d} | {line}")
