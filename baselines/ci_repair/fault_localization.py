@@ -900,6 +900,17 @@ FINAL CHECK
                     fault_level=fault_level,
                 )
                 print("\n--- Before Line range ---", line_range)
+
+                # Validate extended range before using it
+                lines = original_content.splitlines()
+                total_lines = len(lines)
+                ext_start, ext_end = extended_range
+
+                # Check if extended range is valid, otherwise keep original
+                if not (1 <= ext_start <= ext_end <= total_lines):
+                    print(f"[WARNING] Extended range {extended_range} is invalid for file with {total_lines} lines. Keeping original range {line_range}.")
+                    extended_range = line_range
+
                 fault["line_range"] = extended_range
 
                 snippet = extract_snippet_from_line_range(

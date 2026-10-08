@@ -37,7 +37,34 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         changed_files_dir = os.path.join(base_dir, changed_files_dir)
     os.makedirs(changed_files_dir, exist_ok=True)  # Create directory if it doesn't exist
 
-    # If your helper needs a token:
+    # Make result_dir absolute if it's relative
+    project_result_dir = config.project_result_dir
+    if base_dir and not os.path.isabs(project_result_dir):
+        project_result_dir = os.path.join(base_dir, project_result_dir)
+    result_dir = os.path.join(
+        project_result_dir, f"{model_key}_{log_analyzer_type}"
+    )
+    os.makedirs(result_dir, exist_ok=True)
+
+    # Load existing results to check what's already been processed
+    existing_log_details_path = os.path.join(result_dir, "log_details.json")
+    existing_fl_path = os.path.join(result_dir, "fault_localization.json")
+    existing_patches_path = os.path.join(result_dir, "generated_patches.json")
+
+    processed_sha_fails = set()
+
+    if os.path.exists(existing_log_details_path):
+        with open(existing_log_details_path, "r") as f:
+            error_details = json.load(f)
+            processed_sha_fails.update(item.get("sha_fail") for item in error_details if item.get("sha_fail"))
+
+    if os.path.exists(existing_fl_path):
+        with open(existing_fl_path, "r") as f:
+            fault_localization = json.load(f)
+
+    if os.path.exists(existing_patches_path):
+        with open(existing_patches_path, "r") as f:
+            generated_patches = json.load(f)
 
     # Determine subset based on num_instances parameter
     if num_instances is not None:
@@ -46,6 +73,8 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
     else:
         subset = dataset
         print(f"[MAIN] Processing all {len(dataset)} instances")
+
+    print(f"[MAIN] Found {len(processed_sha_fails)} already processed instances, will skip those")
     # target_ids = {241, 243, 281, 323}
     # subset = [dp for dp in dataset if dp.get("id") in target_ids]
 
@@ -53,6 +82,12 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         task_id = datapoint["id"]
         repo_name = datapoint["repo_name"]
         repo_owner = datapoint["repo_owner"]
+        sha_fail = datapoint["sha_fail"]
+
+        # Check if this instance was already processed
+        if sha_fail in processed_sha_fails:
+            print(f"\n[MAIN] Skipping already processed commit: {sha_fail} (task_id: {task_id})")
+            continue
 
         # Make paths absolute if they're relative
         baseline_repo_folder = config.baseline_repo_folder
@@ -61,7 +96,6 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         repo_path = os.path.join(baseline_repo_folder, repo_name)
 
         head_branch = datapoint["head_branch"]
-        sha_fail = datapoint["sha_fail"]
         benchmark_owner = config.benchmark_owner
         repo_url = f"https://github.com/{benchmark_owner}/{repo_name}.git"
         logs = datapoint["logs"]
@@ -69,16 +103,7 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         workflow_path = datapoint["workflow_path"]
         sha_success = datapoint["sha_success"]
 
-        # Make result_dir absolute if it's relative
-        project_result_dir = config.project_result_dir
-        if base_dir and not os.path.isabs(project_result_dir):
-            project_result_dir = os.path.join(base_dir, project_result_dir)
-        result_dir = os.path.join(
-            project_result_dir, f"{model_key}_{log_analyzer_type}"
-        )
-        os.makedirs(result_dir, exist_ok=True)
-
-        print(f"\n[MAIN] Proceeding with failed commit: {sha_fail}")
+        print(f"\n[MAIN] Proceeding with failed commit: {sha_fail} (task_id: {task_id})")
 
         # Make sure repo is cloned and at sha_fail
         ensure_repo_at_commit(repo_url, repo_path, sha_fail)
