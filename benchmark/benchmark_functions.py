@@ -225,6 +225,112 @@ def get_repo(datapoint, repos_folder, test_username, benchmark_owner, credential
     return repo, new_branch_name
 
 
+def ensure_all_workflows_enabled(repo_name, credentials, config):
+    """
+    Enable ALL workflows in a repository that are disabled due to inactivity.
+
+    GitHub auto-disables all workflows on inactive forks. This function:
+    1. Lists all workflows in the repository
+    2. Checks each workflow's state (active/disabled/inactive)
+    3. Enables any disabled workflows
+    4. Verifies workflows are enabled after the operation
+
+    Returns:
+        tuple: (success: bool, enabled_count: int)
+               success=True if all workflows are active, False otherwise
+    """
+    token = credentials["token"]
+    headers = {
+        "Authorization": f"token {token}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    # List all workflows in the repository
+    list_url = f"https://api.github.com/repos/{config.benchmark_owner}/{repo_name}/actions/workflows"
+
+    try:
+        # Step 1: Get all workflows
+        response = requests.get(list_url, headers=headers, timeout=20)
+        if not response.ok:
+            print(f"[WARN] Could not list workflows: HTTP {response.status_code}")
+            return False, 0
+
+        data = response.json()
+        workflows = data.get("workflows", [])
+
+        if not workflows:
+            print(f"[INFO] No workflows found in {repo_name}")
+            return True, 0  # No workflows to enable, so success
+
+        # Step 2: Check state and enable disabled workflows
+        print(f"[INFO] Found {len(workflows)} workflow(s) in {repo_name}")
+        enabled_count = 0
+        disabled_workflows = []
+
+        for workflow in workflows:
+            workflow_id = workflow.get("id")
+            workflow_name = workflow.get("name", workflow.get("path", "unknown"))
+            state = workflow.get("state")
+
+            if state == "disabled_inactivity":
+                disabled_workflows.append((workflow_id, workflow_name))
+                print(f"[INFO] Workflow '{workflow_name}' is disabled_inactivity - enabling...")
+
+                # Enable the workflow
+                enable_url = f"https://api.github.com/repos/{config.benchmark_owner}/{repo_name}/actions/workflows/{workflow_id}/enable"
+                enable_response = requests.put(enable_url, headers=headers, timeout=20)
+
+                if enable_response.status_code == 204:
+                    print(f"[OK] Workflow '{workflow_name}' enabled successfully")
+                    enabled_count += 1
+                else:
+                    print(f"[ERROR] Failed to enable workflow '{workflow_name}': HTTP {enable_response.status_code}")
+                    return False, enabled_count
+            elif state == "active":
+                print(f"[OK] Workflow '{workflow_name}' is already active")
+            elif state in ("disabled_manually", "disabled_fork"):
+                print(f"[WARN] Workflow '{workflow_name}' is {state} - cannot auto-enable")
+            else:
+                print(f"[INFO] Workflow '{workflow_name}' state: {state}")
+
+        # Step 3: Verify all workflows are now active (if we enabled any)
+        if enabled_count > 0:
+            print(f"[INFO] Verifying {enabled_count} workflow(s) were enabled...")
+            import time
+            time.sleep(2)  # Brief delay to allow GitHub API to update
+
+            # Re-fetch workflows to verify
+            verify_response = requests.get(list_url, headers=headers, timeout=20)
+            if verify_response.ok:
+                verify_data = verify_response.json()
+                verify_workflows = verify_data.get("workflows", [])
+
+                still_disabled = []
+                for workflow in verify_workflows:
+                    if workflow.get("state") == "disabled_inactivity":
+                        still_disabled.append(workflow.get("name", workflow.get("path", "unknown")))
+
+                if still_disabled:
+                    print(f"[ERROR] {len(still_disabled)} workflow(s) still disabled: {', '.join(still_disabled)}")
+                    return False, enabled_count
+                else:
+                    print(f"[OK] All workflows verified as active in {repo_name}")
+                    return True, enabled_count
+            else:
+                print(f"[WARN] Could not verify workflow states: HTTP {verify_response.status_code}")
+                # Continue anyway - we'll find out when the push happens
+                return True, enabled_count
+        else:
+            print(f"[OK] All {len(workflows)} workflow(s) in {repo_name} are already enabled")
+            return True, 0
+
+    except Exception as e:
+        print(f"[ERROR] Error checking/enabling workflows: {e}")
+        import traceback
+        traceback.print_exc()
+        return False, 0
+
+
 def ensure_workflow_enabled(repo_name, workflow_path, credentials, config):
     """
     Check if a workflow is disabled and enable it if needed.
@@ -491,11 +597,24 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
     # NOTE: This happens AFTER applying the patch to avoid conflicts
     copy_and_edit_workflow_file(datapoint, repo)
 
-    # IMPORTANT: Ensure workflow is enabled before pushing. This is performed
-    # only for datapoints that will actually be submitted.
-    workflow_path = datapoint.get("workflow_path", "")
-    if workflow_path:
-        ensure_workflow_enabled(repo.name, workflow_path, credentials, config)
+    # IMPORTANT: Enable ALL workflows before pushing, not just the target workflow.
+    # GitHub disables ALL workflows on inactive forks, so we need to enable them all
+    # to ensure the test runs properly.
+    print(f"[INFO] Checking and enabling all workflows in {repo.name}...")
+    success, enabled_count = ensure_all_workflows_enabled(repo.name, credentials, config)
+
+    if not success:
+        print(f"[ERROR] Failed to enable all workflows in {repo.name} - skipping push")
+        from datetime import datetime, timezone
+        error_file = os.path.join(config.out_folder, "workflow_enable_failures.jsonl")
+        with open(error_file, "a") as f:
+            f.write(json.dumps({
+                "id": datapoint["id"],
+                "repo_name": repo.name,
+                "reason": "failed_to_enable_workflows",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }) + "\n")
+        return None
 
     # Push the corrected repo
     commit_sha = push_repo(repo, credentials, config.benchmark_owner, user_branch_name)

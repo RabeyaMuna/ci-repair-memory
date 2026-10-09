@@ -147,6 +147,7 @@ class CIFixBenchmark:
         n_attempts = 0
         jobs_results = []
         jobs_ids_invalid = []
+        workflow_enable_attempted = set()  # Track which repos we've tried to enable
 
         print(f"Starting evaluation: {len(jobs_ids_await)} jobs to check")
 
@@ -155,6 +156,32 @@ class CIFixBenchmark:
             print(f"\nCycle {n_attempts}: polling all {len(jobs_ids_await)} jobs")
 
             new_waiting = []
+            start_time = time.time()
+
+            # On first few cycles, try enabling workflows for waiting jobs
+            if n_attempts <= 3:
+                repos_to_enable = set()
+                for job in jobs_ids_await:
+                    repo_name = job.get("repo_name")
+                    if repo_name and repo_name not in workflow_enable_attempted:
+                        repos_to_enable.add(repo_name)
+
+                if repos_to_enable:
+                    from .benchmark_functions import ensure_all_workflows_enabled
+                    print(f"\n[AUTO-ENABLE] Checking {len(repos_to_enable)} repos for disabled workflows...")
+                    for repo_name in repos_to_enable:
+                        try:
+                            success, count = ensure_all_workflows_enabled(
+                                repo_name, self.credentials, self.config
+                            )
+                            workflow_enable_attempted.add(repo_name)
+                            if count > 0:
+                                print(f"  [OK] Enabled {count} workflow(s) in {repo_name}")
+                        except Exception as e:
+                            print(f"  [WARN] Could not enable workflows for {repo_name}: {e}")
+                            workflow_enable_attempted.add(repo_name)
+                    print()
+
             start_time = time.time()
 
             for job_id in jobs_ids_await:
