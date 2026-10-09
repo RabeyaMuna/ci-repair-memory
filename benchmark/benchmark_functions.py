@@ -597,6 +597,27 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
     # NOTE: This happens AFTER applying the patch to avoid conflicts
     copy_and_edit_workflow_file(datapoint, repo)
 
+    # IMPORTANT: Enable GitHub Actions at repository level FIRST
+    # GitHub disables Actions on inactive forks - must enable at repo level before workflows
+    print(f"[INFO] Enabling GitHub Actions for {repo.name}...")
+    try:
+        actions_url = f"https://api.github.com/repos/{config.benchmark_owner}/{repo.name}/actions/permissions"
+        actions_response = requests.put(
+            actions_url,
+            headers={
+                "Authorization": f"token {credentials['token']}",
+                "Accept": "application/vnd.github+json"
+            },
+            json={"enabled": True, "allowed_actions": "all"},
+            timeout=20
+        )
+        if actions_response.status_code in [200, 204]:
+            print(f"[OK] Actions enabled for {repo.name}")
+        else:
+            print(f"[WARN] Could not enable Actions: HTTP {actions_response.status_code}")
+    except Exception as e:
+        print(f"[WARN] Error enabling Actions: {e}")
+
     # IMPORTANT: Enable ALL workflows before pushing, not just the target workflow.
     # GitHub disables ALL workflows on inactive forks, so we need to enable them all
     # to ensure the test runs properly.
