@@ -121,10 +121,19 @@ class LLMTracker:
 
         if not self.calls:
             return {
+                "session_start": self.start_time,
+                "session_end": datetime.now().isoformat(),
                 "total_calls": 0,
+                "successful_calls": 0,
+                "failed_calls": 0,
+                "total_input_tokens": 0,
+                "total_output_tokens": 0,
                 "total_tokens": 0,
-                "total_cost": 0.0,
-                "total_duration": 0.0
+                "total_cost_usd": 0.0,
+                "total_duration_seconds": 0.0,
+                "average_duration_seconds": 0.0,
+                "by_module": {},
+                "by_model": {}
             }
 
         total_calls = len(self.calls)

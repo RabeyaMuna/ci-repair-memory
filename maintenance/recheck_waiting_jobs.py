@@ -361,9 +361,12 @@ for i, job in enumerate(pushed_jobs, 1):
     print(f"[{i}/{total}] Checking {repo} (ID {job_id})...", end=" ", flush=True)
 
     try:
-        job_url, conclusion = get_results(job, bench.config, bench.credentials)
+        job_url, conclusion, timing_metrics = get_results(job, bench.config, bench.credentials)
         job["url"] = job_url
         job["conclusion"] = conclusion
+        # Store timing metrics for each job
+        if timing_metrics:
+            job["timing"] = timing_metrics
         print(f"→ {conclusion}")
     except Exception as e:
         print(f"→ ERROR: {e}")
@@ -458,6 +461,49 @@ print(f"\nCombined results (success+failure) written → {results_file}")
 print(f"[Sanity] Combined row count: {len(combined_results)}")
 
 print(f"\n  Accuracy (success / completed_non_cancelled): {accuracy:.4f} ({accuracy*100:.2f}%)")
+
+# -----------------------------
+# Timing Statistics Summary
+# -----------------------------
+print("\n" + "="*80)
+print(" TIMING STATISTICS")
+print("="*80)
+
+# Collect timing data from all completed jobs
+execution_times = []
+queue_delays = []
+
+for job in normalized:
+    if "timing" in job:
+        timing = job["timing"]
+        if "execution_time_seconds" in timing:
+            execution_times.append(timing["execution_time_seconds"])
+        if "queue_delay_seconds" in timing:
+            queue_delays.append(timing["queue_delay_seconds"])
+
+if execution_times:
+    import statistics
+    print(f"\nExecution Time (seconds):")
+    print(f"  Mean:   {statistics.mean(execution_times):.2f}s")
+    print(f"  Median: {statistics.median(execution_times):.2f}s")
+    print(f"  Max:    {max(execution_times):.2f}s")
+    print(f"  Min:    {min(execution_times):.2f}s")
+    print(f"  Count:  {len(execution_times)} jobs")
+else:
+    print("\nNo execution time data available (jobs may still be running)")
+
+if queue_delays:
+    import statistics
+    print(f"\nQueue Delay (seconds):")
+    print(f"  Mean:   {statistics.mean(queue_delays):.2f}s")
+    print(f"  Median: {statistics.median(queue_delays):.2f}s")
+    print(f"  Max:    {max(queue_delays):.2f}s")
+    print(f"  Min:    {min(queue_delays):.2f}s")
+    print(f"  Count:  {len(queue_delays)} jobs")
+else:
+    print("\nNo queue delay data available")
+
+print("="*80)
 
 # -----------------------------
 # Cancellation Summary

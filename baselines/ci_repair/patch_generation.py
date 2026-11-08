@@ -2,13 +2,11 @@ import os
 import re
 import sys
 import demjson3
-from pathlib import Path
 import json
 import subprocess
 import logging
 import shlex
 import traceback
-import py_compile
 from dotenv import load_dotenv
 from typing import Dict, List, Any, Optional
 from pydantic import BaseModel
@@ -37,107 +35,140 @@ if not logging.getLogger().handlers:
 logger.setLevel(logging.INFO)
 
 automated_commands_available = [
-  {
-    "tool": "ruff",
-    "purpose": (
-      "Unified linter and formatter for Python. "
-      "Can replace flake8/pyflakes/pycodestyle, handle many import issues, "
-      "and format code (similar to black)."
-    ),
-    "install_command": "pip install ruff",
-    "check_command": "ruff check {{file_or_dir}}",
-    "fix_command": "ruff check --fix {{file_or_dir}}",
-    "format_command": "ruff format {{file_or_dir}}",
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "black",
-    "purpose": "Code formatter enforcing uniform style and indentation",
-    "install_command": "pip install black",
-    "check_command": "black --check {{file_or_dir}}",
-    "fix_command": "black {{file_or_dir}}",
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "isort",
-    "purpose": "Sort and group imports automatically",
-    "install_command": "pip install isort",
-    "check_command": "isort --check-only {{file_or_dir}}",
-    "fix_command": "isort {{file_or_dir}}",
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "flake8",
-    "purpose": "Linting tool for style and logical errors (PEP8, unused imports, etc.)",
-    "install_command": "pip install flake8",
-    "check_command": "flake8 {{file_or_dir}}",
-    "fix_command": "ruff check --fix {{file_or_dir}}",  # delegate fixes to Ruff
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "autopep8",
-    "purpose": "Automatically formats Python code to be PEP8 compliant",
-    "install_command": "pip install autopep8",
-    "check_command": "autopep8 --diff {{file_or_dir}}",
-    "fix_command": "autopep8 --in-place --aggressive {{file_or_dir}}",
-    "file_pattern": "*.py"
-  },
-  {
+    {
+        "tool": "ruff",
+        "purpose": "Unified Python linter and formatter (combines flake8, isort, black)",
+        "install_command": "pip install ruff",
+        "fix_command": "ruff check --fix {{file_or_dir}}",
+        "format_command": "ruff format {{file_or_dir}}",
+        "file_pattern": "*.py",
+        "fixes": ["linting errors", "import sorting, order, grouping", "code formatting"],
+    },
+    {
+        "tool": "black",
+        "purpose": "Python code formatter (opinionated, PEP 8 compliant)",
+        "install_command": "pip install black",
+        "fix_command": "black {{file_or_dir}}",
+        "file_pattern": "*.py",
+        "fixes": ["code formatting", "line length", "indentation"],
+    },
+    {
+        "tool": "docstrfmt",
+        "purpose": "RST file formatter (mainly for .rst documentation files, also formats RST in docstrings)",
+        "install_command": "pip install docstrfmt",
+        "fix_command": "docstrfmt {{file_or_dir}}",
+        "file_pattern": ["*.rst", "*.py"],
+        "fixes": ["RST heading style", "RST formatting", "RST syntax"],
+        "note": "Primarily for *.rst files. For Python docstrings use docformatter instead.",
+    },
+    {
+        "tool": "docformatter",
+        "purpose": "Python docstring formatter (PEP 257 compliant, for docstrings inside .py files)",
+        "install_command": "pip install docformatter",
+        "fix_command": "docformatter --in-place --recursive {{file_or_dir}}",
+        "file_pattern": "*.py",
+        "fixes": ["docstring formatting", "PEP 257 compliance", "docstring wrapping"],
+        "note": "For Python docstrings. For RST files use docstrfmt instead.",
+    },
+    {
+        "tool": "mdformat",
+        "purpose": "Markdown file formatter",
+        "install_command": "pip install mdformat",
+        "fix_command": "python -m mdformat {{file_or_dir}}",
+        "file_pattern": "*.md",
+        "fixes": ["markdown formatting", "heading style", "list formatting"],
+    },
+    {
+        "tool": "codespell",
+        "purpose": "Spell checker for code and documentation",
+        "install_command": "pip install codespell",
+        "fix_command": "codespell -w {{file_or_dir}}",
+        "file_pattern": ["*.py", "*.md", "*.rst", "*.txt"],
+        "fixes": ["spelling errors", "typos"],
+    },
+    {
+        "tool": "taplo",
+        "purpose": "TOML file formatter",
+        "install_command": "cargo install taplo-cli",
+        "fix_command": "taplo fmt {{file_or_dir}}",
+        "file_pattern": "*.toml",
+        "fixes": ["TOML formatting", "pyproject.toml formatting"],
+        "note": "Requires Rust/Cargo to install",
+    },
+    {
+        "tool": "autopep8",
+        "purpose": "Python code formatter (less opinionated than black)",
+        "install_command": "pip install autopep8",
+        "fix_command": "autopep8 --in-place --recursive {{file_or_dir}}",
+        "file_pattern": "*.py",
+        "fixes": ["PEP 8 violations", "code formatting"],
+    },
+    {
+        "tool": "autoflake",
+        "purpose": "Removes unused imports and variables",
+        "install_command": "pip install autoflake",
+        "fix_command": "autoflake --in-place --remove-all-unused-imports --recursive {{file_or_dir}}",
+        "file_pattern": "*.py",
+        "fixes": ["unused imports", "unused variables"],
+    },
+    {
+    "tool": "yamllint",
+    "purpose": "YAML linter for syntax, indentation, whitespace, and style violations",
+    "install_command": "pip install yamllint",
+    "fix_command": None,
+    "file_pattern": ["*.yml", "*.yaml"],
+    "fixes": [],
+    "note": "Detects YAML violations but does not automatically modify files.",
+},
+{
+    "tool": "yamlfmt",
+    "purpose": "YAML formatter",
+    "install_command": "go install github.com/google/yamlfmt/cmd/yamlfmt@latest",
+    "fix_command": "yamlfmt {{file_or_dir}}",
+    "file_pattern": ["*.yml", "*.yaml"],
+    "fixes": [
+        "YAML formatting",
+        "indentation",
+        "trailing whitespace",
+    ],
+},
+{
+    "tool": "prettier",
+    "purpose": "YAML, JSON, Markdown, and other file formatter",
+    "install_command": "npm install -g prettier",
+    "fix_command": "prettier --write {{file_or_dir}}",
+    "file_pattern": ["*.yml", "*.yaml", "*.json", "*.md"],
+    "fixes": [
+        "YAML indentation",
+        "trailing whitespace",
+        "YAML formatting",
+        "YAML style"
+    ],
+    "note": "Can automatically format GitHub Actions workflow YAML files.",
+},
+{
     "tool": "yapf",
-    "purpose": "Code formatter (alternative to black/autopep8)",
+    "purpose": "Python code formatter",
     "install_command": "pip install yapf",
-    "check_command": "yapf --diff {{file_or_dir}}",
     "fix_command": "yapf -i {{file_or_dir}}",
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "pylint",
-    "purpose": "Comprehensive linter for detecting code smells and logical issues",
-    "install_command": "pip install pylint",
-    "check_command": "pylint {{file_or_dir}}",
-    "fix_command": "ruff check --fix {{file_or_dir}}",  # fixes delegated to Ruff
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "mypy",
-    "purpose": "Static type checker for Python",
-    "install_command": "pip install mypy",
-    "check_command": "mypy {{file_or_dir}}",
-    "fix_command": "",
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "pytest",
-    "purpose": "Run unit and integration tests",
-    "install_command": "pip install pytest",
-    "check_command": "pytest {{file_or_dir}}",
-    "fix_command": "",
-    "file_pattern": "tests/*.py"
-  },
-  {
-    "tool": "bandit",
-    "purpose": "Security linter (checks for hardcoded secrets, dangerous calls, etc.)",
-    "install_command": "pip install bandit",
-    "check_command": "bandit -r {{file_or_dir}}",
-    "fix_command": "",
-    "file_pattern": "*.py"
-  },
-  {
-    "tool": "codespell",
-    "purpose": "Spell checker for comments and docstrings",
-    "install_command": "pip install codespell",
-    "check_command": "codespell {{file_or_dir}}",
-    "fix_command": "codespell -w {{file_or_dir}}",
-    "file_pattern": ["*.py", "*.md", "*.rst"]
-  },
-  {
-    "tool": "docformatter",
-    "purpose": "Format docstrings to follow PEP 257 conventions",
-    "install_command": "pip install docformatter",
-    "check_command": "docformatter --check {{file_or_dir}}",
-    "fix_command": "docformatter --in-place {{file_or_dir}}",
-    "file_pattern": "*.py"
-  }
+    "file_pattern": "*.py",
+    "fixes": ["code formatting", "style violations"],
+},
+{
+    "tool": "pre-commit-black-jupyter",
+    "purpose": "Update and run the Black Jupyter notebook pre-commit hook",
+    "install_command": "pre-commit install",
+    "fix_command": (
+        "pre-commit autoupdate && "
+        "pre-commit clean && "
+        "pre-commit run black-jupyter --all-files"
+    ),
+    "file_pattern": "*.ipynb",
+    "fixes": [
+        "Jupyter notebook formatting",
+        "Black pre-commit hook compatibility",
+    ],
+},
 ]
 
 
@@ -186,15 +217,44 @@ class PatchGeneration:
     def _call_llm_directly(self, prompt: str) -> Any:
         try:
             response = self.llm.invoke([HumanMessage(content=prompt)]).content.strip()
+
+            # Try to extract JSON from markdown code blocks first
             match = re.search(r"```(?:json)?\s*\n(.*?)```", response, re.DOTALL)
-            extracted = match.group(1).strip() if match else response
-            
+            if match:
+                extracted = match.group(1).strip()
+            else:
+                # Try to find JSON array or object in the response
+                # Look for outermost [...] or {...}
+                array_match = re.search(r'(\[.*\])', response, re.DOTALL)
+                object_match = re.search(r'(\{.*\})', response, re.DOTALL)
+
+                # Use whichever match comes first in the response
+                if array_match and object_match:
+                    if array_match.start() < object_match.start():
+                        extracted = array_match.group(1)
+                    else:
+                        extracted = object_match.group(1)
+                elif array_match:
+                    extracted = array_match.group(1)
+                elif object_match:
+                    extracted = object_match.group(1)
+                else:
+                    extracted = response
+
+            # Try standard json.loads first
             try:
                 data = json.loads(extracted)
-            except Exception:
-                data = demjson3.decode(extracted)
-
-            return data
+                return data
+            except json.JSONDecodeError as json_err:
+                # If json.loads fails, try demjson3 which is more lenient
+                logger.debug(f"json.loads failed: {json_err}, trying demjson3")
+                try:
+                    data = demjson3.decode(extracted)
+                    return data
+                except Exception as demjson_err:
+                    logger.error(f"Both json.loads and demjson3 failed")
+                    logger.debug(f"Extracted content:\n{extracted[:1000]}")
+                    raise demjson_err
 
         except Exception as e:
             logger.error(f"Failed to parse LLM response: {e}")
@@ -419,7 +479,13 @@ Rules:
 
 
     def _try_automated_fix(self, faults: List[Dict[str, Any]], full_path: str) -> bool:
-        """Try to fix the file automatically using appropriate tools (ruff, black, isort, etc.)"""
+        """Try to fix the file automatically using appropriate tools (ruff, black, isort, etc.)
+
+        DISABLED: Automated fixes often create massive whole-file reformatting diffs
+        that don't fix the actual bug. Rely on targeted LLM patches instead.
+        """
+        return False  # Skip automated fixes to avoid massive formatting diffs
+
         pyproject_cfg = self._load_pyproject()
         TOKEN_LIMIT = get_prompt_token_budget(self.model_name)
 
@@ -483,92 +549,64 @@ Rules:
             logger.warning(f"No automated commands returned for automated fix in {full_path}")
             return False
         
-        # ---- Execute install commands (with trusted-host fallback) ----
-                # ---- Execute install commands (no sys.executable; trusted-host fallback) ----
+        # Setup venv for running commands
+        venv_dir = self._ensure_venv_and_gitignore()
+        if not venv_dir:
+            logger.warning("Could not setup venv for automated fixes")
+            return False
+
+        # Get venv python/pip
+        if sys.platform == "win32":
+            venv_python = os.path.join(venv_dir, "Scripts", "python.exe")
+            venv_pip = os.path.join(venv_dir, "Scripts", "pip.exe")
+        else:
+            venv_python = os.path.join(venv_dir, "bin", "python")
+            venv_pip = os.path.join(venv_dir, "bin", "pip")
+
+        # ---- Execute install commands in venv ----
         for cmd in results["installation_commands"]:
             try:
-                logger.info(f"Installing tool: {cmd}")
+                logger.info(f"Installing in venv: {cmd}")
                 tokens = shlex.split(cmd)
 
-                # 1) Try original command as returned (e.g., "pip install docformatter")
-                try:
-                     # --- IGNORE ---
-                    proc = subprocess.run(
-                        tokens,
-                        cwd=self.repo_path,
-                        capture_output=True,
-                        text=True,
-                        timeout=120,
-                    )
-                except FileNotFoundError:
-                    # e.g., 'pip' not found -> try python -m pip install ...
-                    if len(tokens) >= 3 and tokens[0] == "pip" and tokens[1] == "install":
-                        pkgs = tokens[2:]
-                        fallback = ["python", "-m", "pip", "install"] + pkgs
-                        logger.info(f"'pip' not found; retrying via: {' '.join(fallback)}")
-                        proc = subprocess.run(
-                            fallback,
-                            cwd=self.repo_path,
-                            capture_output=True,
-                            text=True,
-                            timeout=120,
-                        )
-                    else:
-                        raise
+                # Replace 'pip install' with venv pip
+                if len(tokens) >= 2 and tokens[0] == "pip" and tokens[1] == "install":
+                    pkgs = tokens[2:]
+                    install_cmd = [venv_pip, "install"] + pkgs
+                else:
+                    # Other commands run with venv python
+                    install_cmd = [venv_python, "-m"] + tokens
 
-                if proc.returncode == 0:
-                    logger.info(f"Tool installation succeeded: {cmd}")
-                    continue
-
-                logger.warning(
-                    f"Tool installation failed (normal): {cmd}\n"
-                    f"Return code: {proc.returncode}\n"
-                    f"STDOUT:\n{proc.stdout}\n"
-                    f"STDERR:\n{proc.stderr}"
+                proc = subprocess.run(
+                    install_cmd,
+                    cwd=self.repo_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
                 )
 
-                # 2) If it's a pip install, retry with trusted-host (still NOT sys.executable)
-                if len(tokens) >= 3 and tokens[0] == "pip" and tokens[1] == "install":
-                    pkgs = tokens[2:]
-                    retry_cmd = (
-                        ["python", "-m", "pip", "install",
-                         "--trusted-host", "pypi.org",
-                         "--trusted-host", "files.pythonhosted.org"]
-                        + pkgs
-                    )
-                    logger.info(f"Retrying with trusted-host: {' '.join(retry_cmd)}")
-
-                    proc2 = subprocess.run(
-                        retry_cmd,
-                        cwd=self.repo_path,
-                        capture_output=True,
-                        text=True,
-                        timeout=120,
-                    )
-                    if proc2.returncode == 0:
-                        logger.info(f"Tool installation succeeded (trusted-host): {cmd}")
-                    else:
-                        logger.warning(
-                            f"Tool installation failed (trusted-host): {cmd}\n"
-                            f"Return code: {proc2.returncode}\n"
-                            f"STDOUT:\n{proc2.stdout}\n"
-                            f"STDERR:\n{proc2.stderr}"
-                        )
+                if proc.returncode == 0:
+                    logger.info(f"✓ Installed: {cmd}")
+                else:
+                    logger.warning(f"Install failed: {cmd}\n{proc.stderr}")
 
             except Exception as e:
-                logger.error(f"Tool installation errored ({cmd}): {e}")
-                self._save_interrupted_patch_error("_try_automated_fix:install", full_path, e, extra={"cmd": cmd})
-                logger.exception("Tool installation errored (%s: %s) cmd=%r", type(e).__name__, e, cmd)
+                logger.error(f"Install error ({cmd}): {e}")
 
+        # ---- Execute fix commands in venv ----
+        # Read original content before fixes
+        original_before_fix = self._read_file(full_path)
 
-
-        # ---- Execute fix commands ----
-        any_success = False
         for cmd in results["fix_commands"]:
             try:
-                logger.info(f"Running automated fix command: {cmd}")
+                logger.info(f"Running fix in venv: {cmd}")
+                tokens = shlex.split(cmd)
+
+                # Run command with venv python
+                fix_cmd = [venv_python, "-m"] + tokens
+
                 fix_proc = subprocess.run(
-                    shlex.split(cmd),
+                    fix_cmd,
                     cwd=self.repo_path,
                     capture_output=True,
                     text=True,
@@ -576,17 +614,81 @@ Rules:
                 )
 
                 if fix_proc.returncode == 0:
-                    logger.info(f"Automated fix succeeded: {cmd}")
-                    any_success = True
+                    logger.info(f"✓ Fix succeeded: {cmd}")
                 else:
-                    logger.warning(f"Command failed: {cmd}\n{fix_proc.stderr}")
+                    logger.warning(f"Fix failed: {cmd}\n{fix_proc.stderr}")
+
             except Exception as e:
-                self._save_interrupted_patch_error("_try_automated_fix:fix", full_path, e, extra={"cmd": cmd})
-                logger.error(f"Failed running command {cmd}: {e}")
+                logger.error(f"Fix error ({cmd}): {e}")
 
-        # If automated fix succeeded, return True so caller skips LLM fallback
-        return any_success
+        # Check if file actually changed
+        modified_after_fix = self._read_file(full_path)
+        file_changed = modified_after_fix != original_before_fix
 
+        if not file_changed:
+            logger.info(f"Automated fix ran but file unchanged, falling back to LLM")
+
+        return file_changed
+
+
+    def _llm_git_diff_prompt(self, *, file_path: str, full_path: str, file_content: str, faults_payload: Any, outline: str) -> str:
+        """Prompt LLM to generate a git diff patch (MiniSWE-Agent approach)."""
+        return f"""
+You are a Senior Software Engineer responsible for fixing code faults in CI failures.
+Generate a git diff format patch to fix the issues described below.
+
+---
+
+### FILE TO FIX
+File: {file_path}
+Path: {full_path}
+
+### FILE CONTENT
+```
+{file_content}
+```
+
+### FILE OUTLINE (if applicable)
+{outline}
+
+### FAULT LOCALIZATION DATA
+{json.dumps(faults_payload, indent=2)}
+
+### FAILED JOB CONTEXT
+{json.dumps(self.error_details.get("failed_job", {}), indent=2)}
+
+---
+
+### INSTRUCTIONS
+1. Analyze the faults and determine the minimal changes needed to fix them
+2. Generate a COMPLETE git diff patch in standard unified diff format
+3. The patch MUST be applicable with `git apply`
+4. Include context lines (3 lines before/after changes)
+5. Preserve exact indentation and line endings
+6. If no changes needed, return "NO_CHANGES_NEEDED"
+
+### REQUIRED FORMAT
+Your response must be ONLY the git diff patch, starting with:
+```
+diff --git a/{file_path} b/{file_path}
+index <hash>..<hash> <mode>
+--- a/{file_path}
++++ b/{file_path}
+@@ -<start>,<count> +<start>,<count> @@
+ <context lines>
+-<removed lines>
++<added lines>
+ <context lines>
+```
+
+Do NOT include:
+- Explanations or comments
+- Markdown fences (```diff)
+- Multiple file diffs (only fix THIS file)
+- Any text before or after the diff
+
+If no changes are needed, respond with exactly: NO_CHANGES_NEEDED
+""".strip()
 
     def _llm_patch_prompt(self, *, full_path: str, faults_payload: Any, outline: str) -> str:
         return f"""
@@ -637,9 +739,118 @@ Rules:
     ]
     """.strip()
 
+    def _apply_git_diff_patch(self, diff_content: str) -> bool:
+        """Apply a git diff patch using git apply (MiniSWE-Agent approach)."""
+        try:
+            # Clean up diff content
+            diff = diff_content.strip()
+
+            # Check if no changes needed
+            if diff == "NO_CHANGES_NEEDED" or not diff:
+                logger.info("LLM indicated no changes needed")
+                return False
+
+            # Remove markdown fences if present
+            if diff.startswith("```"):
+                lines = diff.split("\n")
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                diff = "\n".join(lines)
+
+            # Validate it looks like a git diff
+            if not diff.startswith("diff --git"):
+                logger.warning(f"Response doesn't look like a git diff: {diff[:100]}")
+                return False
+
+            # Write diff to temporary file
+            import tempfile
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.patch', delete=False) as f:
+                f.write(diff)
+                patch_file = f.name
+
+            try:
+                # Try to apply the patch
+                result = subprocess.run(
+                    ["git", "apply", "--check", patch_file],
+                    cwd=self.repo_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+
+                if result.returncode != 0:
+                    logger.warning(f"Patch validation failed: {result.stderr}")
+                    return False
+
+                # Apply the patch
+                result = subprocess.run(
+                    ["git", "apply", patch_file],
+                    cwd=self.repo_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                    check=True
+                )
+
+                logger.info("✓ Git diff patch applied successfully")
+                return True
+
+            finally:
+                # Clean up temp file
+                try:
+                    os.unlink(patch_file)
+                except:
+                    pass
+
+        except Exception as e:
+            logger.error(f"Error applying git diff patch: {e}")
+            return False
+
     # =========================================================
     # ------------------- LLM PATCH FIX ------------------------
     # =========================================================
+
+    def _generate_git_diff_patch(
+        self,
+        faults: List[Dict[str, Any]],
+        file_path: str,
+        full_path: str,
+        original_content: str,
+    ) -> bool:
+        """
+        Generate and apply patch using git diff format (MiniSWE-Agent approach).
+        Works for ALL file types including notebooks, YAML, JSON, requirements.txt, etc.
+        """
+        outline = get_outline_for_file(full_path) or "No outline available."
+
+        # Build prompt for git diff
+        prompt = self._llm_git_diff_prompt(
+            file_path=file_path,
+            full_path=full_path,
+            file_content=original_content,
+            faults_payload=faults,
+            outline=outline
+        )
+
+        try:
+            # Call LLM to generate diff
+            response = self.llm.invoke(prompt).content.strip()
+
+            logger.info(f"Git diff approach for {file_path}")
+
+            # Apply the diff
+            if self._apply_git_diff_patch(response):
+                logger.info(f"✓ Git diff patch applied to {file_path}")
+                return True
+            else:
+                logger.warning(f"Git diff patch failed for {file_path}")
+                return False
+
+        except Exception as e:
+            logger.error(f"Error in git diff patch generation for {file_path}: {e}")
+            return False
 
     def _generate_llm_patch(
     self,
@@ -821,25 +1032,131 @@ Rules:
     def _replace_snippet_in_code(
         self, code: str, original_snippet: str, fixed_snippet: str
     ) -> str:
-        """Replace a snippet of code safely with normalization."""
+        """Replace a snippet of code safely with normalization and fuzzy matching."""
         if not original_snippet.strip():
             return code
 
+        # 1. Try exact match
         if original_snippet in code:
             return code.replace(original_snippet, fixed_snippet, 1)
 
+        # 2. Try normalized match (strip trailing whitespace)
         norm_code = "\n".join(line.rstrip() for line in code.splitlines())
         norm_snippet = "\n".join(line.rstrip() for line in original_snippet.splitlines())
         if norm_snippet in norm_code:
             logger.info("Snippet found via normalized search.")
             return norm_code.replace(norm_snippet, fixed_snippet, 1)
 
-        logger.debug("Snippet not found after normalization.")
+        # 3. Fallback: Try fuzzy matching
+        try:
+            from difflib import SequenceMatcher
+
+            snippet_lines = original_snippet.splitlines()
+            code_lines = code.splitlines()
+
+            if not snippet_lines:
+                return code
+
+            best_ratio = 0.0
+            best_start = -1
+            snippet_len = len(snippet_lines)
+
+            # Sliding window to find best match
+            for i in range(len(code_lines) - snippet_len + 1):
+                window = code_lines[i:i + snippet_len]
+                matcher = SequenceMatcher(None, snippet_lines, window)
+                ratio = matcher.ratio()
+
+                if ratio > best_ratio:
+                    best_ratio = ratio
+                    best_start = i
+
+            # Apply if similarity is high enough (85%+)
+            if best_ratio >= 0.85 and best_start >= 0:
+                logger.info(f"Snippet found via fuzzy match (similarity: {best_ratio:.2%})")
+
+                # Replace the matched section
+                fixed_lines = fixed_snippet.splitlines()
+                new_lines = (
+                    code_lines[:best_start] +
+                    fixed_lines +
+                    code_lines[best_start + snippet_len:]
+                )
+                return "\n".join(new_lines)
+
+            logger.debug(f"Fuzzy match failed (best similarity: {best_ratio:.2%})")
+
+        except Exception as e:
+            logger.debug(f"Fuzzy matching error: {e}")
+
         return code
+
+    def _write_notebook_with_patches(self, notebook_path: str, patched_code: str) -> bool:
+        """Write patched code back to notebook cells."""
+        try:
+            # Load original notebook
+            with open(notebook_path, "r", encoding="utf-8") as f:
+                notebook = json.load(f)
+
+            # Parse patched code into cells
+            # Format: # Cell N\ncode\n\n# Cell N+1\ncode...
+            cell_blocks = []
+            current_cell_code = []
+
+            for line in patched_code.split("\n"):
+                if line.startswith("# Cell "):
+                    # Start of new cell
+                    if current_cell_code:
+                        cell_blocks.append("\n".join(current_cell_code).strip())
+                        current_cell_code = []
+                elif line.strip() or current_cell_code:  # Skip leading empty lines
+                    current_cell_code.append(line)
+
+            # Don't forget the last cell
+            if current_cell_code:
+                cell_blocks.append("\n".join(current_cell_code).strip())
+
+            # Update notebook cells with patched code
+            code_cell_idx = 0
+            cells = notebook.get("cells", [])
+
+            for cell in cells:
+                if cell.get("cell_type") == "code":
+                    if code_cell_idx < len(cell_blocks):
+                        # Convert patched code to notebook source format
+                        patched_source = cell_blocks[code_cell_idx]
+
+                        # Split into lines with preserved newlines (notebook format)
+                        if patched_source:
+                            source_lines = [line + "\n" for line in patched_source.split("\n")]
+                            # Remove \n from last line
+                            if source_lines:
+                                source_lines[-1] = source_lines[-1].rstrip("\n")
+                            cell["source"] = source_lines
+                        else:
+                            cell["source"] = []
+
+                        code_cell_idx += 1
+
+            # Write updated notebook
+            with open(notebook_path, "w", encoding="utf-8") as f:
+                json.dump(notebook, f, indent=1, ensure_ascii=False)
+
+            logger.info(f"Updated notebook written successfully: {notebook_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to write notebook {notebook_path}: {e}")
+            return False
 
     def _write_updated_file(self, full_path: str, content: str) -> bool:
         """Write updated content to disk with newline normalization."""
         try:
+            # Special handling for Jupyter notebooks
+            if full_path.endswith('.ipynb'):
+                return self._write_notebook_with_patches(full_path, content)
+
+            # Regular file writing
             with open(full_path, "w", encoding="utf-8") as f:
                 for line in content.splitlines(keepends=True):
                     f.write(line if line.endswith("\n") else line + "\n")
@@ -878,17 +1195,27 @@ Rules:
             automated_ok = self._try_automated_fix(faults, full_path)
 
             if not automated_ok:
-                logger.info(f"Falling back to LLM patch for {file_path}")
-                patched_applied = self._generate_llm_patch(
+                # 2) Try git diff approach (works for all file types)
+                logger.info(f"Trying git diff approach for {file_path}")
+                patched_applied = self._generate_git_diff_patch(
                     faults, file_path, full_path, original
                 )
 
-                # Only if LLM actually changed the file do we consider running Ruff
-                if patched_applied:
-                    self._safe_format_python(full_path)
+                # 3) Fallback to snippet-based if git diff fails
+                if not patched_applied:
+                    logger.info(f"Git diff failed, falling back to snippet-based patch for {file_path}")
+                    patched_applied = self._generate_llm_patch(
+                        faults, file_path, full_path, original
+                    )
+
+                # Skip formatting to avoid massive whole-file diffs
+                # The LLM should generate targeted fixes only
+                # if patched_applied and full_path.endswith('.py'):
+                #     self._simple_format_python(full_path)
 
             modified_content = self._read_file(full_path)
 
+            # Check if file was actually modified
             if modified_content != original:
                 self.patch_results.append(
                     {
@@ -899,16 +1226,22 @@ Rules:
                         "fix_method": "automated_or_llm",
                     }
                 )
+                logger.info(f"✓ Successfully modified: {file_path}")
+            else:
+                # File unchanged - revert any partial changes to keep repo clean
+                logger.warning(f"File unchanged, reverting any partial changes: {file_path}")
+                try:
+                    subprocess.run(
+                        ["git", "checkout", "HEAD", "--", file_path],
+                        cwd=self.repo_path,
+                        capture_output=True,
+                        timeout=30
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not revert {file_path}: {e}")
 
         return self.patch_results
     
-    def _ruff_config_error(self, out: str) -> bool:
-        s = (out or "").lower()
-        return (
-            ("failed to parse" in s and "pyproject.toml" in s)
-            or "unknown rule selector" in s
-            or "toml parse error" in s
-        )
 
     def _run_cmd(self, cmd: List[str], timeout: int = 300) -> subprocess.CompletedProcess:
         return subprocess.run(
@@ -919,164 +1252,88 @@ Rules:
             timeout=timeout,
         )
 
-    def _safe_format_python(self, full_path: str) -> None:
-        """Format a Python file respecting project settings when possible; never hard-fail."""
-        if Path(full_path).suffix != ".py":
+    def _ensure_venv_and_gitignore(self) -> str:
+        """
+        Create/use virtual environment: venv-{repo_name}
+        No pyproject.toml checks needed - isolated venv handles everything.
+        Returns path to venv directory.
+        """
+        # Use format: venv-{repo_name}
+        repo_name = os.path.basename(self.repo_path)
+        venv_name = f"venv-{repo_name}"
+        venv_dir = os.path.join(self.repo_path, venv_name)
+
+        # Reuse if exists, create if not
+        if os.path.exists(venv_dir):
+            logger.info(f"Reusing existing venv: {venv_name}")
+        else:
+            logger.info(f"Creating venv: {venv_name}")
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "venv", venv_dir],
+                    cwd=self.repo_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=120,
+                    check=True
+                )
+                logger.info(f"✓ Created venv: {venv_name}")
+            except subprocess.CalledProcessError as e:
+                logger.warning(f"Failed to create venv: {e.stderr}")
+                return None
+
+        # Ensure venv pattern is in .gitignore (won't be staged/committed)
+        gitignore_path = os.path.join(self.repo_path, ".gitignore")
+
+        # Read existing .gitignore
+        existing_content = ""
+        if os.path.exists(gitignore_path):
+            with open(gitignore_path, 'r') as f:
+                existing_content = f.read()
+
+        # Add venv-*/ pattern if not already there
+        if "venv-" not in existing_content:
+            with open(gitignore_path, 'a') as f:
+                f.write(f"\n# CI venv (not committed)\nvenv-*/\n")
+            logger.info(f"Added venv-*/ to .gitignore")
+
+        return venv_dir
+
+    def _simple_format_python(self, full_path: str) -> None:
+        """Simple formatting: pip install ruff, then ruff format. Ignore if not applicable."""
+        if not full_path.endswith('.py'):
             return
 
-        tools_dir = os.path.join(self.repo_path, ".ci_tools")
-        os.makedirs(tools_dir, exist_ok=True)
+        venv_dir = self._ensure_venv_and_gitignore()
+        if not venv_dir:
+            return
 
-        def _run_py_module(module: str, args: List[str], timeout: int = 300) -> subprocess.CompletedProcess:
-            """Run `python -m module ...` with repo-local PYTHONPATH and cwd=self.repo_path."""
-            env = os.environ.copy()
-            env["PYTHONPATH"] = tools_dir + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+        # Get venv paths
+        if sys.platform == "win32":
+            venv_pip = os.path.join(venv_dir, "Scripts", "pip.exe")
+            venv_python = os.path.join(venv_dir, "Scripts", "python.exe")
+        else:
+            venv_pip = os.path.join(venv_dir, "bin", "pip")
+            venv_python = os.path.join(venv_dir, "bin", "python")
 
-            return subprocess.run(
-                [sys.executable, "-m", module] + args,
-                cwd=self.repo_path,
-                env=env,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-            )
-
-        def _pip_install_repo_local(pkgs: List[str], timeout: int = 300) -> bool:
-            """Install packages into repo-local tools_dir using --target."""
-            cmd = [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "--no-input",
-                "--disable-pip-version-check",
-                "--target",
-                tools_dir,
-            ] + pkgs
-
-            proc = subprocess.run(
-                cmd,
-                cwd=self.repo_path,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-            )
-
-            if proc.returncode == 0:
-                return True
-
-            # optional trusted-host retry (keeps same repo-local target)
-            cmd_retry = cmd[:]
-            cmd_retry.insert(cmd_retry.index("install") + 1, "--trusted-host")
-            cmd_retry.insert(cmd_retry.index("install") + 2, "pypi.org")
-            cmd_retry.insert(cmd_retry.index("install") + 3, "--trusted-host")
-            cmd_retry.insert(cmd_retry.index("install") + 4, "files.pythonhosted.org")
-
-            proc2 = subprocess.run(
-                cmd_retry,
-                cwd=self.repo_path,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-            )
-            if proc2.returncode != 0:
-                logger.warning(
-                    f"Repo-local pip install failed for {pkgs}\n"
-                    f"STDERR:\n{proc2.stderr}\nSTDOUT:\n{proc2.stdout}"
-                )
-                return False
-
-            return True
-
-        # --------------------
-        # 1) Try Ruff first
-        # --------------------
         try:
-            if _pip_install_repo_local(["ruff"], timeout=300):
-                check = _run_py_module("ruff", ["check", full_path], timeout=300)
-                combined = (check.stdout or "") + "\n" + (check.stderr or "")
+            # Install ruff (ignore if fails)
+            subprocess.run(
+                [venv_pip, "install", "-q", "ruff"],
+                cwd=self.repo_path,
+                capture_output=True,
+                timeout=300
+            )
 
-                # Your helper catches parse/config errors (like TC001 / TOML issues)
-                if self._ruff_config_error(combined):
-                    logger.warning(
-                        "Skipping Ruff due to Ruff config/pyproject parse error:\n"
-                        f"{check.stderr}"
-                    )
-                else:
-                    # 0) Never run formatters on invalid Python (prevents "corruption" cases)
-                    try:
-                        py_compile.compile(full_path, doraise=True)
-                    except Exception as e:
-                        logger.warning(f"Skipping formatting; invalid Python: {full_path}\n{e}")
-                        return
-
-                    # 1) OPTIONAL: attempt safe autofixes (won't rename vars; may still return 1)
-                    fix = _run_py_module(
-                        "ruff", ["check", "--force-exclude", "--fix", full_path], timeout=300
-                    )
-                    if fix.returncode != 0 and (fix.stdout or fix.stderr):
-                        # Not fatal for formatting; Ruff puts diagnostics in STDOUT.
-                        logger.info(
-                            f"Ruff check --fix reported remaining issues for {full_path} (rc={fix.returncode}):\n"
-                            f"STDOUT:\n{fix.stdout}\nSTDERR:\n{fix.stderr}"
-                        )
-
-                    # 2) Format (this is what fixes indentation/line breaks)
-                    fmt = _run_py_module(
-                        "ruff", ["format", "--force-exclude", full_path], timeout=300
-                    )
-                    if fmt.returncode != 0:
-                        logger.warning(
-                            f"Ruff format failed for {full_path}:\nSTDOUT:\n{fmt.stdout}\nSTDERR:\n{fmt.stderr}"
-                        )
-                        return
-
-                    # 3) Imports-only fix (keeps imports grouped at top; doesn't touch variables)
-                    imp = _run_py_module(
-                        "ruff", ["check", "--select", "I", "--fix", "--force-exclude", full_path], timeout=300
-                    )
-                    if imp.returncode != 0 and (imp.stdout or imp.stderr):
-                        logger.info(
-                            f"Ruff import pass reported issues for {full_path} (rc={imp.returncode}):\n"
-                            f"STDOUT:\n{imp.stdout}\nSTDERR:\n{imp.stderr}"
-                        )
-
-                    # 4) Format again after import edits (keeps spacing consistent)
-                    fmt2 = _run_py_module(
-                        "ruff", ["format", "--force-exclude", full_path], timeout=300
-                    )
-                    if fmt2.returncode != 0:
-                        logger.warning(
-                            f"Ruff format (second pass) failed for {full_path}:\nSTDOUT:\n{fmt2.stdout}\nSTDERR:\n{fmt2.stderr}"
-                        )
-                        return
-
-                    print(f"[FORMAT] Ruff format + import ordering completed for {full_path}")
-                    return
-
-            else:
-                logger.warning("Failed to install Ruff repo-locally; falling back to isort/black.")
-        except Exception as e:
-            logger.warning(f"Ruff formatting attempt errored; falling back: {e}")
-
-                        # --------------------
-        # 2) Fallback: isort + black
-        # # --------------------
-        # try:
-        #     ok = _pip_install_repo_local(["isort", "black"], timeout=300)
-        #     if not ok:
-        #         logger.warning("Failed to install isort/black repo-locally; skipping formatting.")
-        #         return
-
-        #     isort_proc = _run_py_module("isort", [full_path], timeout=300)
-        #     if isort_proc.returncode != 0:
-        #         logger.warning(f"isort failed for {full_path}:\n{isort_proc.stderr}")
-
-        #     black_proc = _run_py_module("black", [full_path], timeout=300)
-        #     if black_proc.returncode != 0:
-        #         logger.warning(f"black failed for {full_path}:\n{black_proc.stderr}")
-        # except Exception as e:
-        #     logger.warning(f"isort/black fallback failed for {full_path}: {e}")
+            # Run ruff format (ignore if fails)
+            subprocess.run(
+                [venv_python, "-m", "ruff", "format", full_path],
+                cwd=self.repo_path,
+                capture_output=True,
+                timeout=300
+            )
+        except Exception:
+            pass  # Ignore all errors
 
     # =========================================================
     # ---------------------- DIFF CREATION --------------------
@@ -1086,15 +1343,52 @@ Rules:
         if not patch_results:
             raise RuntimeError("No valid files after patching.")
 
+        # Files/directories to EXCLUDE from patches (should not be committed)
+        EXCLUDED_PATTERNS = [
+            '.github/workflows/',  # CI workflow files
+            '.github/actions/',    # GitHub Actions
+            '__pycache__/',        # Python cache
+            '.pytest_cache/',      # Pytest cache
+            '.ruff_cache/',        # Ruff cache
+            '.mypy_cache/',        # Mypy cache
+            'venv/',               # Virtual environments
+            '.venv/',
+            'env/',
+            '.env/',
+            'virtualenv/',
+            'build/',              # Build artifacts
+            'dist/',               # Distribution artifacts
+            '.tox/',               # Tox environments
+            'node_modules/',       # Node modules
+            '.git/',               # Git directory
+            '.DS_Store',           # macOS files
+        ]
+
         valid_files = []
         for r in patch_results:
             try:
                 rel = os.path.relpath(r["full_file_path"], self.repo_path)
-                valid_files.append(rel)
+
+                # Check if file matches any excluded pattern
+                should_exclude = False
+                for pattern in EXCLUDED_PATTERNS:
+                    if pattern in rel or rel.endswith(pattern.rstrip('/')):
+                        logger.warning(f"⚠️  EXCLUDING file from patch: {rel} (matches {pattern})")
+                        should_exclude = True
+                        break
+
+                if not should_exclude:
+                    valid_files.append(rel)
+
             except Exception as e:
                 logger.warning(f"Could not compute relative path: {e}")
 
-        subprocess.run(["git", "add"] + valid_files, cwd=self.repo_path, check=True)
+        if not valid_files:
+            logger.error("All files were excluded! No valid files to patch.")
+            raise RuntimeError("All files excluded from patch.")
+
+        # Use -f to force adding even if files are in .gitignore (repo may ignore its own source)
+        subprocess.run(["git", "add", "-f"] + valid_files, cwd=self.repo_path, check=True)
         proc = subprocess.run(
             ["git", "diff", "--cached"],
             cwd=self.repo_path,
@@ -1104,31 +1398,77 @@ Rules:
         )
 
         diff = proc.stdout
+
+        # Debug: log diff info before validation
+        logger.info(f"Generated diff: {len(diff)} chars, {diff.count('diff --git')} files")
+
         if not self._is_diff_valid(diff):
+            logger.error(f"Diff validation failed. First 1000 chars of diff:\n{diff[:1000]}")
             raise RuntimeError("Diff failed validation (git apply --check).")
 
         logger.info("Diff successfully validated.")
         return DiffOutput(diff=diff)
 
     def _is_diff_valid(self, diff_text: str) -> bool:
-        temp = os.path.join(self.repo_path, "temp_validation.diff")
-        with open(temp, "w", encoding="utf-8") as f:
+        # Use absolute path for temp file
+        temp_abs = os.path.abspath(os.path.join(self.repo_path, "temp_validation.diff"))
+        with open(temp_abs, "w", encoding="utf-8") as f:
             f.write(diff_text)
+
+        # Git runs in repo_path, so use just the filename
+        temp_name = "temp_validation.diff"
         proc = subprocess.run(
-            ["git", "apply", "--check", "--3way", temp],
+            ["git", "apply", "--check", "--3way", temp_name],
             cwd=self.repo_path,
             capture_output=True,
             text=True,
         )
-        os.remove(temp)
+
+        if proc.returncode != 0:
+            logger.warning(f"git apply --check failed: {proc.stderr[:500]}")
+
+        os.remove(temp_abs)
         return proc.returncode == 0
 
     # =========================================================
     # ---------------------- UTILITIES ------------------------
     # =========================================================
 
+    def _parse_notebook_to_code(self, notebook_path: str) -> str:
+        """Parse Jupyter notebook and extract code cells as Python code."""
+        try:
+            with open(notebook_path, "r", encoding="utf-8") as f:
+                notebook = json.load(f)
+
+            code_lines = []
+            cells = notebook.get("cells", [])
+
+            for idx, cell in enumerate(cells):
+                if cell.get("cell_type") == "code":
+                    source = cell.get("source", [])
+
+                    # Handle both list and string formats
+                    if isinstance(source, list):
+                        cell_code = "".join(source)
+                    else:
+                        cell_code = source
+
+                    if cell_code.strip():
+                        code_lines.append(f"# Cell {idx + 1}")
+                        code_lines.append(cell_code.rstrip())
+                        code_lines.append("")
+
+            return "\n".join(code_lines)
+        except Exception as e:
+            logger.error(f"Failed to parse notebook {notebook_path}: {e}")
+            return ""
+
     def _read_file(self, full_path: str) -> str:
         try:
+            # Special handling for Jupyter notebooks
+            if full_path.endswith('.ipynb'):
+                return self._parse_notebook_to_code(full_path)
+
             with open(full_path, "r", encoding="utf-8") as f:
                 return f.read()
         except Exception as e:

@@ -6,11 +6,17 @@ import json
 import argparse
 import re
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 from collections import defaultdict, Counter
 import math
 from dotenv import load_dotenv
+import signal
+from contextlib import contextmanager
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from elasticsearch import Elasticsearch
 from langchain_openai import ChatOpenAI
@@ -18,6 +24,9 @@ import networkx as nx
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import nltk
+
+# Import LLM provider utility
+from utilities.llm_provider import get_llm
 
 # Load environment variables from root .env file
 load_dotenv(dotenv_path="../../.env")
@@ -30,27 +39,38 @@ except LookupError:
     nltk.download('punkt', quiet=True)
 
 
+@contextmanager
+def timeout_context(seconds):
+    """Context manager for timeouts (Unix only)"""
+    def timeout_handler(signum, frame):
+        raise TimeoutError(f"Operation timed out after {seconds} seconds")
+
+    # Set the signal handler
+    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(seconds)
+
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
+
+
 class FullBRaInFL:
     """Full BRaIn Fault Localization"""
 
     def __init__(self, model_name: str, es_host: str = "localhost", es_port: int = 9200):
         self.model_name = model_name
-        self.llm = ChatOpenAI(model=self._map_model_name(model_name), temperature=0)
+        # Use the llm_provider utility to support multiple models (GPT, DeepSeek, etc.)
+        self.llm = get_llm(model_name)
         self.es = Elasticsearch([f"http://{es_host}:{es_port}"])
         self.index_name = "ci_repair_repos"
         self.stop_words = set(stopwords.words('english'))
 
-    def _map_model_name(self, model_name: str) -> str:
-        """Map short model names to full OpenAI names"""
-        mapping = {
-            "gpt-5-mini": "gpt-4o-mini",
-            "gpt-5": "gpt-4o",
-            "gpt-4o": "gpt-4o",
-            "gpt-4": "gpt-4",
-            "gpt-4-turbo": "gpt-4-turbo-preview",
-            "gpt-3.5": "gpt-3.5-turbo"
-        }
-        return mapping.get(model_name, "gpt-4o-mini")
+        # Timeout settings
+        self.llm_timeout = 30  # seconds per LLM call
+        self.max_methods_per_instance = 100  # limit methods to prevent timeout
+        self.min_relevant_methods = 10  # early stop if we find enough relevant methods
 
     def run_fl(self, log_details_entry: Dict, index: int) -> Dict:
         """Run full BRaIn FL on a single entry"""
@@ -214,6 +234,8 @@ class FullBRaInFL:
     def parse_and_assess_methods(self, candidates: List[Dict], bug_title: str, bug_description: str) -> List[Dict]:
         """Stage 2: Parse files into methods and assess relevance with LLM"""
         methods_data = []
+        total_methods_checked = 0
+        relevant_count = 0
 
         for candidate in candidates:
             file_path = candidate['file_path']
@@ -222,15 +244,34 @@ class FullBRaInFL:
             # Parse methods from file
             methods = self.parse_methods_from_file(file_content, file_path)
 
-            # Assess each method with LLM (batch for efficiency)
+            # Assess each method with LLM (with limit and timeout)
             for method in methods:
-                is_relevant = self.assess_method_relevance(
-                    method['code'],
-                    method['name'],
-                    file_path,
-                    bug_title,
-                    bug_description
-                )
+                # Stop if we've checked too many methods
+                if total_methods_checked >= self.max_methods_per_instance:
+                    print(f"    [LIMIT] Reached max methods ({self.max_methods_per_instance}), stopping assessment")
+                    break
+
+                # Early stop if we found enough relevant methods
+                if relevant_count >= self.min_relevant_methods and total_methods_checked >= 30:
+                    print(f"    [EARLY STOP] Found {relevant_count} relevant methods, stopping early")
+                    break
+
+                try:
+                    is_relevant = self.assess_method_relevance(
+                        method['code'],
+                        method['name'],
+                        file_path,
+                        bug_title,
+                        bug_description
+                    )
+                    if is_relevant:
+                        relevant_count += 1
+                except TimeoutError:
+                    print(f"    [TIMEOUT] LLM call timed out for {file_path}:{method['name']}")
+                    is_relevant = False
+                except Exception as e:
+                    print(f"    [ERROR] LLM call failed for {file_path}:{method['name']}: {e}")
+                    is_relevant = False
 
                 methods_data.append({
                     "file_path": file_path,
@@ -239,6 +280,14 @@ class FullBRaInFL:
                     "relevant": is_relevant,
                     "bm25_score": candidate.get('bm25_score', 0.0)
                 })
+
+                total_methods_checked += 1
+
+            # Break outer loop if limits reached
+            if total_methods_checked >= self.max_methods_per_instance:
+                break
+            if relevant_count >= self.min_relevant_methods and total_methods_checked >= 30:
+                break
 
         return methods_data
 
@@ -300,16 +349,21 @@ Code:
 Is this method relevant to the bug?"""
 
         try:
-            response = self.llm.invoke([
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ])
+            # Use timeout to prevent hanging
+            with timeout_context(self.llm_timeout):
+                response = self.llm.invoke([
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ])
 
-            response_text = response.content.lower()
-            return 'true' in response_text or '"relevant": true' in response_text
+                response_text = response.content.lower()
+                return 'true' in response_text or '"relevant": true' in response_text
 
+        except TimeoutError:
+            # Re-raise timeout to be handled by caller
+            raise
         except Exception as e:
-            # On error, check if file is in error context (conservative)
+            # On other errors, check if file is in error context (conservative)
             return file_path in bug_description
 
     def expand_query_with_pagerank(self, original_query: str, relevant_methods: List[Dict]) -> str:
@@ -550,6 +604,7 @@ def main():
             results = []
 
     # Process entries with INCREMENTAL SAVING
+    PER_INSTANCE_TIMEOUT = 600  # 10 minutes per instance
 
     for i, entry in enumerate(log_details[:args.limit]):
         entry_id = entry.get('id', i + 1)
@@ -560,15 +615,30 @@ def main():
             continue
 
         try:
-            result = fl.run_fl(entry, i)
-            results.append(result)
-            processed_ids.add(entry_id)
+            # Add per-instance timeout
+            with timeout_context(PER_INSTANCE_TIMEOUT):
+                result = fl.run_fl(entry, i)
+                results.append(result)
+                processed_ids.add(entry_id)
 
-            # SAVE INCREMENTALLY after each instance
+                # SAVE INCREMENTALLY after each instance
+                with open(output_file, 'w') as f:
+                    json.dump(results, f, indent=2)
+                print(f"  ✓ Saved (total: {len(results)} results)")
+
+        except TimeoutError:
+            print(f"[ERROR] BRaIn FL timed out (>{PER_INSTANCE_TIMEOUT}s)")
+            # Save empty result to skip this instance on resume
+            results.append({
+                "id": entry_id,
+                "sha_fail": entry.get("sha_fail", ""),
+                "fault_localization_data": [],
+                "error": "timeout"
+            })
+            processed_ids.add(entry_id)
             with open(output_file, 'w') as f:
                 json.dump(results, f, indent=2)
-            print(f"  ✓ Saved (total: {len(results)} results)")
-
+            continue
         except Exception as e:
             print(f"  [ERROR] Error processing entry {i+1}: {e}")
             continue

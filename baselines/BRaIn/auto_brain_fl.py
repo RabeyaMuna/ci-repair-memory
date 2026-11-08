@@ -86,7 +86,12 @@ class AutoBRaInFL:
             if (i + 1) % 20 == 0:
                 print(f"   Checked {i+1}/{len(log_details)}...")
 
-            repo_name = self.find_repo_for_commit(sha_fail)
+            # Use repo_name from entry if available (enriched data)
+            repo_name = entry.get("repo_name")
+
+            # If not in entry, search for it
+            if not repo_name:
+                repo_name = self.find_repo_for_commit(sha_fail)
 
             if repo_name:
                 if repo_name not in repo_to_commits:

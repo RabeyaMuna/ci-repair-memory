@@ -51,20 +51,28 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
     existing_fl_path = os.path.join(result_dir, "fault_localization.json")
     existing_patches_path = os.path.join(result_dir, "generated_patches.json")
 
-    processed_sha_fails = set()
+    # Track which instances completed each step
+    log_shas = set()
+    fl_shas = set()
+    patch_shas = set()
 
     if os.path.exists(existing_log_details_path):
         with open(existing_log_details_path, "r") as f:
             error_details = json.load(f)
-            processed_sha_fails.update(item.get("sha_fail") for item in error_details if item.get("sha_fail"))
+            log_shas.update(item.get("sha_fail") for item in error_details if item.get("sha_fail"))
 
     if os.path.exists(existing_fl_path):
         with open(existing_fl_path, "r") as f:
             fault_localization = json.load(f)
+            fl_shas.update(item.get("sha_fail") for item in fault_localization if item.get("sha_fail"))
 
     if os.path.exists(existing_patches_path):
         with open(existing_patches_path, "r") as f:
             generated_patches = json.load(f)
+            patch_shas.update(item.get("sha_fail") for item in generated_patches if item.get("sha_fail"))
+
+    # Only skip if instance completed ALL three steps
+    processed_sha_fails = log_shas & fl_shas & patch_shas
 
     # Determine subset based on num_instances parameter
     if num_instances is not None:
@@ -109,92 +117,118 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
         ensure_repo_at_commit(repo_url, repo_path, sha_fail)
 
         # ------------------------------------------------------------------
-        # 1) CI LOG ANALYSIS
+        # 1) CI LOG ANALYSIS (skip if already done)
         # ------------------------------------------------------------------
-        try:
-            if log_analyzer_type == "llm":
-                log_analysis_result = CILogAnalyzerLLM(
-                    repo_path,
-                    logs,
-                    sha_fail,
-                    workflow,
-                    workflow_path,
-                    llm=llm,
-                    model_name=model_key,
-                    task_id=task_id,
-                ).run()
-            else:
-                log_analysis_result = CILogAnalyzerBM25(
-                    repo_path,
-                    logs,
-                    sha_fail,
-                    workflow,
-                    workflow_path,
-                    llm=llm,
-                    model_name=model_key,
-                    task_id=task_id,
-                ).run()
+        if sha_fail in log_shas:
+            # Load existing log analysis
+            log_analysis_result = next((item for item in error_details if item.get("sha_fail") == sha_fail), None)
+            print(f"[MAIN] Using existing log analysis for {sha_fail}")
+        else:
+            try:
+                if log_analyzer_type == "llm":
+                    log_analysis_result = CILogAnalyzerLLM(
+                        repo_path,
+                        logs,
+                        sha_fail,
+                        workflow,
+                        workflow_path,
+                        llm=llm,
+                        model_name=model_key,
+                        task_id=task_id,
+                    ).run()
+                else:
+                    log_analysis_result = CILogAnalyzerBM25(
+                        repo_path,
+                        logs,
+                        sha_fail,
+                        workflow,
+                        workflow_path,
+                        llm=llm,
+                        model_name=model_key,
+                        task_id=task_id,
+                    ).run()
 
-            error_details.append(log_analysis_result)
+                # Only append if not already in list (prevent duplicates)
+                if not any(item.get("sha_fail") == sha_fail for item in error_details):
+                    error_details.append(log_analysis_result)
 
-            with open(os.path.join(result_dir, "log_details.json"), "w") as f:
-                json.dump(error_details, f, indent=4)
+                with open(os.path.join(result_dir, "log_details.json"), "w") as f:
+                    json.dump(error_details, f, indent=4)
 
-            # Skip further processing if log analysis failed
-            if "error" in log_analysis_result and log_analysis_result.get("error"):
-                print(f"[MAIN] Skipping {sha_fail} due to log analysis error: {log_analysis_result.get('error')[:100]}...")
+                # Skip further processing if log analysis failed
+                if "error" in log_analysis_result and log_analysis_result.get("error"):
+                    print(f"[MAIN] Skipping {sha_fail} due to log analysis error: {log_analysis_result.get('error')[:100]}...")
+                    continue
+
+            except Exception as e:
+                print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
                 continue
 
-        except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during error extraction: {e}")
-            continue
-
-        try:
-            changed_files_info = collect_changed_files_for_fail_and_parent(
-                owner=benchmark_owner,
-                repo=repo_name,
-                repo_path=repo_path,
-                sha_fail=sha_fail,
-                workflow_rel_path=workflow_path,
-                workflow_yaml_from_dataset=workflow
-            )
-
-            # Save to per-commit JSON file in baselines/changed_files/{sha_fail}.json
-            changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
-            with open(changed_files_path, "w", encoding="utf-8") as f:
-                json.dump(changed_files_info, f, indent=4)
-
-            print(f"[MAIN] Saved changed files info to {changed_files_path}")
-
-        except Exception as e:
-            print(f"[ERROR] Failed to collect/save changed files for {sha_fail}: {e}")
-            continue
-
         # ------------------------------------------------------------------
-        # 3) FAULT LOCALIZATION (later we can inject changed_files_info)
+        # 2) CHANGED FILES (skip if already exists)
         # ------------------------------------------------------------------
-        try:
-            fault_localizer = FaultLocalization(
-                sha_fail=sha_fail,
-                repo_path=repo_path,
-                error_logs=log_analysis_result,
-                workflow=workflow,
-                llm=llm,
-                model_name=model_key,
-                changed_files_info=changed_files_info,  # add to __init__ later if you want
-            ).run()
+        changed_files_path = os.path.join(changed_files_dir, f"{sha_fail}.json")
+        if os.path.exists(changed_files_path):
+            with open(changed_files_path, "r", encoding="utf-8") as f:
+                changed_files_info = json.load(f)
+            print(f"[MAIN] Using existing changed files for {sha_fail}")
+        else:
+            try:
+                changed_files_info = collect_changed_files_for_fail_and_parent(
+                    owner=benchmark_owner,
+                    repo=repo_name,
+                    repo_path=repo_path,
+                    sha_fail=sha_fail,
+                    workflow_rel_path=workflow_path,
+                    workflow_yaml_from_dataset=workflow
+                )
 
-            fault_localization.append(fault_localizer)
+                with open(changed_files_path, "w", encoding="utf-8") as f:
+                    json.dump(changed_files_info, f, indent=4)
 
-            with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
-                json.dump(fault_localization, f, indent=4)
+                print(f"[MAIN] Saved changed files info to {changed_files_path}")
 
-            if not fault_localizer.get("fault_localization_data"):
-                print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
+            except Exception as e:
+                print(f"[ERROR] Failed to collect/save changed files for {sha_fail}: {e}")
                 continue
 
-        except Exception as e:
-            print(f"[ERROR] Failed processing {sha_fail} during fault localization: {e}")
+        # ------------------------------------------------------------------
+        # 3) FAULT LOCALIZATION (skip if already done)
+        # ------------------------------------------------------------------
+        if sha_fail in fl_shas:
+            # Load existing FL
+            fault_localizer = next((item for item in fault_localization if item.get("sha_fail") == sha_fail), None)
+            print(f"[MAIN] Using existing fault localization for {sha_fail}")
+        else:
+            try:
+                fault_localizer = FaultLocalization(
+                    sha_fail=sha_fail,
+                    repo_path=repo_path,
+                    error_logs=log_analysis_result,
+                    workflow=workflow,
+                    llm=llm,
+                    model_name=model_key,
+                    changed_files_info=changed_files_info,
+                ).run()
+
+                # Only append if not already in list (prevent duplicates)
+                if not any(item.get("sha_fail") == sha_fail for item in fault_localization):
+                    fault_localization.append(fault_localizer)
+
+                with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
+                    json.dump(fault_localization, f, indent=4)
+
+                if not fault_localizer.get("fault_localization_data"):
+                    print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
+                    continue
+
+            except Exception as e:
+                print(f"[ERROR] Failed processing {sha_fail} during fault localization: {e}")
+                continue
+
+        # Check if FL has data before proceeding to patch
+        if not fault_localizer or not fault_localizer.get("fault_localization_data"):
+            print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
             continue
 
         # # ------------------------------------------------------------------
@@ -216,7 +250,9 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                 print(f"[MAIN] No patch generated for {sha_fail}")
                 continue
 
-            generated_patches.append(patch_generator)
+            # Only append if not already in list (prevent duplicates)
+            if not any(item.get("sha_fail") == sha_fail for item in generated_patches):
+                generated_patches.append(patch_generator)
 
             with open(os.path.join(result_dir, "generated_patches.json"), "w") as f:
                 json.dump(generated_patches, f, indent=4)

@@ -54,8 +54,8 @@ load_dotenv()
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_API = "https://api.github.com"
 
-# Ignore config-ish / metadata files
-IGNORED_EXTENSIONS = (".yaml", ".yml", ".xml", ".toml", ".lock", ".md", "json", "jsonl", "json5")
+# Only ignore lock files and compiled binaries - everything else can potentially need fixes
+IGNORED_EXTENSIONS = (".lock", ".pyc", ".pyo", ".so", ".dylib", ".dll", ".exe")
 
 
 # =====================================================================
@@ -163,9 +163,12 @@ def get_commit_changed_files(
 
         git diff --name-only <parent_sha> <sha>
 
-    Filters out config-style / doc / JSON-family files:
-    - .yaml, .yml, .xml, .toml, .lock, .md
-    - anything with extension starting with '.json' (.json, .jsonl, .json5, ...)
+    Filters out only truly irrelevant files:
+    - Lock files (.lock)
+    - Compiled binaries (.pyc, .pyo, .so, .dll, .exe)
+
+    All other file types are included (Python, YAML, JSON, TOML, MD, TXT, etc.)
+    since any file can potentially need fixes to resolve CI failures.
     """
     sha = _normalize_sha(sha)
     parent_sha = ensure_parent_commit_available(repo_path, sha, remote=remote)
@@ -188,16 +191,12 @@ def get_commit_changed_files(
             lower_fp = fp.lower()
             _, ext = os.path.splitext(lower_fp)  # e.g. ".py", ".json", ".jsonl"
 
-            # Ignore config/doc files
+            # Only skip truly irrelevant files (lock files, binaries)
             if ext in IGNORED_EXTENSIONS:
-                print(f"[INFO] Skipping ignored config/doc file: {fp}")
+                print(f"[INFO] Skipping binary/lock file: {fp}")
                 continue
 
-            # Ignore ANY JSON-like extension: .json, .jsonl, .json5, etc.
-            if ext.startswith(".json"):
-                print(f"[INFO] Skipping JSON-family file: {fp}")
-                continue
-
+            # Keep all other files - any file type can need fixes
             filtered_files.append(fp)
 
         return filtered_files

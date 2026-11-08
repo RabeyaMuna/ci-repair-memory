@@ -342,17 +342,58 @@ class FaultLocalization:
             return []
 
         # Estimate tokens and create batches
-        # Reserve tokens for: prompt template (~500) + failed_jobs + response (~200)
+        # Reserve tokens for: prompt template (~3000) + failed_jobs + response (~500) + safety margin
         max_tokens = get_prompt_token_budget(self.model_name or "gpt-4")
-        reserved_tokens = 700 + estimate_tokens(failed_jobs_text)
-        available_tokens = max_tokens - reserved_tokens
+        prompt_overhead = 3500 + estimate_tokens(failed_jobs_text)
+
+        # Use only 60% of remaining tokens for conservative batching
+        available_for_files = max_tokens - prompt_overhead
+        available_tokens = int(available_for_files * 0.6)
 
         batches = []
         current_batch = []
         current_batch_tokens = 0
 
+        # Max tokens for a single file chunk (50% of available)
+        max_file_tokens = int(available_tokens * 0.5)
+
         for candidate in candidates:
             file_tokens = estimate_tokens(candidate["file_path"] + candidate["diff"])
+
+            # If file is too large, split into chunks
+            if file_tokens > max_file_tokens:
+                print(f"[Selector] Chunking large file ({file_tokens:,} tokens): {candidate['file_path']}")
+
+                # Split diff by lines
+                diff_lines = candidate["diff"].splitlines(keepends=True)
+                total_lines = len(diff_lines)
+
+                # Calculate chunks needed
+                num_chunks = (file_tokens // max_file_tokens) + 1
+                lines_per_chunk = max(50, total_lines // num_chunks)
+
+                chunk_num = 1
+                for i in range(0, total_lines, lines_per_chunk):
+                    chunk_lines = diff_lines[i:i + lines_per_chunk]
+                    chunk_diff = "".join(chunk_lines)
+
+                    chunk_candidate = {
+                        "file_path": f"{candidate['file_path']} [chunk {chunk_num}/{num_chunks}]",
+                        "diff": chunk_diff
+                    }
+                    chunk_tokens = estimate_tokens(chunk_candidate["file_path"] + chunk_candidate["diff"])
+
+                    # Add chunk to batch or start new batch
+                    if current_batch and (current_batch_tokens + chunk_tokens > available_tokens):
+                        batches.append(current_batch)
+                        current_batch = []
+                        current_batch_tokens = 0
+
+                    current_batch.append(chunk_candidate)
+                    current_batch_tokens += chunk_tokens
+                    chunk_num += 1
+
+                continue
 
             # If adding this file exceeds limit, start new batch
             if current_batch and (current_batch_tokens + file_tokens > available_tokens):
@@ -467,6 +508,8 @@ FILES TO ANALYZE:
                 continue
 
             full_file_path = resolved["full_path"]
+            # Use the correct relative path from resolution, not the original file_path
+            file_path = resolved.get("relative_path", file_path)
 
             content = self._read_file_content(full_file_path)
             if not content:
@@ -919,6 +962,8 @@ FINAL CHECK
                 )
 
                 fault["code_snippet"] = snippet
+                # Also set original_snippet for patch generation compatibility
+                fault["original_snippet"] = snippet
 
                 fault_locations.append(fault)
                 print("\n--- Fault Detected ---")
@@ -950,7 +995,8 @@ FINAL CHECK
             # Strategy 1: Try direct path from repo root
             abs_path = os.path.join(self.repo_path, normalized)
             if os.path.exists(abs_path) and os.path.isfile(abs_path):
-                return {"status": "found", "full_path": abs_path}
+                rel_path = os.path.relpath(abs_path, self.repo_path)
+                return {"status": "found", "full_path": abs_path, "relative_path": rel_path}
 
             # Strategy 2: Search by filename and score by path similarity
             candidates = []
@@ -992,6 +1038,7 @@ FINAL CHECK
                 return {
                     "status": "found",
                     "full_path": best_match,
+                    "relative_path": candidates[0][2],  # Already calculated relative path
                     "all_candidates": [c[1] for c in candidates],
                     "match_score": best_score
                 }
@@ -1000,8 +1047,63 @@ FINAL CHECK
             print(f"[Path Resolution Error] {e}")
             return {"status": "error", "error": str(e)}
 
+        # Strategy 3 (Fallback): For external paths, try last 2 components
+        # Example: .venv/.../pytest_asyncio/plugin.py -> search for pytest_asyncio/plugin.py
+        parts = normalized.split(os.sep)
+        if len(parts) >= 2:
+            last_two = os.path.join(parts[-2], parts[-1])
+            print(f"[Path Resolution] Trying last 2 components: {last_two}")
+
+            # Search repo tree for files matching this pattern
+            for root, _, files in os.walk(self.repo_path):
+                if parts[-1] in files:
+                    candidate = os.path.join(root, parts[-1])
+                    rel_candidate = os.path.relpath(candidate, self.repo_path)
+
+                    # Check if the relative path ends with our pattern
+                    if rel_candidate.endswith(last_two):
+                        print(f"[Path Resolution] Found via last-2 pattern: {rel_candidate}")
+                        return {"status": "found", "full_path": candidate, "relative_path": rel_candidate}
+
         print(f"[Path Resolution] No match found for '{normalized}'")
         return {"status": "not_found"}
+
+    def _parse_notebook(self, notebook_path: str) -> str:
+        """
+        Parse Jupyter notebook and extract code cells as readable Python code.
+        Returns formatted code with cell markers for reference.
+        """
+        try:
+            with open(notebook_path, "r", encoding="utf-8") as f:
+                notebook = json.load(f)
+
+            code_lines = []
+            cells = notebook.get("cells", [])
+
+            for idx, cell in enumerate(cells):
+                cell_type = cell.get("cell_type", "")
+
+                if cell_type == "code":
+                    # Extract source lines
+                    source = cell.get("source", [])
+
+                    # Handle both list and string formats
+                    if isinstance(source, list):
+                        cell_code = "".join(source)
+                    else:
+                        cell_code = source
+
+                    if cell_code.strip():
+                        # Add cell marker for debugging
+                        code_lines.append(f"# Cell {idx + 1}")
+                        code_lines.append(cell_code.rstrip())
+                        code_lines.append("")  # Blank line between cells
+
+            return "\n".join(code_lines)
+
+        except Exception as e:
+            print(f"[WARN] Failed to parse notebook {notebook_path}: {e}")
+            return ""
 
     def _read_file_content(self, resolved_path: str) -> str:
         """Return file content as a string, or '' if file is missing/unreadable."""
@@ -1011,6 +1113,12 @@ FINAL CHECK
             return ""
 
         try:
+            # Special handling for Jupyter notebooks
+            if resolved_path.endswith('.ipynb'):
+                print(f"[FL] Parsing notebook: {resolved_path}")
+                return self._parse_notebook(resolved_path)
+
+            # Regular file reading
             with open(resolved_path, "r", encoding="utf-8") as f:
                 return f.read()
         except Exception as e:

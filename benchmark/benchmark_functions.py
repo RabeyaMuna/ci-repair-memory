@@ -431,7 +431,7 @@ def get_run_data(
                     time.sleep(wait_time)
                     continue
                 else:
-                    return "", "waiting"
+                    return "", "waiting", {}
 
             data = response.json()
             workflow_runs = data.get("workflow_runs", [])
@@ -462,7 +462,7 @@ def get_run_data(
                     continue
                 else:
                     print(f"  No workflow runs after {max_retries} attempts - workflow may not have triggered")
-                    return "", "waiting"
+                    return "", "waiting", {}
 
             latest_run = max(
                 workflow_runs,
@@ -471,6 +471,36 @@ def get_run_data(
             job_url = latest_run.get("html_url", "")
             status = str(latest_run.get("status") or "").lower()
             run_conclusion = str(latest_run.get("conclusion") or "").lower()
+
+            # Extract timing metrics from the API response
+            timing_metrics = {
+                "created_at": latest_run.get("created_at"),
+                "run_started_at": latest_run.get("run_started_at"),
+                "updated_at": latest_run.get("updated_at"),
+                "run_attempt": latest_run.get("run_attempt", 1),
+                "run_number": latest_run.get("run_number"),
+            }
+
+            # Calculate execution time and queue delay if available
+            if latest_run.get("run_started_at") and latest_run.get("created_at"):
+                from datetime import datetime
+                try:
+                    created = datetime.fromisoformat(latest_run["created_at"].replace("Z", "+00:00"))
+                    started = datetime.fromisoformat(latest_run["run_started_at"].replace("Z", "+00:00"))
+                    queue_delay_seconds = (started - created).total_seconds()
+                    timing_metrics["queue_delay_seconds"] = queue_delay_seconds
+                except:
+                    pass
+
+            if status == "completed" and latest_run.get("run_started_at") and latest_run.get("updated_at"):
+                from datetime import datetime
+                try:
+                    started = datetime.fromisoformat(latest_run["run_started_at"].replace("Z", "+00:00"))
+                    completed = datetime.fromisoformat(latest_run["updated_at"].replace("Z", "+00:00"))
+                    execution_time_seconds = (completed - started).total_seconds()
+                    timing_metrics["execution_time_seconds"] = execution_time_seconds
+                except:
+                    pass
 
             # The workflow-run conclusion is authoritative for this run. Do not
             # mix it with checks belonging to older runs of the same commit.
@@ -494,7 +524,7 @@ def get_run_data(
                     f.write("---------------------DP END------------------------- \n")
                 conclusion = "waiting"
 
-            return job_url, conclusion
+            return job_url, conclusion, timing_metrics
 
         except requests.exceptions.RequestException as e:
             print(f"[Network Error] {e}")
@@ -503,7 +533,7 @@ def get_run_data(
                 time.sleep(wait_time)
                 continue
             else:
-                return "", "waiting"
+                return "", "waiting", {}
 
         except Exception as e:
             print(f"[Unexpected Error] {e}")
@@ -511,10 +541,10 @@ def get_run_data(
                 time.sleep(wait_time)
                 continue
             else:
-                return "", "waiting"
+                return "", "waiting", {}
 
     # Should never reach here, but just in case
-    return "", "waiting"
+    return "", "waiting", {}
 
 
 def fix_none(datapoint, repo_path, repo=None, out_folder=None):
@@ -712,15 +742,15 @@ def get_results(job_identificator, config, credentials):
     # We have to make some pause to get result or even url, unless it sees no runs
     repo_name = job_identificator["repo_name"]
     commit_sha = job_identificator["commit"]
-    job_url, conclusion = get_run_data(
+    job_url, conclusion, timing_metrics = get_run_data(
         repo_name,
         commit_sha,
         credentials,
         config,
         workflow_path=job_identificator.get("workflow"),
     )
-    
-    return job_url, conclusion
+
+    return job_url, conclusion, timing_metrics
 
 
 def dataset_to_json(dataset):
@@ -1037,9 +1067,10 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
         f.write(diff_content)
 
     # Pre-check patch validity
-    # NOTE: NOT using --3way because it pulls in large files from git history
+    # Try with --3way to handle formatting differences and fuzzy matching
+    # This may pull some files from history but helps with reformatted code
     check = subprocess.run(
-        ["git", "apply", "--check", temp_diff_path],
+        ["git", "apply", "--check", "--3way", temp_diff_path],
         cwd=repo_path,
         capture_output=True,
         text=True
@@ -1059,10 +1090,10 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
 
     # Apply patch if valid
     try:
-        # Apply patch WITHOUT --3way to prevent pulling in files from git history
-        # The --3way flag was causing 4000+ large files to be merged in
+        # Use --3way to handle formatting differences
+        # May pull some files from history but necessary for reformatted code
         subprocess.run(
-            ["git", "apply", temp_diff_path],
+            ["git", "apply", "--3way", temp_diff_path],
             cwd=repo_path,
             capture_output=True,
             text=True,
