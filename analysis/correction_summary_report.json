@@ -1,0 +1,45 @@
+{
+  "analysis_date": "2026-11-20T16:29:23.017506",
+  "original_comparison": {
+    "kappa_score": 0.5308,
+    "interpretation": "Moderate agreement",
+    "binary_agreement_pct": 80.97,
+    "perfect_instance_matches": 67,
+    "perfect_match_pct": 11.86,
+    "total_mismatches": 498
+  },
+  "corrections_applied": {
+    "file_corrected": "failure_classifications_deepseek_v4_flash.json",
+    "total_instances_corrected": 273,
+    "types_added": {
+      "Runtime Error": 225,
+      "Assertion Error": 139,
+      "Package Install Error": 66,
+      "Syntax Error": 43,
+      "Test Failure": 34,
+      "Environment Error": 29
+    },
+    "types_removed": {
+      "Configuration Error": 8,
+      "Code Formatting": 4
+    }
+  },
+  "after_corrections": {
+    "kappa_score": 0.6735,
+    "interpretation": "Substantial agreement",
+    "binary_agreement_pct": 86.09,
+    "perfect_instance_matches": 99,
+    "perfect_match_pct": 17.52,
+    "remaining_mismatches": 466
+  },
+  "conclusion": {
+    "primary_finding": "GPT-5 Mini classifications were more accurate than DeepSeek v4 Flash",
+    "key_issues_in_deepseek": [
+      "Missing Runtime Error classifications for import errors and type mismatches (225 instances)",
+      "Missing Assertion Error classifications for explicit assertions (139 instances)",
+      "Confusion between Configuration Error and Package Install Error (66 instances)",
+      "Missing Syntax Error for Python version-specific syntax like PEP 604 (43 instances)"
+    ],
+    "improvement": "Kappa increased from 0.5308 (moderate) to 0.6735 (substantial), a 26.9% improvement"
+  }
+}

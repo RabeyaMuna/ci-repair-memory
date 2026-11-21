@@ -163,11 +163,11 @@ def forked_repo_list(repos: list[str], path: Path) -> None:
         print(f"[WARN] Could not write repo list file ({path}): {e}")
 
 
-# ================= NEW: enable Actions + workflows ================= #
+# ================= Enable repository Actions ================= #
 
 def enable_actions_for_repo(owner: str, repo: str) -> None:
     """
-    Ensure GitHub Actions is enabled for this repo, and enable all workflows.
+    Ensure GitHub Actions is enabled at repository scope.
     Safe to call repeatedly; if already enabled, it just prints and returns.
     """
     # 1) Check / set Actions permissions
@@ -207,42 +207,6 @@ def enable_actions_for_repo(owner: str, repo: str) -> None:
     else:
         print(f"[INFO] Actions already enabled for {owner}/{repo}")
 
-    # 2) Enable all workflows (so schedules, etc., start running)
-    workflows_url = f"{API_BASE}/repos/{owner}/{repo}/actions/workflows"
-    wf_resp = requests.get(workflows_url, headers=HEADERS)
-    if wf_resp.status_code != 200:
-        print(
-            f"[WARN] Could not list workflows for {owner}/{repo}: "
-            f"{wf_resp.status_code} {wf_resp.text[:120]}"
-        )
-        return
-
-    workflows = wf_resp.json().get("workflows", [])
-    if not workflows:
-        print(f"[INFO] No workflows found in {owner}/{repo}")
-        return
-
-    for wf in workflows:
-        wf_id = wf.get("id")
-        wf_name = wf.get("name")
-        if wf_id is None:
-            continue
-        enable_url = f"{API_BASE}/repos/{owner}/{repo}/actions/workflows/{wf_id}/enable"
-        en_resp = requests.put(enable_url, headers=HEADERS)
-        if en_resp.status_code == 204:
-            print(f"  [OK] Enabled workflow: {wf_name}")
-        elif en_resp.status_code == 202:
-            print(f"  [OK] Workflow {wf_name} accepted for enabling (202).")
-        elif en_resp.status_code == 409:
-            # sometimes returned if workflow is already active
-            print(f"  [INFO] Workflow already active or cannot be enabled: {wf_name}")
-        else:
-            print(
-                f"  [WARN] Could not enable workflow {wf_name} "
-                f"({wf_id}) for {owner}/{repo}: "
-                f"{en_resp.status_code} {en_resp.text[:120]}"
-            )
-
 # ================================================================== #
 
 
@@ -280,7 +244,7 @@ def main():
             interval_s=POLL_INTERVAL,
         ):
             print(f"[OK] Fork available: https://github.com/{USERNAME}/{target_repo_name}")
-            # NEW: enable Actions + workflows for the new fork
+            # Enable Actions at repository scope for the new fork.
             enable_actions_for_repo(USERNAME, target_repo_name)
         else:
             print(

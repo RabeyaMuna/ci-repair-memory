@@ -1,0 +1,24 @@
+{
+  "failing_commits": 565,
+  "ground_truth_repairs": 565,
+  "candidate_patches": "TBD",
+  "execution_duration": {
+    "mean_seconds": 212.12,
+    "mean_minutes": 3.54,
+    "median_seconds": 77.0,
+    "median_minutes": 1.28,
+    "max_seconds": 30782.0,
+    "max_minutes": 513.03,
+    "min_seconds": 2.0,
+    "min_minutes": 0.03,
+    "count": 557
+  },
+  "queueing_delay": {
+    "mean_seconds": "< 60",
+    "median_seconds": "< 30",
+    "note": "GitHub Actions typical; exact data requires workflow created_at timestamp"
+  },
+  "timeouts": {
+    "count": 2
+  }
+}

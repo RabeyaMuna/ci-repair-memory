@@ -1,0 +1,9501 @@
+{
+  "deepseek_corrections": {
+    "104": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "105": {
+      "add": [],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "108": {
+      "add": [],
+      "remove": [
+        "Test Failure"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Test Failure",
+            0
+          ]
+        ]
+      }
+    },
+    "113": {
+      "add": [
+        "Runtime Error",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ],
+          [
+            "Test Failure",
+            2.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "114": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "117": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "118": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "122": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "125": {
+      "add": [],
+      "remove": [
+        "Package Install Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Package Install Error",
+            0
+          ]
+        ]
+      }
+    },
+    "126": {
+      "add": [],
+      "remove": [
+        "Test Failure",
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Test Failure",
+            0
+          ],
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "127": {
+      "add": [],
+      "remove": [
+        "Package Install Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Package Install Error",
+            0
+          ]
+        ]
+      }
+    },
+    "129": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "130": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "131": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "132": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "133": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            7.5
+          ],
+          [
+            "Configuration Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "135": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            10.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "137": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            11.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "139": {
+      "add": [
+        "Configuration Error",
+        "Code Formatting",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            5.5
+          ],
+          [
+            "Code Formatting",
+            5.5
+          ],
+          [
+            "Environment Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "140": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "143": {
+      "add": [],
+      "remove": [
+        "Test Failure"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Test Failure",
+            0
+          ]
+        ]
+      }
+    },
+    "145": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [
+        "Configuration Error",
+        "Package Install Error"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ],
+          [
+            "Package Install Error",
+            0
+          ]
+        ]
+      }
+    },
+    "147": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "149": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "154": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "156": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "157": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "16": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "161": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            10.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "172": {
+      "add": [
+        "Code Formatting",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            7.5
+          ],
+          [
+            "Runtime Error",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "173": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "175": {
+      "add": [],
+      "remove": [
+        "Package Install Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Package Install Error",
+            0
+          ]
+        ]
+      }
+    },
+    "177": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "18": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "183": {
+      "add": [],
+      "remove": [
+        "Package Install Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Package Install Error",
+            0
+          ]
+        ]
+      }
+    },
+    "185": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "189": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            11.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "19": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "192": {
+      "add": [],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "195": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "196": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "198": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            10.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "199": {
+      "add": [
+        "Type Checking",
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6.5
+          ],
+          [
+            "Syntax Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "200": {
+      "add": [
+        "Linting",
+        "Code Formatting",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7
+          ],
+          [
+            "Code Formatting",
+            9.5
+          ],
+          [
+            "Runtime Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "204": {
+      "add": [],
+      "remove": [
+        "Package Install Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Package Install Error",
+            0
+          ]
+        ]
+      }
+    },
+    "205": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "206": {
+      "add": [
+        "Linting",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8.5
+          ],
+          [
+            "Runtime Error",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "208": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "209": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "216": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "218": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "219": {
+      "add": [
+        "Syntax Error",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            5
+          ],
+          [
+            "Configuration Error",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "22": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "220": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "221": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "222": {
+      "add": [
+        "Syntax Error",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            5.5
+          ],
+          [
+            "Runtime Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "224": {
+      "add": [
+        "Linting",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6.5
+          ],
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "225": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "226": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "228": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "230": {
+      "add": [],
+      "remove": [
+        "Test Failure"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Test Failure",
+            0.5
+          ]
+        ]
+      }
+    },
+    "231": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "232": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "235": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "242": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "249": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5.5
+          ],
+          [
+            "Code Formatting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "250": {
+      "add": [
+        "Runtime Error",
+        "Package Install Error"
+      ],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4
+          ],
+          [
+            "Package Install Error",
+            4.5
+          ]
+        ],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "251": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "253": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6
+          ]
+        ],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "254": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "256": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "258": {
+      "add": [
+        "Linting",
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5
+          ],
+          [
+            "Type Checking",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "259": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [
+        "Package Install Error"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": [
+          [
+            "Package Install Error",
+            0
+          ]
+        ]
+      }
+    },
+    "26": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "260": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "262": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "263": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "264": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "265": {
+      "add": [
+        "Doc/Docstring",
+        "Package Install Error"
+      ],
+      "remove": [
+        "Test Failure"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            3.5
+          ],
+          [
+            "Package Install Error",
+            2.5
+          ]
+        ],
+        "remove": [
+          [
+            "Test Failure",
+            0
+          ]
+        ]
+      }
+    },
+    "267": {
+      "add": [
+        "Linting",
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5.5
+          ],
+          [
+            "Package Install Error",
+            2.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "269": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "27": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "272": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "274": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "275": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "276": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "278": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "281": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "283": {
+      "add": [],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "284": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "285": {
+      "add": [
+        "Linting",
+        "Runtime Error",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7
+          ],
+          [
+            "Runtime Error",
+            7.5
+          ],
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "288": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "295": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "296": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "297": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "299": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "300": {
+      "add": [],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "301": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "303": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "305": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "306": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "308": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "310": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            2.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "311": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            2.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "313": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "314": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "315": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "318": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "319": {
+      "add": [
+        "Linting",
+        "Runtime Error",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            11
+          ],
+          [
+            "Runtime Error",
+            11.5
+          ],
+          [
+            "Environment Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "321": {
+      "add": [
+        "Dependency Issues",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            7
+          ],
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "325": {
+      "add": [],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "327": {
+      "add": [
+        "Linting",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5
+          ],
+          [
+            "Doc/Docstring",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "328": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "33": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "330": {
+      "add": [
+        "Type Checking",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6.5
+          ],
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "331": {
+      "add": [
+        "Type Checking",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            8.5
+          ],
+          [
+            "Runtime Error",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "332": {
+      "add": [
+        "Type Checking",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            3
+          ],
+          [
+            "Runtime Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "333": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "334": {
+      "add": [
+        "Type Checking",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4.5
+          ],
+          [
+            "Runtime Error",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "335": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "336": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "337": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "338": {
+      "add": [
+        "Type Checking",
+        "Runtime Error",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            3
+          ],
+          [
+            "Runtime Error",
+            6.5
+          ],
+          [
+            "Doc/Docstring",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "339": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "34": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "340": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            11.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "343": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "347": {
+      "add": [],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "349": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "352": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "356": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "358": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "359": {
+      "add": [],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "36": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "360": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "364": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "366": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "369": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "37": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "370": {
+      "add": [
+        "Linting",
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            11
+          ],
+          [
+            "Type Checking",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "374": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "380": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [
+        "Type Checking"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": [
+          [
+            "Type Checking",
+            0
+          ]
+        ]
+      }
+    },
+    "385": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "387": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "388": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "39": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "392": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "396": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "399": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "40": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "400": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "402": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "403": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "406": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "408": {
+      "add": [
+        "Syntax Error",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            6
+          ],
+          [
+            "Environment Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "409": {
+      "add": [
+        "Configuration Error",
+        "Code Formatting",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            5.5
+          ],
+          [
+            "Code Formatting",
+            9.5
+          ],
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "411": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "412": {
+      "add": [
+        "Linting",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ],
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "413": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "414": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            2.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "415": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "416": {
+      "add": [
+        "Environment Error",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3.5
+          ],
+          [
+            "Code Formatting",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "418": {
+      "add": [
+        "Environment Error",
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3.5
+          ],
+          [
+            "Package Install Error",
+            2.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "421": {
+      "add": [],
+      "remove": [
+        "Package Install Error"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Package Install Error",
+            1
+          ]
+        ]
+      }
+    },
+    "422": {
+      "add": [
+        "Dependency Issues",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            7.5
+          ],
+          [
+            "Configuration Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "430": {
+      "add": [],
+      "remove": [
+        "Code Formatting"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Code Formatting",
+            0.5
+          ]
+        ]
+      }
+    },
+    "432": {
+      "add": [
+        "Type Checking",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            3.5
+          ],
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "437": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "438": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "44": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            10.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "440": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            2
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "442": {
+      "add": [],
+      "remove": [
+        "Code Formatting"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Code Formatting",
+            0
+          ]
+        ]
+      }
+    },
+    "446": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            7.5
+          ]
+        ],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "447": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            12.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "448": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            7
+          ]
+        ],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "450": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "452": {
+      "add": [
+        "Syntax Error",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            6.5
+          ],
+          [
+            "Runtime Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "453": {
+      "add": [
+        "Runtime Error",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            8.5
+          ],
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "454": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "458": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "46": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            11.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "461": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "462": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "463": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "467": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            10.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "470": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            14.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "474": {
+      "add": [
+        "Linting",
+        "Runtime Error",
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5
+          ],
+          [
+            "Runtime Error",
+            3.5
+          ],
+          [
+            "Type Checking",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "477": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "478": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "479": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "480": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "482": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "483": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            10.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "485": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [
+        "Code Formatting"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": [
+          [
+            "Code Formatting",
+            0
+          ]
+        ]
+      }
+    },
+    "486": {
+      "add": [
+        "Test Failure",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ],
+          [
+            "Runtime Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "49": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "492": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "493": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "498": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "499": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            11.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "50": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "500": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            9
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "501": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "502": {
+      "add": [
+        "Linting",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ],
+          [
+            "Runtime Error",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "503": {
+      "add": [
+        "Linting",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9
+          ],
+          [
+            "Runtime Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "505": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "506": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "508": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ],
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "509": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "51": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "511": {
+      "add": [
+        "Linting",
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9
+          ],
+          [
+            "Dependency Issues",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "512": {
+      "add": [
+        "Runtime Error",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ],
+          [
+            "Code Formatting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "513": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "515": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "517": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "518": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "519": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            11.5
+          ],
+          [
+            "Code Formatting",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "52": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "521": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "526": {
+      "add": [
+        "Configuration Error",
+        "Syntax Error",
+        "Code Formatting",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            6.5
+          ],
+          [
+            "Syntax Error",
+            6.5
+          ],
+          [
+            "Code Formatting",
+            7
+          ],
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "527": {
+      "add": [],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "529": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "530": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "532": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [
+        "Code Formatting"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6
+          ]
+        ],
+        "remove": [
+          [
+            "Code Formatting",
+            0
+          ]
+        ]
+      }
+    },
+    "536": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "537": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "538": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "539": {
+      "add": [
+        "Runtime Error",
+        "Configuration Error"
+      ],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6.5
+          ],
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "54": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            2
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "540": {
+      "add": [
+        "Configuration Error",
+        "Code Formatting",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            5
+          ],
+          [
+            "Code Formatting",
+            9
+          ],
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "544": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "546": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "547": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "548": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "549": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "550": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            11
+          ]
+        ],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "558": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "564": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "566": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "567": {
+      "add": [
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Environment Error",
+            3.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "568": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "57": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [
+        "Configuration Error"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            5
+          ]
+        ],
+        "remove": [
+          [
+            "Configuration Error",
+            0
+          ]
+        ]
+      }
+    },
+    "572": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "6": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "61": {
+      "add": [],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "63": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "64": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            2.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "66": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "7": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "71": {
+      "add": [
+        "Runtime Error",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            6
+          ],
+          [
+            "Test Failure",
+            2
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "72": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "73": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "75": {
+      "add": [
+        "Linting",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7.5
+          ],
+          [
+            "Runtime Error",
+            9.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "77": {
+      "add": [
+        "Linting",
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7
+          ],
+          [
+            "Type Checking",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "78": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "8": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "81": {
+      "add": [
+        "Runtime Error",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            2.5
+          ],
+          [
+            "Code Formatting",
+            9.5
+          ],
+          [
+            "Configuration Error",
+            7.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "82": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "83": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            11.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "84": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            10.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "90": {
+      "add": [
+        "Linting",
+        "Runtime Error"
+      ],
+      "remove": [
+        "Dependency Issues"
+      ],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            10
+          ],
+          [
+            "Runtime Error",
+            10.5
+          ]
+        ],
+        "remove": [
+          [
+            "Dependency Issues",
+            0
+          ]
+        ]
+      }
+    },
+    "97": {
+      "add": [
+        "Dependency Issues",
+        "Environment Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            5
+          ],
+          [
+            "Environment Error",
+            3
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "98": {
+      "add": [
+        "Package Install Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Package Install Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    }
+  },
+  "gpt5mini_corrections": {
+    "100": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "101": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "102": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "103": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "104": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "106": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "109": {
+      "add": [
+        "Linting",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ],
+          [
+            "Code Formatting",
+            6.5
+          ],
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "111": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "112": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            10
+          ],
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "114": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "116": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8
+          ],
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "117": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "118": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "119": {
+      "add": [
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Test Failure",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "120": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "122": {
+      "add": [
+        "Linting",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "123": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "124": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4.5
+          ],
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "126": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "128": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "13": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "130": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "131": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "134": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "136": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "138": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "142": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "143": {
+      "add": [
+        "Syntax Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "144": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "145": {
+      "add": [
+        "Syntax Error",
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Syntax Error",
+            6
+          ],
+          [
+            "Dependency Issues",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "146": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "147": {
+      "add": [
+        "Linting",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Runtime Error",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "148": {
+      "add": [
+        "Test Failure",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ],
+          [
+            "Runtime Error",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "15": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "150": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "151": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "152": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "153": {
+      "add": [
+        "Linting",
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "154": {
+      "add": [
+        "Type Checking",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "155": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "156": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "157": {
+      "add": [
+        "Dependency Issues",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "158": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "159": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "16": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "161": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "162": {
+      "add": [
+        "Dependency Issues",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "166": {
+      "add": [
+        "Code Formatting",
+        "Test Failure",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Test Failure",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "167": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "168": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "169": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            10
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "170": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "171": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "173": {
+      "add": [
+        "Linting",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "174": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "175": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "176": {
+      "add": [
+        "Test Failure",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "177": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "179": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "18": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "181": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "182": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "185": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "186": {
+      "add": [
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "189": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "19": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "192": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "193": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "194": {
+      "add": [
+        "Test Failure",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "198": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "199": {
+      "add": [
+        "Test Failure",
+        "Dependency Issues",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ],
+          [
+            "Dependency Issues",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "20": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "201": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "202": {
+      "add": [
+        "Configuration Error",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ],
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "204": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "205": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "207": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "208": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "210": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "212": {
+      "add": [
+        "Linting",
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5
+          ],
+          [
+            "Type Checking",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "213": {
+      "add": [
+        "Runtime Error",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            8
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "214": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "216": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "217": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "220": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "221": {
+      "add": [
+        "Type Checking",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Doc/Docstring",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "222": {
+      "add": [
+        "Type Checking",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4.5
+          ],
+          [
+            "Doc/Docstring",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "225": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "227": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "228": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "229": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "23": {
+      "add": [
+        "Dependency Issues",
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "233": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "234": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "235": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "242": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "243": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "244": {
+      "add": [
+        "Type Checking",
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Runtime Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "246": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "248": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "252": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "253": {
+      "add": [
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "254": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "257": {
+      "add": [
+        "Linting",
+        "Code Formatting",
+        "Test Failure",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            4.5
+          ],
+          [
+            "Test Failure",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "259": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "260": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "262": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "264": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "265": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "266": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "267": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "268": {
+      "add": [
+        "Dependency Issues",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "269": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "27": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "270": {
+      "add": [
+        "Dependency Issues",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ],
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "272": {
+      "add": [
+        "Assertion Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Assertion Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "275": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            10
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "276": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "277": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "278": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "279": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "28": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "280": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "284": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "286": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "287": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "288": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "289": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "290": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "291": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "295": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "296": {
+      "add": [
+        "Dependency Issues",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            5
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "297": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "298": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "299": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "300": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "301": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "304": {
+      "add": [
+        "Type Checking",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "310": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "311": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "312": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "314": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "315": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "317": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "318": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "319": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "320": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "323": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "326": {
+      "add": [
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "327": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "328": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "329": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "33": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "330": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "331": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "332": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "334": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "335": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "336": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "339": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "34": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "341": {
+      "add": [
+        "Type Checking",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "343": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "344": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "345": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "346": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "347": {
+      "add": [
+        "Code Formatting",
+        "Assertion Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Assertion Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "348": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "349": {
+      "add": [
+        "Assertion Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Assertion Error",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "351": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            5
+          ],
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "354": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "355": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "356": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "358": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "36": {
+      "add": [
+        "Dependency Issues",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            6
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "361": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "363": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "364": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "367": {
+      "add": [
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "369": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "371": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "376": {
+      "add": [
+        "Dependency Issues",
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ],
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "378": {
+      "add": [
+        "Configuration Error",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ],
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "379": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "38": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "383": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "384": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "386": {
+      "add": [
+        "Dependency Issues",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            5
+          ],
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "388": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "390": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "391": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "392": {
+      "add": [
+        "Code Formatting",
+        "Type Checking",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "393": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "396": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "400": {
+      "add": [
+        "Linting",
+        "Type Checking",
+        "Dependency Issues",
+        "Code Formatting",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ],
+          [
+            "Type Checking",
+            6
+          ],
+          [
+            "Dependency Issues",
+            4
+          ],
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "402": {
+      "add": [
+        "Configuration Error",
+        "Code Formatting",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ],
+          [
+            "Code Formatting",
+            6.5
+          ],
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "403": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "406": {
+      "add": [
+        "Type Checking",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "407": {
+      "add": [
+        "Assertion Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Assertion Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "408": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "411": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "414": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "415": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "418": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "42": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "420": {
+      "add": [
+        "Configuration Error",
+        "Assertion Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ],
+          [
+            "Assertion Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "422": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "43": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "433": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "434": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "435": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "436": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "437": {
+      "add": [
+        "Type Checking",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "438": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "439": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "44": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "441": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "443": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "444": {
+      "add": [
+        "Code Formatting",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "446": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            9
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "447": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            9
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "449": {
+      "add": [
+        "Linting",
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8
+          ],
+          [
+            "Type Checking",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "45": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "454": {
+      "add": [
+        "Type Checking",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "456": {
+      "add": [
+        "Linting",
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Type Checking",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "457": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "458": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "46": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "460": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "463": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "466": {
+      "add": [
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "467": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "468": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "47": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "470": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "475": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "478": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "479": {
+      "add": [
+        "Type Checking"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "48": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "480": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "481": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "488": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "49": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "491": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "494": {
+      "add": [
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4.5
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "495": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "50": {
+      "add": [
+        "Type Checking",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            6
+          ],
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "509": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "51": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "512": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "514": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "52": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4.5
+          ],
+          [
+            "Configuration Error",
+            5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "521": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Code Formatting",
+            6.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "522": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "524": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "525": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "531": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "532": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "534": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "538": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "541": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "542": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "543": {
+      "add": [
+        "Code Formatting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "549": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "550": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "551": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "558": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "560": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "562": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "565": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "566": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "567": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "568": {
+      "add": [
+        "Code Formatting",
+        "Doc/Docstring"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Doc/Docstring",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "571": {
+      "add": [
+        "Type Checking",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "572": {
+      "add": [
+        "Type Checking",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Type Checking",
+            4
+          ],
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "573": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "574": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "58": {
+      "add": [
+        "Runtime Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Runtime Error",
+            7
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "61": {
+      "add": [
+        "Test Failure",
+        "Syntax Error",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            5
+          ],
+          [
+            "Syntax Error",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "63": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "65": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "66": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            8
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "71": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            8
+          ],
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "72": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "73": {
+      "add": [
+        "Dependency Issues",
+        "Code Formatting",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            5
+          ],
+          [
+            "Code Formatting",
+            6
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "74": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "76": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "77": {
+      "add": [
+        "Dependency Issues"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "79": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "8": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "80": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "82": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "83": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "84": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            6
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "86": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "87": {
+      "add": [
+        "Assertion Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Assertion Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "88": {
+      "add": [
+        "Linting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "89": {
+      "add": [
+        "Dependency Issues",
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Dependency Issues",
+            5
+          ],
+          [
+            "Test Failure",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "9": {
+      "add": [
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Code Formatting",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "91": {
+      "add": [
+        "Test Failure",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "93": {
+      "add": [
+        "Linting",
+        "Code Formatting"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4.5
+          ],
+          [
+            "Code Formatting",
+            8.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "94": {
+      "add": [
+        "Test Failure"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Test Failure",
+            5.5
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "98": {
+      "add": [
+        "Linting",
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Linting",
+            4
+          ],
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    },
+    "99": {
+      "add": [
+        "Configuration Error"
+      ],
+      "remove": [],
+      "scores": {
+        "add": [
+          [
+            "Configuration Error",
+            4
+          ]
+        ],
+        "remove": []
+      }
+    }
+  }
+}

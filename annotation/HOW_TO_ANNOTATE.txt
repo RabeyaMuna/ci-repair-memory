@@ -1,0 +1,185 @@
+================================================================================
+                      HOW TO ANNOTATE CI FAILURES
+================================================================================
+
+📁 FILES:
+  1. ANNOTATION_SHEET.csv  ← Open this and fill your annotations
+  2. This file             ← Instructions + Full Taxonomy
+
+================================================================================
+📝 STEPS:
+================================================================================
+
+1. Open ANNOTATION_SHEET.csv in Excel or Google Sheets
+
+2. For each row (565 instances):
+   - Click GitHub_Compare_Link → see the code diff
+   - Read System_Generated columns (for reference only)
+   - Fill YOUR classification in last 3 columns
+
+3. When done: Save as YOUR_NAME_annotations.csv and send back
+
+================================================================================
+📋 FULL TAXONOMY WITH DESCRIPTIONS
+================================================================================
+
+🔧 CODE FORMATTING
+-------------------
+Issues with code style, indentation, line length, etc.
+Examples:
+  - Wrong indentation (spaces vs tabs)
+  - Lines too long (>80 characters)
+  - Inconsistent quote style (single vs double quotes)
+  - Trailing whitespace
+  - Missing/extra blank lines
+Tools: black, autopep8, prettier
+
+🔍 LINTING
+----------
+Code quality issues detected by linters (unused imports, undefined vars, etc.)
+Examples:
+  - Unused import statements
+  - Unused variables
+  - Undefined names
+  - Redefined variables
+  - Wildcard imports (from x import *)
+Tools: flake8, pylint, ruff
+
+⚠️ SYNTAX ERROR
+----------------
+Python syntax errors, invalid code structure
+Examples:
+  - Missing colon after if/for/def
+  - Invalid operators (using | instead of or)
+  - Unclosed brackets/parentheses
+  - Invalid indentation breaking syntax
+  - SyntaxError exceptions
+
+🔤 TYPE CHECKING
+----------------
+Type annotation errors, mypy issues
+Examples:
+  - Missing type hints
+  - Incompatible types in assignment
+  - Wrong return type annotation
+  - Type mismatches
+Tools: mypy, pyright, pyre
+
+💥 RUNTIME ERROR
+----------------
+Errors that occur during execution (AttributeError, KeyError, etc.)
+Examples:
+  - AttributeError: object has no attribute 'x'
+  - KeyError: missing dictionary key
+  - ValueError: invalid value
+  - TypeError: wrong type passed to function
+  - IndexError: list index out of range
+  - NameError: name not defined
+
+🧪 TEST FAILURE
+---------------
+Unit/integration tests that fail
+Examples:
+  - pytest test failures
+  - unittest failures
+  - Test assertions fail
+  - Integration test failures
+  - Flaky tests
+
+✗ ASSERTION ERROR
+-----------------
+Failed assertions in tests
+Examples:
+  - assert x == y fails
+  - assertEqual(a, b) fails
+  - assertTrue(condition) fails
+  - assertRaises doesn't catch expected exception
+
+📦 DEPENDENCY ISSUES
+--------------------
+Missing dependencies, version conflicts
+Examples:
+  - ModuleNotFoundError: No module named 'x'
+  - ImportError: cannot import name 'x'
+  - Version conflicts between packages
+  - Incompatible dependency versions
+  - Circular dependencies
+
+📥 PACKAGE INSTALL ERROR
+------------------------
+Failed package installation, missing requirements
+Examples:
+  - requirements.txt missing packages
+  - pip install fails
+  - Package not found on PyPI
+  - setup.py errors
+  - Build dependencies missing
+
+⚙️ CONFIGURATION ERROR
+----------------------
+Invalid config files, wrong settings
+Examples:
+  - Invalid YAML/JSON config
+  - Wrong workflow settings
+  - Bad .github/workflows/*.yml
+  - Config file syntax errors
+  - Missing required config keys
+
+🌍 ENVIRONMENT ERROR
+--------------------
+Platform-specific issues, missing env vars
+Examples:
+  - Windows vs Linux path differences
+  - Missing environment variables
+  - OS-specific code failures
+  - Platform-specific imports
+  - Architecture differences (ARM vs x86)
+
+📖 DOC/DOCSTRING
+----------------
+Documentation format issues, missing docstrings
+Examples:
+  - Missing docstrings
+  - Invalid docstring format
+  - Sphinx documentation errors
+  - Wrong documentation syntax
+  - Google/NumPy docstring format issues
+
+================================================================================
+💡 ANNOTATION TIPS
+================================================================================
+
+✓ Most instances have 2-3 failure types (pick ALL that apply)
+
+✓ Common combinations:
+  - Linting + Code Formatting
+  - Test Failure + Runtime Error
+  - Test Failure + Assertion Error
+  - Dependency Issues + Package Install Error
+  - Runtime Error + Type Checking
+
+✓ Example annotations:
+
+  Row 1: Removes unused import
+  → Your_Failure_Types: Linting
+  → Your_Sub_Types: unused import
+  → Your_Notes: Removes unused pandas import
+
+  Row 2: Fixes test with AttributeError
+  → Your_Failure_Types: Test Failure, Runtime Error
+  → Your_Sub_Types: test assertion failure, AttributeError
+  → Your_Notes: Test failed due to missing attribute
+
+  Row 3: Fixes indentation and removes unused var
+  → Your_Failure_Types: Code Formatting, Linting
+  → Your_Sub_Types: indentation, unused variable
+  → Your_Notes: Fixes spacing and removes unused x variable
+
+================================================================================
+⏱️ TIME: ~5-8 hours total (can save and resume anytime)
+
+📧 SEND: YOUR_NAME_annotations.csv to [email]
+
+❓ Questions: [email]
+
+================================================================================

@@ -21,19 +21,19 @@ def filter_by_id(example, ids):
     return example['id'] in ids
 
 class CIFixBenchmark:
-    def __init__(self, model_name, config_path):
+    def __init__(self, model_name, config_path, skip_upstream_sync=False):
 
         self.dataset_id = "ci-benchmark-user/ci-repair-bench"
 
         # Loads a YAML/JSON configuration file using OmegaConf, a part of the Hydra library.
         self.config = OmegaConf.load(config_path)
         benchmark_owner = self.config.get("benchmark_owner")
-        
+
         if not "test_username" in self.config:
             self.config.test_username = self.config.username_gh
-            
+
         language = self.config.language
-        
+
         self.credentials = {
             "username": self.config.username_gh,
             "token": os.environ.get("GITHUB_TOKEN"),
@@ -45,12 +45,13 @@ class CIFixBenchmark:
         OmegaConf.update(
             self.config, "benchmark_owner", benchmark_owner, force_add=True
         )
-        
+
         if hasattr(self.config, "data_cache_dir"):
             self.cache_dir = self.config.data_cache_dir
         else:
             self.cache_dir = None
         self.model_name = model_name
+        self.skip_upstream_sync = skip_upstream_sync
 
     def get_dataset(
         self,
@@ -84,18 +85,37 @@ class CIFixBenchmark:
 
         return self.dataset
 
-    def run_dataset(self, fix_repo_function, test_dataset=None):        
+    def run_dataset(self, fix_repo_function, test_dataset=None, resume=False):
         if test_dataset is None:
             test_dataset = self.dataset
-        self.jobs_ids = []
         jobs_ids_file_path = os.path.join(
             self.config.out_folder, f"jobs_ids_{self.model_name}.jsonl"
         )
-        
-        with open(jobs_ids_file_path, "w") as writer:
+
+        # A resumed run must never erase the pushes recorded by an earlier run.
+        # self.jobs_ids intentionally contains only jobs created by this run so
+        # eval_jobs does not re-poll every historical job.
+        existing_jobs = _read_jsonl(jobs_ids_file_path) if resume else []
+        existing_ids = {str(job.get("id")) for job in existing_jobs}
+        self.jobs_ids = []
+        file_mode = "a" if resume else "w"
+
+        if resume:
+            print(
+                f"[RESUME] Preserving {len(existing_jobs)} existing push records "
+                f"in {jobs_ids_file_path}"
+            )
+
+        with open(jobs_ids_file_path, file_mode) as writer:
             for datapoint in tqdm(test_dataset):
+                datapoint_id = str(datapoint.get("id"))
+                if datapoint_id in existing_ids:
+                    print(f"[RESUME] ID {datapoint_id}: already pushed; skipping")
+                    continue
+
                 job_identificator = process_datapoint(
-                    datapoint, fix_repo_function, self.config, self.credentials
+                    datapoint, fix_repo_function, self.config, self.credentials,
+                    skip_upstream_sync=self.skip_upstream_sync
                 )
 
                 if job_identificator is None:
@@ -105,10 +125,17 @@ class CIFixBenchmark:
                 # encoding cannot leave a truncated JSONL record.
                 writer.write(json.dumps(job_identificator) + "\n")
                 writer.flush()
+                existing_ids.add(datapoint_id)
                 
         return self.jobs_ids
 
-    def eval_jobs(self, jobs_ids=None, job_ids_file=None, result_filename=None):
+    def eval_jobs(
+        self,
+        jobs_ids=None,
+        job_ids_file=None,
+        result_filename=None,
+        append_results=False,
+    ):
         """
         Evaluate all submitted jobs by polling all GitHub Actions results periodically.
         Fetches all jobs each cycle but includes delay and rate-limit protection
@@ -134,8 +161,9 @@ class CIFixBenchmark:
         self.config.out_folder, f"jobs_success_{self.model_name}.jsonl"
        )
         
-        result_file = open(jobs_results_file_path, "w")
-        success_file = open(jobs_success_file_path, "w")
+        result_mode = "a" if append_results else "w"
+        result_file = open(jobs_results_file_path, result_mode)
+        success_file = open(jobs_success_file_path, result_mode)
 
         # Load job IDs
         if job_ids_file is not None:
@@ -158,7 +186,8 @@ class CIFixBenchmark:
             new_waiting = []
             start_time = time.time()
 
-            # On first few cycles, try enabling workflows for waiting jobs
+            # On the first few cycles, recover only the repository-level
+            # Actions permission. Never enable individual workflows.
             if n_attempts <= 3:
                 repos_to_enable = set()
                 for job in jobs_ids_await:
@@ -168,17 +197,23 @@ class CIFixBenchmark:
 
                 if repos_to_enable:
                     from .benchmark_functions import ensure_all_workflows_enabled
-                    print(f"\n[AUTO-ENABLE] Checking {len(repos_to_enable)} repos for disabled workflows...")
+                    print(
+                        f"\n[AUTO-ENABLE] Checking Actions for "
+                        f"{len(repos_to_enable)} repositories..."
+                    )
                     for repo_name in repos_to_enable:
                         try:
-                            success, count = ensure_all_workflows_enabled(
+                            repo_enabled = ensure_all_workflows_enabled(
                                 repo_name, self.credentials, self.config
                             )
                             workflow_enable_attempted.add(repo_name)
-                            if count > 0:
-                                print(f"  [OK] Enabled {count} workflow(s) in {repo_name}")
+                            if not repo_enabled:
+                                print(
+                                    f"  [WARN] Actions recovery was incomplete "
+                                    f"for {repo_name}"
+                                )
                         except Exception as e:
-                            print(f"  [WARN] Could not enable workflows for {repo_name}: {e}")
+                            print(f"  [WARN] Could not recover Actions for {repo_name}: {e}")
                             workflow_enable_attempted.add(repo_name)
                     print()
 
@@ -186,7 +221,9 @@ class CIFixBenchmark:
 
             for job_id in jobs_ids_await:
                 try:
-                    job_url, conclusion = get_results(job_id, self.config, self.credentials)
+                    job_url, conclusion, timing_metrics = get_results(
+                        job_id, self.config, self.credentials
+                    )
                 except Exception as e:
                     print(f"Warning: API error for {job_id.get('repo_name')}: {e}")
                     new_waiting.append(job_id)
@@ -208,6 +245,7 @@ class CIFixBenchmark:
                 else:
                     job_id["url"] = job_url
                     job_id["conclusion"] = conclusion
+                    job_id["timing"] = timing_metrics
                     jobs_results.append(job_id)
                     json.dump(job_id, result_file)
                     result_file.write("\n")
@@ -287,6 +325,7 @@ class CIFixBenchmark:
         ids_list: Optional[List] = None,
         force_download: bool = False,
         result_filename: Optional[str] = None,
+        resume: bool = False,
     ):
         """
         Evaluate the benchmark on either a local or online dataset.
@@ -309,10 +348,10 @@ class CIFixBenchmark:
 
         print(f"Got {len(self.dataset)} datapoints to evaluate")
         print("---------------- Running datapoints -------------------")
-        self.run_dataset(fix_repo_function)
+        self.run_dataset(fix_repo_function, resume=resume)
 
         print("---------------- Getting results -------------------")
-        self.eval_jobs(result_filename=result_filename)
+        self.eval_jobs(result_filename=result_filename, append_results=resume)
 
     def run_datapoint(self, datapoint, fix_repo_function):
         # This method is for debugging reasons
@@ -321,7 +360,8 @@ class CIFixBenchmark:
         )
         with open(jobs_ids_file_path, "w") as writer:
             job_identificator = process_datapoint(
-                datapoint, fix_repo_function, self.config, self.credentials
+                datapoint, fix_repo_function, self.config, self.credentials,
+                skip_upstream_sync=self.skip_upstream_sync
             )
             json.dump(job_identificator, writer)
             writer.write("\n")

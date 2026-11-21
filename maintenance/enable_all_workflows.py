@@ -1,97 +1,100 @@
 #!/usr/bin/env python3
-"""
-Enable all workflows for repositories that are waiting
-"""
-import json
-import requests
+"""Enable GitHub Actions at repository scope for explicitly named repositories."""
+
+import argparse
+import os
 from pathlib import Path
+
+import requests
 from omegaconf import OmegaConf
 
-# Load config
-config = OmegaConf.load("config.yaml")
-token = config.get("GITHUB_TOKEN")
-benchmark_owner = config.get("benchmark_owner", "RabeyaMuna")
 
-if not token:
-    print("[ERROR] GITHUB_TOKEN not found in config.yaml")
-    exit(1)
+def enable_repository_actions(benchmark_owner, repo_name, token):
+    """Enable and verify repository-level GitHub Actions permissions."""
+    url = (
+        f"https://api.github.com/repos/{benchmark_owner}/{repo_name}"
+        "/actions/permissions"
+    )
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
 
-headers = {
-    "Authorization": f"token {token}",
-    "Accept": "application/vnd.github+json"
-}
+    response = requests.put(
+        url,
+        headers=headers,
+        json={"enabled": True, "allowed_actions": "all"},
+        timeout=20,
+    )
+    if response.status_code not in (200, 204):
+        print(
+            f"[ERROR] {benchmark_owner}/{repo_name}: could not enable "
+            f"repository Actions (HTTP {response.status_code})"
+        )
+        return False
 
-# Load jobs awaiting
-jobs_file = Path("results/jobs_awaiting_diff.jsonl")
-if not jobs_file.exists():
-    print("[ERROR] jobs_awaiting_diff.jsonl not found")
-    exit(1)
+    verify_response = requests.get(url, headers=headers, timeout=20)
+    if not verify_response.ok:
+        print(
+            f"[ERROR] {benchmark_owner}/{repo_name}: could not verify "
+            f"repository Actions (HTTP {verify_response.status_code})"
+        )
+        return False
 
-# Get unique repo names
-repos = set()
-with open(jobs_file) as f:
-    for line in f:
-        job = json.loads(line)
-        repos.add(job["repo_name"])
+    if verify_response.json().get("enabled") is not True:
+        print(f"[ERROR] {benchmark_owner}/{repo_name}: Actions remains disabled")
+        return False
 
-print(f"Found {len(repos)} repositories with waiting jobs")
-print(f"Enabling workflows for: {', '.join(sorted(repos))}\n")
+    print(f"[OK] {benchmark_owner}/{repo_name}: repository Actions enabled")
+    return True
 
-enabled_repos = []
-failed_repos = []
 
-for i, repo_name in enumerate(sorted(repos), 1):
-    print(f"[{i}/{len(repos)}] Processing {repo_name}...")
+def main():
+    project_root = Path(__file__).resolve().parents[1]
+    config = OmegaConf.load(project_root / "config.yaml")
 
-    # List all workflows
-    list_url = f"https://api.github.com/repos/{benchmark_owner}/{repo_name}/actions/workflows"
+    parser = argparse.ArgumentParser(
+        description=(
+            "Enable repository-level GitHub Actions without reading benchmark "
+            "job or awaiting-ID files"
+        )
+    )
+    parser.add_argument(
+        "repo_names",
+        nargs="+",
+        metavar="REPO",
+        help="Repository name under the benchmark owner (one or more)",
+    )
+    parser.add_argument(
+        "--benchmark-owner",
+        default=config.get("benchmark_owner", "Muna4029"),
+        help="GitHub owner containing the benchmark repositories",
+    )
+    args = parser.parse_args()
 
-    try:
-        response = requests.get(list_url, headers=headers, timeout=20)
-        if not response.ok:
-            print(f"  [WARN] Could not list workflows: HTTP {response.status_code}")
-            failed_repos.append(repo_name)
-            continue
+    token = os.environ.get("GITHUB_TOKEN") or config.get("GITHUB_TOKEN")
+    if not token:
+        parser.error("GITHUB_TOKEN is required in the environment or config.yaml")
 
-        workflows = response.json().get("workflows", [])
+    failed = []
+    for repo_name in dict.fromkeys(args.repo_names):
+        try:
+            if not enable_repository_actions(
+                args.benchmark_owner, repo_name, token
+            ):
+                failed.append(repo_name)
+        except requests.RequestException as error:
+            print(f"[ERROR] {args.benchmark_owner}/{repo_name}: {error}")
+            failed.append(repo_name)
 
-        if not workflows:
-            print(f"  [INFO] No workflows found")
-            continue
+    if failed:
+        print(f"[SUMMARY] Failed repositories: {', '.join(failed)}")
+        return 1
 
-        enabled_count = 0
-        for workflow in workflows:
-            workflow_id = workflow.get("id")
-            workflow_name = workflow.get("name", workflow.get("path", "unknown"))
-            state = workflow.get("state")
+    print(f"[SUMMARY] Enabled repository Actions for {len(set(args.repo_names))} repo(s)")
+    return 0
 
-            if state in ("disabled_inactivity", "disabled_fork", "disabled_manually"):
-                print(f"    Enabling '{workflow_name}' (state: {state})...")
-                enable_url = f"https://api.github.com/repos/{benchmark_owner}/{repo_name}/actions/workflows/{workflow_id}/enable"
-                enable_response = requests.put(enable_url, headers=headers, timeout=20)
 
-                if enable_response.status_code == 204:
-                    print(f"      [OK] Enabled")
-                    enabled_count += 1
-                else:
-                    print(f"      [ERROR] Failed: HTTP {enable_response.status_code}")
-
-        if enabled_count > 0:
-            print(f"  [OK] Enabled {enabled_count} workflow(s)")
-            enabled_repos.append(repo_name)
-        else:
-            print(f"  [OK] All workflows already active")
-            enabled_repos.append(repo_name)
-
-    except Exception as e:
-        print(f"  [ERROR] Error: {e}")
-        failed_repos.append(repo_name)
-
-print("\n" + "="*60)
-print("SUMMARY")
-print("="*60)
-print(f"Successfully processed: {len(enabled_repos)}/{len(repos)}")
-if failed_repos:
-    print(f"Failed: {len(failed_repos)}")
-    print(f"  {', '.join(failed_repos)}")
-print("="*60)
+if __name__ == "__main__":
+    raise SystemExit(main())

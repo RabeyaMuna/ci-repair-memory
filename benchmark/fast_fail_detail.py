@@ -233,7 +233,11 @@ def finalize_after_last_poll(
         for job in waiting_now:
             jid = job.get("id")
             try:
-                job_url, concl = get_results(job, self.config, self.credentials)
+                job_url, concl, timing_metrics = get_results(
+                    job, self.config, self.credentials
+                )
+                if timing_metrics:
+                    job["timing"] = timing_metrics
             except Exception as e:
                 debug_log("get_results exception for id={}: {}", jid, repr(e))
                 job_url, concl = None, "waiting"

@@ -220,7 +220,7 @@ def chunk_diff(diff: str, max_chars: int = 8000) -> list:
 
 def classify_chunk_with_llm(issue_id: str, ci_logs: str, diff_chunk: str,
                             validation_steps: list, chunk_idx: int, total_chunks: int,
-                            client: OpenAI, log_details: dict = None, workflow_info: dict = None) -> list:
+                            client: OpenAI, model_name: str, log_details: dict = None, workflow_info: dict = None) -> list:
     """Classify failure types for one chunk of the diff."""
 
     # CRITICAL: Truncate CI logs to prevent token overflow
@@ -243,29 +243,50 @@ def classify_chunk_with_llm(issue_id: str, ci_logs: str, diff_chunk: str,
         chunk_note = f"\n\nNOTE: This is chunk {chunk_idx}/{total_chunks} of the complete diff. Classify failures in THIS chunk only."
         prompt += chunk_note
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a CI/CD failure analysis expert. Identify ALL failure types in the ground truth diff, as one CI workflow can have multiple failed jobs/steps with different failure types. CI logs only show FIRST failure, but the diff fixes MULTIPLE problems."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.3
-        )
+    # Retry logic for API calls (max 3 attempts)
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            # GPT-5-mini only supports temperature=1
+            temperature = 1.0 if 'gpt-5' in model_name.lower() else 0.3
 
-        result = json.loads(response.choices[0].message.content)
-        failures = result.get('failures', [])
-        return failures
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": "You are a CI/CD failure analysis expert. Identify ALL failure types in the ground truth diff, as one CI workflow can have multiple failed jobs/steps with different failure types. CI logs only show FIRST failure, but the diff fixes MULTIPLE problems."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=temperature
+            )
 
-    except Exception as e:
-        print(f"   ️  Error in chunk {chunk_idx}: {str(e)}")
-        return []
+            result = json.loads(response.choices[0].message.content)
+            failures = result.get('failures', [])
+            return failures
+
+        except TimeoutError as e:
+            if attempt < max_retries - 1:
+                print(f"   ⏱️  Timeout on attempt {attempt+1}/{max_retries}, retrying...")
+                continue
+            else:
+                print(f"   ❌ Timeout after {max_retries} attempts in chunk {chunk_idx}")
+                return []
+        except Exception as e:
+            if "timeout" in str(e).lower():
+                if attempt < max_retries - 1:
+                    print(f"   ⏱️  Timeout on attempt {attempt+1}/{max_retries}, retrying...")
+                    continue
+                else:
+                    print(f"   ❌ Timeout after {max_retries} attempts in chunk {chunk_idx}")
+                    return []
+            else:
+                print(f"   ❌ Error in chunk {chunk_idx}: {str(e)[:100]}")
+                return []
 
 
 def classify_with_llm(issue_id: str, ci_logs: str, diff: str, validation_steps: list,
-                     client: OpenAI, log_details: dict = None, workflow_info: dict = None) -> Dict[str, Any]:
-    """Classify failure types using GPT-4o-mini with DEPENDENCY-AWARE chunking.
+                     client: OpenAI, model_name: str, log_details: dict = None, workflow_info: dict = None) -> Dict[str, Any]:
+    """Classify failure types with DEPENDENCY-AWARE chunking.
 
     Analyzes COMPLETE ground truth (not truncated) to find ALL hidden failures.
     Keeps related files (with import dependencies) together for better analysis.
@@ -273,18 +294,27 @@ def classify_with_llm(issue_id: str, ci_logs: str, diff: str, validation_steps: 
     """
 
     # Dependency-aware chunking (keeps related files together)
+    # GPT-5-mini has 128K token context (~500K chars), so use large chunks
+    # 100K chars per chunk = ~25K tokens, leaving room for prompt + response
     try:
-        chunk_data = chunk_diff_with_dependencies(diff, max_chars=8000)
+        chunk_data = chunk_diff_with_dependencies(diff, max_chars=100000)
     except Exception as e:
         print(f"   ️  Dependency chunking failed, using simple chunking: {str(e)}")
         # Fallback to simple chunking
-        simple_chunks = chunk_diff(diff, max_chars=8000)
+        simple_chunks = chunk_diff(diff, max_chars=100000)
         chunk_data = [{'content': c, 'files': [], 'has_dependencies': False} for c in simple_chunks]
 
     all_failures = []
 
+    # Show chunking info if multiple chunks
+    if len(chunk_data) > 1:
+        print(f" [{len(chunk_data)} chunks]", end='', flush=True)
+
     # Classify each chunk
     for idx, chunk_info in enumerate(chunk_data, 1):
+        if len(chunk_data) > 1:
+            print(f" chunk{idx}", end='', flush=True)
+
         chunk_content = chunk_info['content']
         has_deps = chunk_info['has_dependencies']
 
@@ -298,7 +328,7 @@ def classify_with_llm(issue_id: str, ci_logs: str, diff: str, validation_steps: 
 
         chunk_failures = classify_chunk_with_llm(
             issue_id, ci_logs, chunk_content + chunk_note,
-            validation_steps, idx, len(chunk_data), client,
+            validation_steps, idx, len(chunk_data), client, model_name,
             log_details, workflow_info
         )
         all_failures.extend(chunk_failures)
@@ -364,24 +394,53 @@ def main():
     parser.add_argument('--limit', type=int, default=None,
                         help='Limit number of issues to classify (for testing)')
     parser.add_argument('--checkpoint', type=str, default='results/classification_checkpoint.json',
-                        help='Checkpoint file for resuming (auto-saves every 10 instances)')
-    parser.add_argument('--save-interval', type=int, default=10,
-                        help='Save checkpoint every N instances (default: 10)')
+                        help='Checkpoint file for resuming (auto-saves after every instance)')
+    parser.add_argument('--save-interval', type=int, default=1,
+                        help='Save checkpoint every N instances (default: 1 = save after each)')
+    parser.add_argument('--model', type=str, default='gpt-4o-mini',
+                        help='Model to use (default: gpt-4o-mini, or: deepseek-chat)')
+    parser.add_argument('--base-url', type=str, default=None,
+                        help='Base URL for API (for DeepSeek: https://api.deepseek.com)')
     args = parser.parse_args()
+
+    # Auto-generate model-specific output paths if using defaults
+    model_slug = args.model.replace('/', '_').replace('-', '_')
+    if args.output == 'results/failure_classifications.json':
+        args.output = f'results/failure_classifications_{model_slug}.json'
+    if args.checkpoint == 'results/classification_checkpoint.json':
+        args.checkpoint = f'results/classification_checkpoint_{model_slug}.json'
 
     print("="*80)
     print("FAILURE TYPE CLASSIFICATION (Backward Engineering)")
     print("="*80)
+    print(f"Model: {args.model}")
+    print(f"Output: {args.output}")
     print()
 
-    # Initialize OpenAI client
-    api_key = os.getenv('OPENAI_API_KEY')
-    if not api_key:
-        print(" Error: OPENAI_API_KEY not found in .env file")
-        return 1
-
-    client = OpenAI(api_key=api_key)
-    print(" OpenAI client initialized")
+    # Initialize client based on model
+    # Set reasonable timeout to prevent hanging (120s = 2 minutes)
+    if 'deepseek' in args.model.lower():
+        api_key = os.getenv('DEEPSEEK_API_KEY')
+        if not api_key:
+            print(" Error: DEEPSEEK_API_KEY not found in .env file")
+            return 1
+        client_kwargs = {"api_key": api_key, "timeout": 120.0}
+        if args.base_url:
+            client_kwargs["base_url"] = args.base_url
+        else:
+            client_kwargs["base_url"] = "https://api.deepseek.com"
+        client = OpenAI(**client_kwargs)
+        print(" DeepSeek client initialized (timeout: 120s)")
+    else:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            print(" Error: OPENAI_API_KEY not found in .env file")
+            return 1
+        client_kwargs = {"api_key": api_key, "timeout": 120.0}
+        if args.base_url:
+            client_kwargs["base_url"] = args.base_url
+        client = OpenAI(**client_kwargs)
+        print(f" OpenAI client initialized (timeout: 120s, base_url: {client_kwargs.get('base_url', 'default')})")
 
     # Load dataset
     print("\n Loading dataset...")
@@ -487,7 +546,7 @@ def main():
 
         # Classify
         result = classify_with_llm(issue_id, ci_logs, diff, validation_steps, client,
-                                   log_details, workflow_info)
+                                   args.model, log_details, workflow_info)
         classifications.append(result)
 
         # Show all failure types found (no truncation)
@@ -495,7 +554,7 @@ def main():
         types_str = ", ".join(result['failure_type'])
         print(f"  [{num_types}] {types_str}")
 
-        # Save checkpoint incrementally
+        # Save checkpoint incrementally (after every instance by default)
         if len(classifications) % args.save_interval == 0:
             checkpoint_path.parent.mkdir(exist_ok=True, parents=True)
             with open(checkpoint_path, 'w') as f:
@@ -504,7 +563,9 @@ def main():
                     'last_processed_id': issue_id,
                     'classifications': classifications
                 }, f, indent=2)
-            print(f"    💾 Checkpoint saved: {len(classifications)} instances")
+            # Only show save message every 10 instances to avoid spam
+            if len(classifications) % 10 == 0:
+                print(f"    💾 Checkpoint saved: {len(classifications)} instances")
 
     # Final checkpoint save
     if len(classifications) > start_count:
@@ -557,6 +618,7 @@ def main():
 
     output_data = {
         "total_classified": len(classifications),
+        "model": args.model,
         "taxonomy": FAILURE_TAXONOMY,
         "unique_failure_types": unique_types,
         "unique_failure_subtypes": unique_subtypes,

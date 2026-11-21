@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <title>CI Failure Annotation Tool - Rabeya</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.3);
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: white;
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .panel {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-row {
+            margin-bottom: 15px;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        .github-link {
+            display: inline-block;
+            background: #24292e;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .github-link:hover {
+            background: #1a1f23;
+        }
+
+        .taxonomy-grid {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .taxonomy-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .taxonomy-item:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .taxonomy-item.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .taxonomy-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .taxonomy-label {
+            font-weight: 500;
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .remove-custom {
+            margin-left: auto;
+            color: #dc2626;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 8px;
+        }
+
+        .taxonomy-item.selected .remove-custom {
+            color: #fee;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .sub-type-container {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .common-sub-type {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #667eea;
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .common-sub-type:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .sub-type-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #10b981;
+            color: white;
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .sub-type-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+
+        .navigation {
+            display: flex;
+            gap: 15px;
+            padding: 30px;
+            border-top: 1px solid #e0e0e0;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .instance-counter {
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .system-ref {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .system-ref-title {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .system-ref-content {
+            color: #856404;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .instructions-toggle {
+            margin-bottom: 20px;
+            cursor: pointer;
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .instructions-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+        .instructions-content.open {
+            max-height: 2000px;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 CI Failure Annotation Tool - Rabeya</h1>
+            <p>Classify failure types - Select multiple types, add custom ones, choose sub-types</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <p style="margin-top: 10px; opacity: 0.9;" id="progressText">0 of 565 instances completed</p>
+        </div>
+
+        <div class="content">
+            <!-- Left Panel: Instance Information -->
+            <div class="panel">
+                <h2>📋 Instance Information</h2>
+
+                <div class="info-row">
+                    <div class="info-label">Instance ID</div>
+                    <div class="info-value" id="instanceId">-</div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Repository</div>
+                    <div class="info-value" id="repository">-</div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">Workflow Name</div>
+                    <div class="info-value" id="workflowName">-</div>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">CI Workflow YAML</div>
+                    <textarea readonly id="workflowContent" style="width: 100%; height: 350px; font-family: 'Courier New', monospace; font-size: 11px; padding: 10px; background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; overflow-y: auto; resize: vertical;">-</textarea>
+                </div>
+
+                <div class="info-row">
+                    <div class="info-label">View Code Changes</div>
+                    <a href="#" target="_blank" class="github-link" id="githubLink">
+                        🔗 Open GitHub Diff
+                    </a>
+                </div>
+
+                <div class="system-ref">
+                    <div class="system-ref-title">⚠️ SYSTEM-GENERATED CLASSIFICATION (For Reference)</div>
+                    <div class="info-row">
+                        <strong>Failure Types:</strong>
+                        <div class="system-ref-content" id="systemTypes" style="font-weight: 600; color: #856404;">-</div>
+                    </div>
+                    <div class="info-row" style="margin-top: 10px;">
+                        <strong>Sub-types:</strong>
+                        <div class="system-ref-content" id="systemSubTypes" style="font-weight: 600; color: #856404;">-</div>
+                    </div>
+                    <div class="info-row" style="margin-top: 10px;">
+                        <strong>Evidence/Description:</strong>
+                        <div class="system-ref-content" id="systemEvidence" style="max-height: 200px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 4px;">-</div>
+                    </div>
+                </div>
+
+                <div class="instructions-toggle" onclick="toggleInstructions()">
+                    <strong>📖 Quick Taxonomy Reference</strong> (click to expand)
+                </div>
+                <div class="instructions-content" id="taxonomyRef">
+                    <div style="padding: 15px; background: white; border-radius: 6px; font-size: 13px; line-height: 1.6;">
+                        <p><strong>🔧 Code Formatting:</strong> Style issues (indentation, quotes, line length)</p>
+                        <p><strong>🔍 Linting:</strong> Quality issues (unused imports, undefined vars)</p>
+                        <p><strong>⚠️ Syntax Error:</strong> Python syntax errors</p>
+                        <p><strong>🔤 Type Checking:</strong> Type annotation errors (mypy)</p>
+                        <p><strong>💥 Runtime Error:</strong> AttributeError, KeyError, ValueError, etc.</p>
+                        <p><strong>🧪 Test Failure:</strong> Unit/integration test failures</p>
+                        <p><strong>✗ Assertion Error:</strong> Failed test assertions</p>
+                        <p><strong>📦 Dependency Issues:</strong> Missing deps, version conflicts</p>
+                        <p><strong>📥 Package Install Error:</strong> pip install failures</p>
+                        <p><strong>⚙️ Configuration Error:</strong> Invalid config files</p>
+                        <p><strong>🌍 Environment Error:</strong> Platform-specific issues</p>
+                        <p><strong>📖 Doc/Docstring:</strong> Documentation format issues</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Your Annotations -->
+            <div class="panel">
+                <h2>✏️ Your Classification</h2>
+
+                <div class="info-label">Failure Types (select all that apply, or add custom)</div>
+                <div class="taxonomy-grid" id="taxonomyGrid"></div>
+
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="text" id="customTypeInput" placeholder="Add custom failure type..." style="flex: 1;">
+                    <button onclick="addCustomType()" class="btn-primary btn-small">➕ Add</button>
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <div class="info-label">Sub-types (click to add, or type custom ones)</div>
+                    <div class="sub-type-container">
+                        <div class="info-label" style="font-size: 12px; margin-bottom: 10px;">Common sub-types:</div>
+                        <div id="commonSubTypes"></div>
+                    </div>
+                    <input type="text" id="customSubTypeInput" placeholder="Or type custom sub-types (press Enter to add)...">
+                    <div style="margin-top: 10px; min-height: 60px; background: #f9f9f9; border: 2px dashed #e0e0e0; border-radius: 6px; padding: 10px;">
+                        <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Selected Sub-types:</div>
+                        <div id="selectedSubTypes"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div class="info-label">Notes (optional)</div>
+                    <textarea id="notesInput" placeholder="Any additional observations or context..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="previousInstance()" id="prevBtn">← Previous</button>
+                <button class="btn-primary" onclick="nextInstance()" id="nextBtn">Next →</button>
+            </div>
+
+            <div>
+                <div class="instance-counter" id="instanceCounter">Instance 1 of 565</div>
+                <div id="autoSaveStatus" style="font-size: 13px; color: #999; margin-top: 5px;">Auto-save: OFF</div>
+            </div>
+
+            <div class="nav-buttons">
+                <button class="btn-secondary" onclick="enableAutoSave()" id="enableAutoSaveBtn">🔄 Enable Auto-Save</button>
+                <button class="btn-secondary" onclick="saveProgress()">💾 Save Progress</button>
+                <button class="btn-success" onclick="exportAnnotations()">📥 Export CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_TAXONOMY = [
+            'Code Formatting',
+            'Linting',
+            'Syntax Error',
+            'Type Checking',
+            'Runtime Error',
+            'Test Failure',
+            'Assertion Error',
+            'Dependency Issues',
+            'Package Install Error',
+            'Configuration Error',
+            'Environment Error',
+            'Doc/Docstring'
+        ];
+
+        const COMMON_SUB_TYPES = [
+            'unused import', 'undefined variable', 'wrong indentation', 'line too long',
+            'inconsistent quotes', 'missing type hint', 'type mismatch', 'AttributeError',
+            'KeyError', 'ValueError', 'TypeError', 'NameError', 'test assertion failure',
+            'missing dependency', 'version conflict', 'import error', 'config syntax error',
+            'missing docstring', 'invalid docstring format', 'environment variable missing'
+        ];
+
+        let customTaxonomy = [];
+        let instances = [];
+        let currentIndex = 0;
+        let annotations = {};
+        let selectedSubTypes = new Set();
+        let csvFileHandle = null; // For File System Access API
+        let autoSaveEnabled = false;
+
+        // Load CSV data
+        async function loadData() {
+            try {
+                const response = await fetch('rabeya_annotations.csv');
+                const csvText = await response.text();
+
+                // Use PapaParse for proper CSV parsing (handles multi-line fields)
+                const parsed = Papa.parse(csvText, {
+                    header: true,
+                    skipEmptyLines: true
+                });
+
+                instances = parsed.data.map(row => {
+                    return {
+                        id: row['ID'],
+                        repository: row['Repository'],
+                        workflowName: row['Workflow_Name'],
+                        workflowContent: row['Workflow_Content'],
+                        githubLink: row['GitHub_Compare_Link'],
+                        systemTypes: row['System_Generated_Failure_Types'],
+                        systemSubTypes: row['System_Generated_Sub_Types'],
+                        systemEvidence: row['System_Generated_Evidence']
+                    };
+                });
+
+                // Load saved progress
+                const saved = localStorage.getItem('annotations_rabeya');
+                if (saved) {
+                    annotations = JSON.parse(saved);
+                }
+
+                // Load custom taxonomy
+                const savedCustom = localStorage.getItem('customTaxonomy_rabeya');
+                if (savedCustom) {
+                    customTaxonomy = JSON.parse(savedCustom);
+                }
+
+                initializeTaxonomyGrid();
+                initializeCommonSubTypes();
+                displayInstance(0);
+                updateProgress();
+            } catch (error) {
+                alert('Error loading data. Make sure ANNOTATION_SHEET.csv is in the same folder!');
+                console.error(error);
+            }
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+
+            return result;
+        }
+
+        function initializeTaxonomyGrid() {
+            const grid = document.getElementById('taxonomyGrid');
+            grid.innerHTML = '';
+
+            const allTypes = [...DEFAULT_TAXONOMY, ...customTaxonomy];
+
+            allTypes.forEach((type, index) => {
+                const isCustom = index >= DEFAULT_TAXONOMY.length;
+
+                const item = document.createElement('div');
+                item.className = 'taxonomy-item';
+                item.onclick = (e) => {
+                    if (!e.target.classList.contains('remove-custom')) {
+                        toggleTaxonomy(type, item);
+                    }
+                };
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `tax-${type}`;
+                checkbox.onclick = (e) => e.stopPropagation();
+
+                const label = document.createElement('span');
+                label.className = 'taxonomy-label';
+                label.textContent = type;
+
+                item.appendChild(checkbox);
+                item.appendChild(label);
+
+                if (isCustom) {
+                    const removeBtn = document.createElement('span');
+                    removeBtn.className = 'remove-custom';
+                    removeBtn.textContent = '✕';
+                    removeBtn.title = 'Remove custom type';
+                    removeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        removeCustomType(type);
+                    };
+                    item.appendChild(removeBtn);
+                }
+
+                grid.appendChild(item);
+            });
+        }
+
+        function initializeCommonSubTypes() {
+            const container = document.getElementById('commonSubTypes');
+            container.innerHTML = '';
+
+            COMMON_SUB_TYPES.forEach(subType => {
+                const tag = document.createElement('span');
+                tag.className = 'common-sub-type';
+                tag.textContent = subType;
+                tag.onclick = () => addSubType(subType);
+                container.appendChild(tag);
+            });
+
+            // Add Enter key handler for custom sub-types
+            document.getElementById('customSubTypeInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const value = this.value.trim();
+                    if (value) {
+                        value.split(',').forEach(st => {
+                            const trimmed = st.trim();
+                            if (trimmed) addSubType(trimmed);
+                        });
+                        this.value = '';
+                    }
+                }
+            });
+        }
+
+        function addCustomType() {
+            const input = document.getElementById('customTypeInput');
+            const type = input.value.trim();
+
+            if (!type) return;
+
+            if (DEFAULT_TAXONOMY.includes(type) || customTaxonomy.includes(type)) {
+                alert('This failure type already exists!');
+                return;
+            }
+
+            customTaxonomy.push(type);
+            localStorage.setItem('customTaxonomy_rabeya', JSON.stringify(customTaxonomy));
+            input.value = '';
+
+            initializeTaxonomyGrid();
+            restoreSelections();
+            saveCurrentAnnotation();
+        }
+
+        function removeCustomType(type) {
+            if (confirm(`Remove custom type "${type}"?`)) {
+                customTaxonomy = customTaxonomy.filter(t => t !== type);
+                localStorage.setItem('customTaxonomy_rabeya', JSON.stringify(customTaxonomy));
+                initializeTaxonomyGrid();
+                restoreSelections();
+                saveCurrentAnnotation();
+            }
+        }
+
+        function addSubType(subType) {
+            selectedSubTypes.add(subType);
+            updateSelectedSubTypes();
+            saveCurrentAnnotation();
+        }
+
+        function removeSubType(subType) {
+            selectedSubTypes.delete(subType);
+            updateSelectedSubTypes();
+            saveCurrentAnnotation();
+        }
+
+        function updateSelectedSubTypes() {
+            const container = document.getElementById('selectedSubTypes');
+            container.innerHTML = '';
+
+            if (selectedSubTypes.size === 0) {
+                container.innerHTML = '<span style="color: #999; font-size: 13px;">No sub-types selected yet...</span>';
+                return;
+            }
+
+            Array.from(selectedSubTypes).forEach(subType => {
+                const tag = document.createElement('span');
+                tag.className = 'sub-type-tag';
+
+                const text = document.createElement('span');
+                text.textContent = subType;
+
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'remove';
+                removeBtn.textContent = '✕';
+                removeBtn.onclick = () => removeSubType(subType);
+
+                tag.appendChild(text);
+                tag.appendChild(removeBtn);
+                container.appendChild(tag);
+            });
+        }
+
+        function restoreSelections() {
+            const instance = instances[currentIndex];
+            const saved = annotations[instance.id] || {};
+
+            document.querySelectorAll('.taxonomy-item').forEach(item => {
+                const checkbox = item.querySelector('input');
+                const type = item.querySelector('.taxonomy-label').textContent;
+                const isSelected = saved.types && saved.types.includes(type);
+
+                checkbox.checked = isSelected;
+                if (isSelected) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        function toggleTaxonomy(type, element) {
+            const checkbox = element.querySelector('input');
+            checkbox.checked = !checkbox.checked;
+            element.classList.toggle('selected');
+
+            saveCurrentAnnotation();
+        }
+
+        function displayInstance(index) {
+            if (index < 0 || index >= instances.length) return;
+
+            currentIndex = index;
+            const instance = instances[index];
+
+            document.getElementById('instanceId').textContent = instance.id;
+            document.getElementById('repository').textContent = instance.repository;
+            document.getElementById('workflowName').textContent = instance.workflowName;
+            document.getElementById('workflowContent').value = instance.workflowContent || 'Workflow content not available';
+            document.getElementById('githubLink').href = instance.githubLink;
+            document.getElementById('systemTypes').textContent = instance.systemTypes || 'N/A';
+            document.getElementById('systemSubTypes').textContent = instance.systemSubTypes || 'N/A';
+            document.getElementById('systemEvidence').textContent = instance.systemEvidence || 'No evidence provided';
+            document.getElementById('instanceCounter').textContent = `Instance ${index + 1} of ${instances.length}`;
+
+            // Load saved annotation for this instance
+            const saved = annotations[instance.id] || {};
+
+            // Update taxonomy checkboxes
+            restoreSelections();
+
+            // Update sub-types
+            selectedSubTypes = new Set(saved.subTypes || []);
+            updateSelectedSubTypes();
+
+            document.getElementById('notesInput').value = saved.notes || '';
+
+            // Update navigation buttons
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').textContent = index === instances.length - 1 ? 'Finish ✓' : 'Next →';
+
+            updateProgress();
+        }
+
+        function saveCurrentAnnotation() {
+            const instance = instances[currentIndex];
+            const selectedTypes = [];
+
+            document.querySelectorAll('.taxonomy-item input:checked').forEach(checkbox => {
+                const label = checkbox.parentElement.querySelector('.taxonomy-label');
+                selectedTypes.push(label.textContent);
+            });
+
+            annotations[instance.id] = {
+                types: selectedTypes,
+                subTypes: Array.from(selectedSubTypes),
+                notes: document.getElementById('notesInput').value
+            };
+
+            localStorage.setItem('annotations_rabeya', JSON.stringify(annotations));
+            updateProgress();
+
+            // Auto-save to CSV if enabled
+            if (autoSaveEnabled) {
+                autoSaveToCSV();
+            }
+        }
+
+        async function autoSaveToCSV() {
+            try {
+                if (!csvFileHandle) return;
+
+                // Generate updated CSV
+                let csv = 'ID,Repository,Workflow_Name,GitHub_Compare_Link,System_Generated_Failure_Types,System_Generated_Sub_Types,System_Generated_Evidence,--- YOUR ANNOTATIONS BELOW ---,Your_Failure_Types,Your_Sub_Types,Your_Notes\n';
+
+                instances.forEach(instance => {
+                    const ann = annotations[instance.id] || {};
+                    const types = (ann.types || []).join(', ');
+                    const subTypes = (ann.subTypes || []).join(', ');
+                    const notes = (ann.notes || '').replace(/"/g, '""');
+
+                    csv += `"${instance.id}","${instance.repository}","${instance.workflowName}","${instance.githubLink}","${instance.systemTypes}","${instance.systemSubTypes}","${instance.systemEvidence}","→→→","${types}","${subTypes}","${notes}"\n`;
+                });
+
+                // Write to file
+                const writable = await csvFileHandle.createWritable();
+                await writable.write(csv);
+                await writable.close();
+
+                document.getElementById('autoSaveStatus').textContent = '✓ Saved';
+                setTimeout(() => {
+                    document.getElementById('autoSaveStatus').textContent = '✓ Auto-save: ON';
+                }, 1000);
+            } catch (error) {
+                console.error('Auto-save failed:', error);
+                document.getElementById('autoSaveStatus').textContent = '⚠ Save failed';
+            }
+        }
+
+        async function enableAutoSave() {
+            if (!window.showSaveFilePicker) {
+                alert('⚠️ Auto-save to CSV requires Chrome/Edge browser.\n\nYour progress is still saved in the browser and you can export at the end!');
+                return;
+            }
+
+            try {
+                const options = {
+                    suggestedName: 'rabeya_annotations.csv',
+                    types: [{
+                        description: 'CSV Files',
+                        accept: {'text/csv': ['.csv']},
+                    }],
+                };
+
+                csvFileHandle = await window.showSaveFilePicker(options);
+                autoSaveEnabled = true;
+
+                // Initial save
+                await autoSaveToCSV();
+
+                alert('✓ Auto-save enabled! CSV updates automatically after each annotation.');
+                document.getElementById('enableAutoSaveBtn').style.display = 'none';
+            } catch (error) {
+                console.log('Auto-save cancelled');
+            }
+        }
+
+        function nextInstance() {
+            saveCurrentAnnotation();
+            if (currentIndex < instances.length - 1) {
+                displayInstance(currentIndex + 1);
+            } else {
+                alert('🎉 All instances completed! Click "Export CSV" to save your annotations.');
+            }
+        }
+
+        function previousInstance() {
+            saveCurrentAnnotation();
+            if (currentIndex > 0) {
+                displayInstance(currentIndex - 1);
+            }
+        }
+
+        function updateProgress() {
+            const completed = Object.keys(annotations).length;
+            const total = instances.length;
+            const percentage = (completed / total) * 100;
+
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${completed} of ${total} instances completed`;
+        }
+
+        function saveProgress() {
+            saveCurrentAnnotation();
+            alert('✓ Progress saved! You can close this page and resume later.');
+        }
+
+        function exportAnnotations() {
+            saveCurrentAnnotation();
+
+            let csv = 'ID,Repository,Workflow_Name,GitHub_Compare_Link,System_Generated_Failure_Types,System_Generated_Sub_Types,System_Generated_Evidence,--- YOUR ANNOTATIONS BELOW ---,Your_Failure_Types,Your_Sub_Types,Your_Notes\n';
+
+            instances.forEach(instance => {
+                const ann = annotations[instance.id] || {};
+                const types = (ann.types || []).join(', ');
+                const subTypes = (ann.subTypes || []).join(', ');
+                const notes = (ann.notes || '').replace(/"/g, '""');
+
+                csv += `"${instance.id}","${instance.repository}","${instance.workflowName}","${instance.githubLink}","${instance.systemTypes}","${instance.systemSubTypes}","${instance.systemEvidence}","→→→","${types}","${subTypes}","${notes}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'my_annotations.csv';
+            a.click();
+
+            alert('✓ Annotations exported successfully!');
+        }
+
+        function toggleInstructions() {
+            const content = document.getElementById('taxonomyRef');
+            content.classList.toggle('open');
+        }
+
+        // Auto-save on notes input
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('notesInput').addEventListener('input', saveCurrentAnnotation);
+            }, 1000);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            if (e.key === 'ArrowRight' && currentIndex < instances.length - 1) {
+                nextInstance();
+            } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+                previousInstance();
+            } else if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                saveProgress();
+            }
+        });
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>

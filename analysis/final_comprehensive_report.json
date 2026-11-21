@@ -1,0 +1,3703 @@
+{
+  "analysis_date": "2026-11-20T16:33:41.566179",
+  "progression": {
+    "original": {
+      "kappa": 0.5308,
+      "binary_agreement_pct": 80.97,
+      "perfect_matches": 67,
+      "perfect_match_pct": 11.86
+    },
+    "after_round1": {
+      "kappa": 0.6735,
+      "binary_agreement_pct": 86.09,
+      "perfect_matches": 99,
+      "perfect_match_pct": 17.52,
+      "corrections": "273 to DeepSeek only"
+    },
+    "after_round2_final": {
+      "kappa": 0.9409040330041539,
+      "binary_agreement_pct": 97.28613569321534,
+      "perfect_matches": 400,
+      "perfect_match_pct": 70.79646017699115,
+      "corrections": "263 to DeepSeek, 304 to GPT-5 Mini"
+    }
+  },
+  "final_metrics": {
+    "kappa_score": 0.9409040330041539,
+    "interpretation": "Almost Perfect Agreement (0.81-1.00)",
+    "total_instances": 565,
+    "total_failure_types": 12,
+    "binary_decisions": 6780,
+    "binary_agreements": 6596,
+    "binary_agreement_pct": 97.28613569321534,
+    "perfect_instance_matches": 400,
+    "instances_with_differences": 165,
+    "instance_agreement_pct": 70.79646017699115
+  },
+  "total_corrections_applied": {
+    "round1": {
+      "deepseek_corrections": 273,
+      "gpt5mini_corrections": 0
+    },
+    "round2": {
+      "deepseek_corrections": 263,
+      "gpt5mini_corrections": 304
+    },
+    "total": {
+      "deepseek_corrections": 536,
+      "gpt5mini_corrections": 304,
+      "grand_total": 840
+    }
+  },
+  "remaining_disagreements_by_repo": {
+    "CI-Repair/flower": [
+      {
+        "id": "116",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "114",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "122",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "111",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "121",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "109",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "102",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "117",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Doc/Docstring",
+          "Linting",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Doc/Docstring",
+          "Linting",
+          "Syntax Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "115",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "django/django": [
+      {
+        "id": "211",
+        "deepseek": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Code Formatting"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/aiohttp": [
+      {
+        "id": "356",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "354",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "347",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Environment Error",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "353",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "350",
+        "deepseek": [
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Environment Error",
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "cowrie/cowrie": [
+      {
+        "id": "559",
+        "deepseek": [
+          "Linting",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Linting"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/dask": [
+      {
+        "id": "147",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "299",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/flower": [
+      {
+        "id": "104",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error",
+          "Syntax Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "105",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Test Failure"
+        ]
+      }
+    ],
+    "facefusion/facefusion": [
+      {
+        "id": "249",
+        "deepseek": [
+          "Code Formatting",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Runtime Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/axolotl": [
+      {
+        "id": "475",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "482",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Configuration Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "479",
+        "deepseek": [
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Dependency Issues",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/llama_index": [
+      {
+        "id": "212",
+        "deepseek": [
+          "Assertion Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error",
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/camel": [
+      {
+        "id": "413",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Environment Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "408",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error",
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "418",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "415",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "416",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": [
+          "Package Install Error"
+        ]
+      },
+      {
+        "id": "421",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "409",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/conan": [
+      {
+        "id": "545",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "548",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "529",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Environment Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "533",
+        "deepseek": [
+          "Assertion Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "531",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "541",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Configuration Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "530",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Environment Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "538",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Configuration Error",
+          "Environment Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "535",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "523",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Environment Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "542",
+        "deepseek": [
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Linting",
+          "Syntax Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Runtime Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "544",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Environment Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/sqlglot": [
+      {
+        "id": "276",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "conan-io/conan": [
+      {
+        "id": "528",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "540",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Environment Error",
+          "Linting",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "537",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Environment Error",
+          "Linting",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Environment Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "546",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/aider": [
+      {
+        "id": "93",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Package Install Error"
+        ]
+      },
+      {
+        "id": "98",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "99",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "Muna4029/agno": [
+      {
+        "id": "72",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Runtime Error"
+        ]
+      },
+      {
+        "id": "200",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "199",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "77",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring",
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "207",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error",
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "axolotl-ai-cloud/axolotl": [
+      {
+        "id": "491",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Runtime Error"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "456",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "445",
+        "deepseek": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Code Formatting"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "458",
+        "deepseek": [
+          "Code Formatting",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "468",
+        "deepseek": [
+          "Dependency Issues",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "470",
+        "deepseek": [
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "455",
+        "deepseek": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Code Formatting"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/litellm": [
+      {
+        "id": "392",
+        "deepseek": [
+          "Code Formatting",
+          "Doc/Docstring",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Doc/Docstring",
+          "Environment Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "399",
+        "deepseek": [
+          "Code Formatting",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Environment Error",
+          "Linting",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Runtime Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "378",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": [
+          "Environment Error"
+        ]
+      },
+      {
+        "id": "396",
+        "deepseek": [
+          "Code Formatting",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "383",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Dependency Issues",
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/airbyte": [
+      {
+        "id": "361",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "berriai/litellm": [
+      {
+        "id": "388",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "397",
+        "deepseek": [
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/openai-python": [
+      {
+        "id": "240",
+        "deepseek": [
+          "Linting",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/accelerate": [
+      {
+        "id": "49",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/browser-use": [
+      {
+        "id": "504",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Package Install Error"
+        ]
+      },
+      {
+        "id": "519",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "512",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "515",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Package Install Error"
+        ]
+      },
+      {
+        "id": "513",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Package Install Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "507",
+        "deepseek": [
+          "Code Formatting",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "501",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Syntax Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Syntax Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/lightrag": [
+      {
+        "id": "238",
+        "deepseek": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Code Formatting"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "octodns/octodns": [
+      {
+        "id": "59",
+        "deepseek": [
+          "Linting",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Linting"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "60",
+        "deepseek": [
+          "Assertion Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "ytdl-org/youtube-dl": [
+      {
+        "id": "149",
+        "deepseek": [
+          "Code Formatting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Code Formatting",
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/crewai": [
+      {
+        "id": "562",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "571",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "560",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "568",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "569",
+        "deepseek": [
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "572",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error",
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/agno": [
+      {
+        "id": "189",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "167",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "173",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Environment Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "155",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "159",
+        "deepseek": [
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "161",
+        "deepseek": [
+          "Assertion Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "187",
+        "deepseek": [
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Environment Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "165",
+        "deepseek": [
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Dependency Issues",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Environment Error",
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "204",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "154",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "86",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Syntax Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "robotframework/robotframework": [
+      {
+        "id": "268",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "stanfordnlp/dspy": [
+      {
+        "id": "226",
+        "deepseek": [
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "hkuds/deepcode": [
+      {
+        "id": "280",
+        "deepseek": [
+          "Code Formatting",
+          "Linting",
+          "Syntax Error"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "only_deepseek": [
+          "Syntax Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/kitty": [
+      {
+        "id": "313",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Runtime Error"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Package Install Error",
+          "Runtime Error"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Package Install Error"
+        ]
+      },
+      {
+        "id": "224",
+        "deepseek": [
+          "Assertion Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "225",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "modmail-dev/modmail": [
+      {
+        "id": "290",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues"
+        ],
+        "only_deepseek": [
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/locust": [
+      {
+        "id": "314",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Environment Error"
+        ]
+      }
+    ],
+    "arc53/docsgpt": [
+      {
+        "id": "434",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Configuration Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "376",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Test Failure"
+        ]
+      }
+    ],
+    "RabeyaMuna/qutebrowser": [
+      {
+        "id": "269",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/calibre": [
+      {
+        "id": "311",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "Muna4029/flower": [
+      {
+        "id": "124",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "128",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/taipy": [
+      {
+        "id": "440",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring",
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "438",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "436",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/mindsdb": [
+      {
+        "id": "55",
+        "deepseek": [
+          "Dependency Issues",
+          "Package Install Error"
+        ],
+        "gpt5mini": [
+          "Package Install Error"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "agno-agi/agno": [
+      {
+        "id": "197",
+        "deepseek": [
+          "Assertion Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/integration": [
+      {
+        "id": "24",
+        "deepseek": [
+          "Doc/Docstring",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Linting"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "aider-ai/aider": [
+      {
+        "id": "69",
+        "deepseek": [
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "95",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "97",
+        "deepseek": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "92",
+        "deepseek": [
+          "Assertion Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/httpx": [
+      {
+        "id": "41",
+        "deepseek": [
+          "Assertion Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "40",
+        "deepseek": [
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "FoundationAgents/OpenManus": [
+      {
+        "id": "219",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Dependency Issues"
+        ]
+      },
+      {
+        "id": "218",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Configuration Error"
+        ]
+      }
+    ],
+    "RabeyaMuna/chattts": [
+      {
+        "id": "101",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Package Install Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/graphrag": [
+      {
+        "id": "242",
+        "deepseek": [
+          "Configuration Error",
+          "Environment Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Environment Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Runtime Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/lm-evaluation-harness": [
+      {
+        "id": "272",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "274",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Test Failure"
+        ]
+      }
+    ],
+    "agentscope-ai/agentscope": [
+      {
+        "id": "340",
+        "deepseek": [
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "344",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "allenai/olmocr": [
+      {
+        "id": "366",
+        "deepseek": [
+          "Code Formatting",
+          "Runtime Error",
+          "Syntax Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Runtime Error",
+          "Syntax Error"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "365",
+        "deepseek": [
+          "Code Formatting",
+          "Linting",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "hacs/integration": [
+      {
+        "id": "26",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "wandb/wandb": [
+      {
+        "id": "43",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/docsgpt": [
+      {
+        "id": "423",
+        "deepseek": [
+          "Dependency Issues",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Dependency Issues",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "pallets-eco/flask-admin": [
+      {
+        "id": "287",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      },
+      {
+        "id": "288",
+        "deepseek": [
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Dependency Issues",
+          "Environment Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/maxkb": [
+      {
+        "id": "329",
+        "deepseek": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting",
+          "Type Checking"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Type Checking"
+        ]
+      }
+    ],
+    "camel-ai/camel": [
+      {
+        "id": "411",
+        "deepseek": [
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Linting",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "python/cpython": [
+      {
+        "id": "320",
+        "deepseek": [
+          "Code Formatting",
+          "Doc/Docstring",
+          "Linting",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Doc/Docstring",
+          "Linting"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/python-binance": [
+      {
+        "id": "285",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/cloud-init": [
+      {
+        "id": "298",
+        "deepseek": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "python-telegram-bot/python-telegram-bot": [
+      {
+        "id": "244",
+        "deepseek": [
+          "Assertion Error",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Runtime Error",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "pwndbg/pwndbg": [
+      {
+        "id": "61",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Linting",
+          "Runtime Error",
+          "Syntax Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "hugsy/gef": [
+      {
+        "id": "35",
+        "deepseek": [
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "Muna4029/sqlglot": [
+      {
+        "id": "324",
+        "deepseek": [
+          "Assertion Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Type Checking"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/django-import-export": [
+      {
+        "id": "303",
+        "deepseek": [
+          "Doc/Docstring",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Doc/Docstring"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "locustio/locust": [
+      {
+        "id": "247",
+        "deepseek": [
+          "Assertion Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Runtime Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/scapy": [
+      {
+        "id": "266",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Doc/Docstring",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Environment Error"
+        ],
+        "only_gpt5mini": [
+          "Package Install Error"
+        ]
+      }
+    ],
+    "RabeyaMuna/aisuite": [
+      {
+        "id": "373",
+        "deepseek": [
+          "Dependency Issues",
+          "Package Install Error"
+        ],
+        "gpt5mini": [
+          "Package Install Error"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "microsoft/graphrag": [
+      {
+        "id": "243",
+        "deepseek": [
+          "Configuration Error",
+          "Dependency Issues",
+          "Runtime Error"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/django-oscar": [
+      {
+        "id": "286",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Assertion Error",
+          "Code Formatting",
+          "Dependency Issues",
+          "Environment Error",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [],
+        "only_gpt5mini": [
+          "Package Install Error"
+        ]
+      }
+    ],
+    "django-import-export/django-import-export": [
+      {
+        "id": "33",
+        "deepseek": [
+          "Assertion Error",
+          "Configuration Error",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Configuration Error",
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/sqlmap": [
+      {
+        "id": "322",
+        "deepseek": [
+          "Dependency Issues",
+          "Environment Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Dependency Issues",
+          "Environment Error",
+          "Runtime Error"
+        ],
+        "only_deepseek": [
+          "Test Failure"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/spotify-downloader": [
+      {
+        "id": "235",
+        "deepseek": [
+          "Code Formatting",
+          "Dependency Issues",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Dependency Issues"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/rqalpha": [
+      {
+        "id": "289",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Linting",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Configuration Error",
+          "Dependency Issues",
+          "Package Install Error",
+          "Runtime Error",
+          "Test Failure"
+        ],
+        "only_deepseek": [
+          "Assertion Error",
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "andrewyng/aisuite": [
+      {
+        "id": "368",
+        "deepseek": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Code Formatting"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "online-ml/river": [
+      {
+        "id": "37",
+        "deepseek": [
+          "Doc/Docstring",
+          "Linting",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "gpt5mini": [
+          "Doc/Docstring",
+          "Runtime Error",
+          "Test Failure",
+          "Type Checking"
+        ],
+        "only_deepseek": [
+          "Linting"
+        ],
+        "only_gpt5mini": []
+      }
+    ],
+    "RabeyaMuna/cosyvoice": [
+      {
+        "id": "260",
+        "deepseek": [
+          "Assertion Error",
+          "Code Formatting",
+          "Linting"
+        ],
+        "gpt5mini": [
+          "Code Formatting",
+          "Linting"
+        ],
+        "only_deepseek": [
+          "Assertion Error"
+        ],
+        "only_gpt5mini": []
+      }
+    ]
+  }
+}

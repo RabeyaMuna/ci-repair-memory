@@ -151,7 +151,7 @@ def chunk_diff_with_dependencies(diff: str, max_chars: int = 8000) -> List[Dict[
         cluster_files = sorted(cluster)
         cluster_content = '\n'.join(parsed_files[f] for f in cluster_files)
 
-        # If cluster is too large, split it
+        # If cluster fits in one chunk, keep it together
         if len(cluster_content) <= max_chars:
             chunks.append({
                 'content': cluster_content,
@@ -159,13 +159,47 @@ def chunk_diff_with_dependencies(diff: str, max_chars: int = 8000) -> List[Dict[
                 'has_dependencies': len(cluster_files) > 1
             })
         else:
-            # Split large cluster by individual files
-            for file_path in cluster_files:
-                file_content = parsed_files[file_path]
-                chunks.append({
-                    'content': file_content,
-                    'files': [file_path],
-                    'has_dependencies': False
-                })
+            # Split large cluster while respecting dependencies
+            # Group files with their direct dependencies together
+            remaining_files = set(cluster_files)
+
+            while remaining_files:
+                current_chunk_content = ""
+                current_chunk_files = []
+
+                # Start with an arbitrary file from remaining
+                start_file = next(iter(remaining_files))
+                to_process = [start_file]
+
+                while to_process and remaining_files:
+                    file_path = to_process.pop(0)
+                    if file_path not in remaining_files:
+                        continue
+
+                    file_content = parsed_files[file_path]
+
+                    # Check if adding this file would exceed max_chars
+                    if current_chunk_content and len(current_chunk_content) + len(file_content) > max_chars:
+                        # This file won't fit, process it in next chunk
+                        continue
+
+                    # Add file to current chunk
+                    current_chunk_content += '\n' + file_content if current_chunk_content else file_content
+                    current_chunk_files.append(file_path)
+                    remaining_files.remove(file_path)
+
+                    # Add its direct dependencies to process next (keep related files together)
+                    if file_path in dep_graph:
+                        for dep in dep_graph[file_path]:
+                            if dep in remaining_files and dep not in to_process:
+                                to_process.append(dep)
+
+                # Save chunk if we collected any files
+                if current_chunk_content:
+                    chunks.append({
+                        'content': current_chunk_content,
+                        'files': current_chunk_files,
+                        'has_dependencies': len(current_chunk_files) > 1
+                    })
 
     return chunks if chunks else [{'content': diff, 'files': [], 'has_dependencies': False}]

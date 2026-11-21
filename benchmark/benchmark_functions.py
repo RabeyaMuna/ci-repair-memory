@@ -8,7 +8,48 @@ import requests
 import subprocess
 from git import GitCommandError
 from ruamel.yaml import YAML
-  
+
+def format_workflows_with_prettier(repo_path):
+    """
+    Format all workflow files in .github/workflows using prettier to ensure consistent formatting.
+    This prevents indentation and formatting issues before pushing.
+    """
+    workflow_dir = os.path.join(repo_path, ".github", "workflows")
+
+    if not os.path.exists(workflow_dir):
+        return
+
+    # Find all YAML workflow files
+    workflow_files = [
+        os.path.join(workflow_dir, f)
+        for f in os.listdir(workflow_dir)
+        if f.endswith(('.yml', '.yaml'))
+    ]
+
+    if not workflow_files:
+        return
+
+    try:
+        # Run prettier on all workflow files
+        cmd = ["prettier", "--write", "--parser", "yaml"] + workflow_files
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode == 0:
+            print(f"[INFO] Formatted {len(workflow_files)} workflow file(s) with prettier")
+        else:
+            print(f"[WARN] Prettier formatting had issues: {result.stderr}")
+    except FileNotFoundError:
+        print("[WARN] prettier not found - skipping workflow formatting")
+    except subprocess.TimeoutExpired:
+        print("[WARN] prettier timed out - skipping workflow formatting")
+    except Exception as e:
+        print(f"[WARN] Could not format workflows with prettier: {e}")
+
 def edit_workflow_push(workflow_file):
     """
     editing workflow.yaml so, that it would be run on push
@@ -118,6 +159,9 @@ def push_repo(repo, credentials, benchmark_owner, user_branch_name):
     Pushes the corrected repo, return commit sha to use it for getting results
     """
 
+    # Format workflow files with prettier before committing to avoid formatting issues
+    format_workflows_with_prettier(repo.working_dir)
+
     # TODO think about adding only changed files
     repo.git.add(".")
     repo.git.add(update=True)
@@ -171,10 +215,13 @@ def push_repo(repo, credentials, benchmark_owner, user_branch_name):
     return commit_hash
 
 
-def get_repo(datapoint, repos_folder, test_username, benchmark_owner, credentials):
+def get_repo(datapoint, repos_folder, test_username, benchmark_owner, credentials, skip_upstream_sync=False):
     """
     clones repo and switches it to the required commit
     creates branch with username
+
+    Args:
+        skip_upstream_sync: If True, skip upstream syncing for forks (assumes repos are pre-synced)
     """
     repos_folder = os.path.abspath(repos_folder)
     id = datapoint["id"]
@@ -190,15 +237,103 @@ def get_repo(datapoint, repos_folder, test_username, benchmark_owner, credential
     origin_url = (
         f"https://{username}:{token}@github.com/{benchmark_owner}/{repo_name}.git"
     )
+    # Check if this is a fork and get upstream info FIRST (unless skipping)
+    upstream_url = None
+    is_fork = False
+    if not skip_upstream_sync:
+        try:
+            api_url = f"https://api.github.com/repos/{benchmark_owner}/{repo_name}"
+            headers = {"Authorization": f"token {token}"}
+            response = requests.get(api_url, headers=headers, timeout=10)
+
+            if response.status_code == 200:
+                repo_info = response.json()
+                is_fork = repo_info.get("fork", False)
+                if is_fork and "parent" in repo_info:
+                    parent_full_name = repo_info["parent"]["full_name"]
+                    parent_owner, parent_name = parent_full_name.split("/", 1)
+                    upstream_url = f"https://github.com/{parent_owner}/{parent_name}.git"
+                    print(f"[INFO] Detected fork of {parent_full_name}")
+        except Exception as e:
+            print(f"[WARN] Could not check fork status: {e}")
+    else:
+        print(f"[INFO] Skipping upstream sync (using pre-synced repos)")
+
+    # Clone repo (without depth limit if it's a fork, to allow proper upstream sync)
     if (not os.path.exists(repo_path)) or (not os.listdir(repo_path)):
-        repo = git.Repo.clone_from(repo_url, repo_path, depth=1)  # branch=commit_hash
+        if is_fork and upstream_url:
+            # For forks, clone without depth limit to allow upstream sync
+            print(f"[INFO] Cloning fork (full clone to enable upstream sync)...")
+            repo = git.Repo.clone_from(repo_url, repo_path)
+        else:
+            repo = git.Repo.clone_from(repo_url, repo_path, depth=1)
     else:
         repo = git.Repo(repo_path)
+
     try:
         origin = repo.remote("origin")
     except:
         origin = repo.create_remote("origin", url=origin_url)
-    repo.git.fetch("origin", commit_hash)
+
+    # For forks: sync with upstream FIRST before fetching the specific commit (unless skipping)
+    commit_fetched_from_upstream = False
+    if is_fork and upstream_url and not skip_upstream_sync:
+        print(f"[INFO] Syncing with upstream...")
+        try:
+            # Add or update upstream remote
+            try:
+                upstream = repo.remote("upstream")
+                upstream.set_url(upstream_url)
+            except:
+                upstream = repo.create_remote("upstream", url=upstream_url)
+
+            # Unshallow if needed
+            try:
+                repo.git.fetch("--unshallow")
+            except:
+                pass  # Already full clone
+
+            # Fetch everything from upstream to get all workflows and files
+            print(f"[INFO] Fetching all refs from upstream...")
+            repo.git.fetch("upstream", "--tags", "--force", "--prune")
+
+            # CRITICAL FIX: Merge upstream's .github/workflows to get latest actions.lock
+            try:
+                print(f"[INFO] Merging upstream workflow files (fixes actions-lock errors)...")
+                # Checkout to workflows from upstream to get latest actions.lock
+                try:
+                    repo.git.checkout("upstream/main", "--", ".github/workflows/")
+                    print(f"[OK] Updated .github/workflows/ from upstream (includes actions.lock)")
+                except:
+                    try:
+                        repo.git.checkout("upstream/master", "--", ".github/workflows/")
+                        print(f"[OK] Updated .github/workflows/ from upstream (includes actions.lock)")
+                    except:
+                        print(f"[INFO] Could not checkout workflows from upstream")
+            except Exception as e:
+                print(f"[WARN] Could not merge upstream workflows: {e}")
+
+            # Try to fetch the specific commit from upstream FIRST
+            try:
+                print(f"[INFO] Fetching commit {commit_hash[:8]} from upstream...")
+                repo.git.fetch("upstream", commit_hash)
+                # Verify the commit exists
+                repo.git.execute(["git", "cat-file", "-e", commit_hash])
+                commit_fetched_from_upstream = True
+                print(f"[OK] Commit found in upstream")
+            except:
+                print(f"[INFO] Commit not in upstream, will fetch from fork")
+
+        except Exception as e:
+            print(f"[WARN] Could not sync with upstream: {e}")
+            print(f"[INFO] Continuing with fork only...")
+
+    # Fetch from origin if we didn't get it from upstream
+    if not commit_fetched_from_upstream:
+        print(f"[INFO] Fetching commit {commit_hash[:8]} from fork...")
+        repo.git.fetch("origin", commit_hash)
+
+    # Reset to the commit
     try:
         repo.git.reset("--hard", commit_hash)
     except Exception as e:
@@ -219,6 +354,49 @@ def get_repo(datapoint, repos_folder, test_username, benchmark_owner, credential
     # TODO note that you should ban usage of the .git folder.
     # You need flag "-B" to checkout to the current state. Otherwise, the old brach state would be used
     repo.git.checkout(new_branch_name)  # Use regular checkout since branch is fresh
+
+    # For forks: bring in .github/workflows from upstream's default branch (unless skipping)
+    # This ensures we have the latest workflow definitions even if they weren't in sha_fail
+    if is_fork and upstream_url and not skip_upstream_sync:
+        try:
+            print(f"[INFO] Merging .github/workflows from upstream default branch...")
+            # Get upstream's default branch name
+            default_branch = "main"  # fallback
+            try:
+                # Try to detect the actual default branch
+                branches = repo.git.execute(["git", "branch", "-r", "--list", "upstream/*"]).split("\n")
+                for b in branches:
+                    b = b.strip()
+                    if "upstream/main" in b:
+                        default_branch = "main"
+                        break
+                    elif "upstream/master" in b:
+                        default_branch = "master"
+                        break
+            except:
+                pass
+
+            # Checkout .github/workflows from upstream default branch
+            # This brings in the latest workflows while keeping the rest at sha_fail
+            try:
+                repo.git.checkout(f"upstream/{default_branch}", "--", ".github/workflows")
+                # Check if anything was actually checked out
+                status = repo.git.status("--short")
+                if status:
+                    print(f"[OK] Updated workflows from upstream/{default_branch}")
+                    # Commit the workflow updates
+                    repo.git.add(".github/workflows")
+                    try:
+                        repo.git.commit("-m", f"Merge workflows from upstream/{default_branch} for testing")
+                        print(f"[OK] Committed workflow updates")
+                    except:
+                        print(f"[INFO] No workflow changes to commit")
+                else:
+                    print(f"[INFO] Workflows already up to date")
+            except Exception as e:
+                print(f"[INFO] Could not merge workflows from upstream (may not exist): {e}")
+        except Exception as e:
+            print(f"[WARN] Could not merge workflows from upstream: {e}")
 
     repo.name, repo.owner = repo_name, repo_owner
 
@@ -567,10 +745,11 @@ def fix_apply_diff(datapoint, repo_path, repo, out_folder):
     return None
 
 
-def process_datapoint(datapoint, fix_repo_function, config, credentials):
+def process_datapoint(datapoint, fix_repo_function, config, credentials, skip_upstream_sync=False):
     """
     fix_repo_function - function that takes repo path and datapoint, repo object and out_folder.
     it should edit the repo in the folder, nothing to return
+    skip_upstream_sync - if True, skip upstream syncing for forks (assumes repos are pre-synced)
     credentials are passed in the following format:
     {'token': token, 'username': username}
     """
@@ -608,6 +787,7 @@ def process_datapoint(datapoint, fix_repo_function, config, credentials):
         config.test_username,
         config.benchmark_owner,
         credentials,
+        skip_upstream_sync=skip_upstream_sync,
     )
 
     # IMPORTANT: Apply patch BEFORE modifying workflow
@@ -801,16 +981,16 @@ def _prediction_offsets(patch_file):
         with mmap.mmap(source.fileno(), 0, access=mmap.ACCESS_READ) as data:
             if data[:2] != b"{\n":
                 raise ValueError(f"Expected a pretty-printed JSON object: {patch_file}")
-            # Try 4-space indentation first, fall back to 2-space
-            marker = b'\n    "'  # 4 spaces
+            # Try 2-space indentation first (top-level keys), then fall back to 4-space
+            marker = b'\n  "'  # 2 spaces
             cursor = data.find(marker)
-            indent_offset = 5  # newline(1) + 4 spaces
+            indent_offset = 3  # newline(1) + 2 spaces
 
             if cursor == -1:
-                # Try 2-space indentation
-                marker = b'\n  "'  # 2 spaces
+                # Try 4-space indentation
+                marker = b'\n    "'  # 4 spaces
                 cursor = data.find(marker)
-                indent_offset = 3  # newline(1) + 2 spaces
+                indent_offset = 5  # newline(1) + 4 spaces
 
             previous = None
             while cursor != -1:
@@ -844,7 +1024,7 @@ def _load_patch_for_datapoint(out_folder, current_id, sha_fail):
         patch_files.append(os.path.abspath(env_patch_file))
     existing = [path for path in patch_files if os.path.isfile(path)]
     if not existing:
-        raise FileNotFoundError("Patch file not found. Checked: " + ", ".join(patch_files))
+        return None  # No patch file found - continue without applying patch
 
     for patch_file in existing:
         if os.path.basename(patch_file) != "preds.json":
@@ -1001,15 +1181,47 @@ def _record_unapplyable_patch(datapoint, patch_data, check, out_folder):
     print(f"[RECORDED] Corrupted/unapplyable patch details saved to {preferred_path}")
 
 
-def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
+def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder, normalize_ground_truth=False):
     out_folder = os.path.abspath(out_folder)
     current_id  = datapoint["id"]
     sha_fail    = datapoint.get("sha_fail", "")
-    patch_data = _load_patch_for_datapoint(out_folder, current_id, sha_fail)
+    sha_success = datapoint.get("sha_success", "")
 
-    if not patch_data:
-        print(f"[INFO] No patch found for ID {current_id} / sha_fail {sha_fail[:12]} - will push without patch")
-        return None  # Continue to push without applying patch
+    # For ground truth with normalization, generate patch directly from git
+    if normalize_ground_truth and sha_success:
+        print(f"[GROUND_TRUTH] Generating normalized patch: {sha_fail[:12]} -> {sha_success[:12]}")
+        try:
+            result = subprocess.run(
+                ["git", "diff", sha_fail, sha_success],
+                cwd=repo_path,
+                capture_output=True,
+                encoding='utf-8',
+                errors='replace',  # Replace invalid UTF-8 bytes with replacement character
+                check=True
+            )
+            normalized_diff = result.stdout
+
+            if not normalized_diff.strip():
+                print(f"[WARN] Normalized diff is empty for ID {current_id}")
+                return None
+
+            # Create patch_data structure with normalized diff
+            patch_data = {
+                "diff": normalized_diff,
+                "sha_fail": sha_fail,
+                "id": current_id
+            }
+            print(f"[GROUND_TRUTH] Using normalized diff ({len(normalized_diff)} chars)")
+        except subprocess.CalledProcessError as e:
+            print(f"[ERROR] Failed to normalize ground truth: {e.stderr}")
+            return None
+    else:
+        # For generated patches, load from file as normal
+        patch_data = _load_patch_for_datapoint(out_folder, current_id, sha_fail)
+
+        if not patch_data:
+            print(f"[INFO] No patch found for ID {current_id} / sha_fail {sha_fail[:12]} - will push without patch")
+            return None  # Continue to push without applying patch
 
     # Sanity check: the patch must have been generated for the same sha_fail
     # that the repo is currently at. If they differ, the diff will not apply.
@@ -1024,39 +1236,45 @@ def fix_apply_generated_patch(datapoint, repo_path, repo, out_folder):
     temp_diff_path = os.path.join(out_folder, f"temp_{current_id}.diff")
 
     # === WORKFLOW VALIDATION: Filter out invalid workflow changes ===
+    # Skip validation for normalized ground truth (already clean)
     # Only validates the SPECIFIC workflow from the dataset (datapoint['workflow_path'])
     # Other workflows in the diff are left as-is
-    try:
-        from .workflow_patch_validator import validate_and_filter_workflow_changes
+    if normalize_ground_truth:
+        # Normalized ground truth is already clean, use as-is
+        diff_content = patch_data.get("diff") or patch_data.get("patch", "")
+        print(f"[GROUND_TRUTH] Skipping validation for normalized patch")
+    else:
+        try:
+            from .workflow_patch_validator import validate_and_filter_workflow_changes
 
-        print(f"[VALIDATION] Checking for workflow changes in patch for ID {current_id}")
-        # Use "patch" field if "diff" doesn't exist
-        original_diff = patch_data.get("diff") or patch_data.get("patch", "")
-        filtered_diff, validation_report = validate_and_filter_workflow_changes(
-            original_diff,
-            datapoint
-        )
+            print(f"[VALIDATION] Checking for workflow changes in patch for ID {current_id}")
+            # Use "patch" field if "diff" doesn't exist
+            original_diff = patch_data.get("diff") or patch_data.get("patch", "")
+            filtered_diff, validation_report = validate_and_filter_workflow_changes(
+                original_diff,
+                datapoint
+            )
 
-        if validation_report.get('dataset_workflow_in_diff'):
-            if validation_report['filtered_diff_modified']:
-                print(f"[VALIDATION] Removed invalid workflow changes for {datapoint.get('workflow_path')}")
-                print(f"[VALIDATION] Dataset workflow will be used as-is (via copy_and_edit_workflow_file)")
-                diff_content = filtered_diff
+            if validation_report.get('dataset_workflow_in_diff'):
+                if validation_report['filtered_diff_modified']:
+                    print(f"[VALIDATION] Removed invalid workflow changes for {datapoint.get('workflow_path')}")
+                    print(f"[VALIDATION] Dataset workflow will be used as-is (via copy_and_edit_workflow_file)")
+                    diff_content = filtered_diff
+                else:
+                    print(f"[VALIDATION] Workflow changes are valid (formatting-only)")
+                    diff_content = filtered_diff
             else:
-                print(f"[VALIDATION] Workflow changes are valid (formatting-only)")
-                diff_content = filtered_diff
-        else:
-            # No dataset workflow in diff, use original
-            diff_content = original_diff
+                # No dataset workflow in diff, use original
+                diff_content = original_diff
 
-    except ImportError:
-        print("[WARN] Workflow validator not available, skipping validation")
-        diff_content = patch_data.get("diff") or patch_data.get("patch", "")
-    except Exception as e:
-        print(f"[WARN] Workflow validation failed: {e}, using original diff")
-        import traceback
-        traceback.print_exc()
-        diff_content = patch_data.get("diff") or patch_data.get("patch", "")
+        except ImportError:
+            print("[WARN] Workflow validator not available, skipping validation")
+            diff_content = patch_data.get("diff") or patch_data.get("patch", "")
+        except Exception as e:
+            print(f"[WARN] Workflow validation failed: {e}, using original diff")
+            import traceback
+            traceback.print_exc()
+            diff_content = patch_data.get("diff") or patch_data.get("patch", "")
 
     # Write patch to temp file
     # Ensure trailing newline — git apply requires it; missing \n → "corrupt patch"
@@ -1146,3 +1364,13 @@ def ids_match(a, b) -> bool:
 
     # Fallback for weird cases – you can decide to be stricter here
     return False
+
+def fix_apply_ground_truth_patch(datapoint, repo_path, repo, out_folder):
+    """Apply ground truth patch (wrapper for fix_apply_generated_patch with normalize_ground_truth=True)."""
+    return fix_apply_generated_patch(
+        datapoint,
+        repo_path,
+        repo,
+        out_folder,
+        normalize_ground_truth=True,
+    )

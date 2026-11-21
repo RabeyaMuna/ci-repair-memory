@@ -1,0 +1,74 @@
+{
+  "total_instances": 565,
+  "jobs_with_timing": 2307,
+  "timeouts": 351,
+  "execution_duration": {
+    "mean_seconds": 6405.917208495882,
+    "median_seconds": 117.0,
+    "max_seconds": 55243.0,
+    "min_seconds": 2.0,
+    "count": 2307
+  },
+  "instances_with_timing": [
+    {
+      "id": "44",
+      "job_name": "pre-commit",
+      "duration": 153.0,
+      "conclusion": "failure"
+    },
+    {
+      "id": "64",
+      "job_name": "build (3.10)",
+      "duration": 63.0,
+      "conclusion": "success"
+    },
+    {
+      "id": "64",
+      "job_name": "build (3.8)",
+      "duration": 68.0,
+      "conclusion": "success"
+    },
+    {
+      "id": "64",
+      "job_name": "build (3.9)",
+      "duration": 122.0,
+      "conclusion": "failure"
+    },
+    {
+      "id": "63",
+      "job_name": "build (3.10)",
+      "duration": 65.0,
+      "conclusion": "success"
+    },
+    {
+      "id": "63",
+      "job_name": "build (3.9)",
+      "duration": 100.0,
+      "conclusion": "failure"
+    },
+    {
+      "id": "63",
+      "job_name": "build (3.8)",
+      "duration": 74.0,
+      "conclusion": "success"
+    },
+    {
+      "id": "37",
+      "job_name": "ubuntu",
+      "duration": 3.0,
+      "conclusion": "failure"
+    },
+    {
+      "id": "27",
+      "job_name": "doctest",
+      "duration": 439.0,
+      "conclusion": "failure"
+    },
+    {
+      "id": "27",
+      "job_name": "documentation",
+      "duration": 2.0,
+      "conclusion": "failure"
+    }
+  ]
+}
