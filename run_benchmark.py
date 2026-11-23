@@ -11,6 +11,7 @@ from benchmark.load_config import load_config
 from benchmark.benchmark_functions import (
     fix_apply_generated_patch,
     fix_apply_ground_truth_patch,
+    fix_none,
 )
 
 # ============================================================
@@ -55,12 +56,27 @@ parser.add_argument(
         "and runs only the remaining ones."
     ),
 )
+parser.add_argument(
+    "--fetch-failed",
+    action="store_true",
+    help=(
+        "Fetch failed instances: Push code WITHOUT applying any patches to collect "
+        "baseline failure info, timing metrics (queue time, execution time), and see "
+        "which instances actually fail without fixes."
+    ),
+)
 args = parser.parse_args()
 
 if args.resume_missing and not args.ground_truth:
     parser.error("--resume-missing requires --ground-truth")
 
-model_name = "ground_truth" if args.ground_truth else "diff"
+# Determine model name based on mode
+if args.fetch_failed:
+    model_name = "failed-baseline"
+elif args.ground_truth:
+    model_name = "ground_truth"
+else:
+    model_name = "diff"
 current_dir = os.getcwd()
 config_path = os.path.join(current_dir, "config.yaml")
 
@@ -128,7 +144,9 @@ if args.resume:
     else:
         print(f"[RESUME] No existing results file found ({jobs_file}). Running all {len(selected_ids)} instances.")
 
-# selected_ids = ["8", "19", "20", "22", "38", "41", "74", "83", "151", "167", "187", "192", "193", "202", "203", "304", "559"]
+
+# selected_ids = all_ids[0:100]  # Default to all IDs if no specific IDs are provided
+selected_ids = ["10"]
 
 # selected_ids = [
 #   "63",
@@ -720,10 +738,17 @@ if args.resume_missing:
 # ============================================================
 print(" Starting benchmark evaluation...")
 
+# Select the appropriate fix function based on mode
+if args.fetch_failed:
+    fix_function = fix_none
+    print(" [FETCH-FAILED MODE] Pushing code WITHOUT patches to collect baseline metrics")
+elif args.ground_truth:
+    fix_function = fix_apply_ground_truth_patch
+else:
+    fix_function = fix_apply_generated_patch
+
 CIBenchPython.eval_dataset(
-    fix_repo_function=(
-        fix_apply_ground_truth_patch if args.ground_truth else fix_apply_generated_patch
-    ),
+    fix_repo_function=fix_function,
     dataset_info=dataset_info,
     num_dp=None,           # Limit number of datapoints (optional)
     ids_list=selected_ids,         # Provide specific IDs if needed

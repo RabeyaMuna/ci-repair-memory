@@ -496,8 +496,8 @@ for job in normalized:
             }
 
 execution_times = [t["execution_seconds"] for t in instance_timings.values()]
-queue_delays = [t["queue_seconds"] for t in instance_timings.values() if t["queue_seconds"] > 0]
-all_queue_delays = [t["queue_seconds"] for t in instance_timings.values()]
+queue_delays = [t["queue_seconds"] for t in instance_timings.values() if t["queue_seconds"] is not None and t["queue_seconds"] >= 0]
+all_queue_delays = [t["queue_seconds"] for t in instance_timings.values() if t["queue_seconds"] is not None]
 
 print(f"\nInstances with timing data: {len(instance_timings)}/{len(normalized)}")
 

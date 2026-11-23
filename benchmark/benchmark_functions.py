@@ -136,6 +136,15 @@ def copy_and_edit_workflow_file(datapoint, repo):
 
     delete_unreferenced_workflows(workflow_dir, reference_files)
 
+    # Remove actions.lock if it exists - we're modifying workflows so lockfile will be invalid
+    lockfile_path = os.path.join(workflow_dir, "actions.lock")
+    if os.path.exists(lockfile_path):
+        try:
+            os.remove(lockfile_path)
+            print(f"[INFO] Removed actions.lock (prevents lockfile validation errors)")
+        except Exception as e:
+            print(f"[WARN] Could not remove actions.lock: {e}")
+
     print(f"[INFO] Workflow updated: {target_file}")
 
 
@@ -659,14 +668,14 @@ def get_run_data(
                 "run_number": latest_run.get("run_number"),
             }
 
-            # Calculate execution time and queue delay if available
+            # Calculate workflow-level timing (now deprecated, use job-level instead)
             if latest_run.get("run_started_at") and latest_run.get("created_at"):
                 from datetime import datetime
                 try:
                     created = datetime.fromisoformat(latest_run["created_at"].replace("Z", "+00:00"))
                     started = datetime.fromisoformat(latest_run["run_started_at"].replace("Z", "+00:00"))
-                    queue_delay_seconds = (started - created).total_seconds()
-                    timing_metrics["queue_delay_seconds"] = queue_delay_seconds
+                    workflow_queue_delay = (started - created).total_seconds()
+                    timing_metrics["workflow_queue_delay_seconds"] = workflow_queue_delay
                 except:
                     pass
 
@@ -679,6 +688,80 @@ def get_run_data(
                     timing_metrics["execution_time_seconds"] = execution_time_seconds
                 except:
                     pass
+
+            # Fetch job-level timing data (THIS IS THE REAL QUEUE DELAY)
+            run_id = latest_run.get("id")
+            if run_id:
+                try:
+                    jobs_url = f"https://api.github.com/repos/{config.benchmark_owner}/{repo_name}/actions/runs/{run_id}/jobs"
+                    jobs_response = requests.get(jobs_url, headers=headers, params={"per_page": 100}, timeout=30)
+
+                    if jobs_response.ok:
+                        jobs_data = jobs_response.json()
+                        jobs = jobs_data.get("jobs", [])
+
+                        job_queue_delays = []
+                        job_execution_times = []
+                        job_details = []
+
+                        from datetime import datetime
+                        for job in jobs:
+                            job_timing = {
+                                "name": job.get("name"),
+                                "status": job.get("status"),
+                                "conclusion": job.get("conclusion"),
+                                "created_at": job.get("created_at"),
+                                "started_at": job.get("started_at"),
+                                "completed_at": job.get("completed_at"),
+                            }
+
+                            # Calculate job queue delay (time waiting for runner)
+                            if job.get("started_at") and job.get("created_at"):
+                                try:
+                                    job_created = datetime.fromisoformat(job["created_at"].replace("Z", "+00:00"))
+                                    job_started = datetime.fromisoformat(job["started_at"].replace("Z", "+00:00"))
+                                    job_queue_delay = (job_started - job_created).total_seconds()
+                                    job_timing["queue_delay_seconds"] = job_queue_delay
+                                    job_queue_delays.append(job_queue_delay)
+                                except:
+                                    pass
+
+                            # Calculate job execution time
+                            if job.get("completed_at") and job.get("started_at"):
+                                try:
+                                    job_started = datetime.fromisoformat(job["started_at"].replace("Z", "+00:00"))
+                                    job_completed = datetime.fromisoformat(job["completed_at"].replace("Z", "+00:00"))
+                                    job_exec_time = (job_completed - job_started).total_seconds()
+                                    job_timing["execution_seconds"] = job_exec_time
+                                    job_execution_times.append(job_exec_time)
+                                except:
+                                    pass
+
+                            job_details.append(job_timing)
+
+                        # Add job-level aggregated metrics
+                        if job_queue_delays:
+                            import statistics
+                            timing_metrics["job_queue_delay_mean"] = statistics.mean(job_queue_delays)
+                            timing_metrics["job_queue_delay_max"] = max(job_queue_delays)
+                            timing_metrics["job_queue_delay_total"] = sum(job_queue_delays)
+
+                        if job_execution_times:
+                            timing_metrics["job_execution_time_total"] = sum(job_execution_times)
+
+                        timing_metrics["jobs"] = job_details
+                        timing_metrics["num_jobs"] = len(jobs)
+
+                        # Set the REAL queue_delay_seconds to job-level mean
+                        if job_queue_delays:
+                            timing_metrics["queue_delay_seconds"] = statistics.mean(job_queue_delays)
+                        else:
+                            timing_metrics["queue_delay_seconds"] = timing_metrics.get("workflow_queue_delay_seconds", 0)
+
+                except Exception as e:
+                    print(f"[WARN] Could not fetch job-level timing: {e}")
+                    # Fallback to workflow-level timing
+                    timing_metrics["queue_delay_seconds"] = timing_metrics.get("workflow_queue_delay_seconds", 0)
 
             # The workflow-run conclusion is authoritative for this run. Do not
             # mix it with checks belonging to older runs of the same commit.

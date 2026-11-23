@@ -1,0 +1,40 @@
+VARIANCE STUDY - QUICK START
+============================
+
+You already have Run 1 results. This will run the SAME 100 instances 2 more times.
+
+OPTION 1: Run everything automatically
+---------------------------------------
+./variance_study/run_variance.sh
+
+OPTION 2: Run step-by-step
+---------------------------
+
+# Step 1: Sample 100 instances from Run 1
+python3 variance_study/sample_from_existing.py \
+    --run1-results baselines/results/deepseek-v4-flash_llm/jobs_results_diff.jsonl \
+    --num-instances 100 \
+    --output variance_study/sampled_ids.txt
+
+# Step 2: Run 2 (generate patches)
+python3 baselines/main.py --model deepseek-v4-flash --analyzer llm --num-instances 100
+
+# Step 3: Run 2 (evaluate)
+python3 run_benchmark.py --ids "$(cat variance_study/sampled_ids.txt)" --skip-upstream-sync
+cp results/jobs_ids_diff.jsonl variance_study/run_2_results.jsonl
+
+# Step 4: Run 3 (generate patches)
+python3 baselines/main.py --model deepseek-v4-flash --analyzer llm --num-instances 100
+
+# Step 5: Run 3 (evaluate)
+python3 run_benchmark.py --ids "$(cat variance_study/sampled_ids.txt)" --skip-upstream-sync
+cp results/jobs_ids_diff.jsonl variance_study/run_3_results.jsonl
+
+# Step 6: Calculate variance
+python3 variance_study/calculate_variance.py
+
+RESULTS
+-------
+variance_study/variance_statistics.json  - Statistics
+variance_study/variance_table.tex        - LaTeX table for paper
+variance_study/paper_text.txt            - Text for reviewer response

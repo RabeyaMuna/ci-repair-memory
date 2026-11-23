@@ -668,26 +668,29 @@ Path: {full_path}
 6. If no changes needed, return "NO_CHANGES_NEEDED"
 
 ### REQUIRED FORMAT
-Your response must be ONLY the git diff patch, starting with:
+Your response must be ONLY the git diff patch. NO explanations, NO comments, NO markdown.
+
+Example of correct output:
 ```
-diff --git a/{file_path} b/{file_path}
-index <hash>..<hash> <mode>
---- a/{file_path}
-+++ b/{file_path}
-@@ -<start>,<count> +<start>,<count> @@
- <context lines>
--<removed lines>
-+<added lines>
- <context lines>
+--- a/src/example/file.py
++++ b/src/example/file.py
+@@ -10,7 +10,7 @@ def example():
+     pass
+
+ def another_function():
+-    old_code = True
++    new_code = True
+     return result
 ```
 
-Do NOT include:
-- Explanations or comments
-- Markdown fences (```diff)
-- Multiple file diffs (only fix THIS file)
-- Any text before or after the diff
-
-If no changes are needed, respond with exactly: NO_CHANGES_NEEDED
+CRITICAL RULES:
+- Start IMMEDIATELY with "--- a/" (no "diff --git", no "index" line)
+- Include 3 context lines before and after changes
+- NO text before the diff
+- NO text after the diff
+- NO explanations about what you changed
+- NO markdown code fences
+- If no changes needed, respond ONLY with: NO_CHANGES_NEEDED
 """.strip()
 
     def _llm_patch_prompt(self, *, full_path: str, faults_payload: Any, outline: str) -> str:
@@ -721,20 +724,30 @@ If no changes are needed, respond with exactly: NO_CHANGES_NEEDED
 
     ---
 
-    ### RESPONSE RULES (CRITICAL)
-    - Your **entire** response must be a single JSON value.
-    - Do NOT include markdown headings, backticks, or any text before or after the JSON.
-    - Do NOT wrap the JSON in ```json``` fences.
-    - No explanations outside the JSON object. No markdown, commentary, or code fences.
-    - Code format should be preserved as-is; return patched code without any corruption.
+    ### RESPONSE RULES (CRITICAL - READ CAREFULLY)
+    1. Your ENTIRE response must be ONLY a JSON array - nothing else
+    2. NO markdown fences (```json```) - just raw JSON
+    3. NO explanations, NO comments, NO text before or after the JSON
+    4. NO backticks around code snippets - they go inside the JSON strings
+    5. Preserve exact indentation and whitespace in code snippets
 
-    ### RESPONSE FORMAT
-    Return one of:
-    1) []   (if no changes are needed)
-    2) [
+    ### RESPONSE FORMAT (MUST FOLLOW EXACTLY)
+    If no changes needed, return exactly:
+    []
+
+    If changes needed, return this structure:
+    [
         {{
-        "original_snippet": "<exact code block that was modified>",
-        "fixed_snippet": "<corrected version of that code block>"
+            "original_snippet": "exact code that needs fixing",
+            "fixed_snippet": "corrected version of that code"
+        }}
+    ]
+
+    ### EXAMPLE OUTPUT
+    [
+        {{
+            "original_snippet": "def foo():\\n    pass",
+            "fixed_snippet": "def foo() -> None:\\n    pass"
         }}
     ]
     """.strip()
@@ -759,8 +772,22 @@ If no changes are needed, respond with exactly: NO_CHANGES_NEEDED
                     lines = lines[:-1]
                 diff = "\n".join(lines)
 
+            # Extract diff if there's extra text before it
+            if not diff.startswith("---") and not diff.startswith("diff --git"):
+                # Try to find where the actual diff starts
+                lines = diff.split("\n")
+                diff_start = -1
+                for i, line in enumerate(lines):
+                    if line.startswith("--- a/") or line.startswith("diff --git"):
+                        diff_start = i
+                        break
+
+                if diff_start > 0:
+                    logger.info(f"Extracting diff from response (skipping {diff_start} lines of preamble)")
+                    diff = "\n".join(lines[diff_start:])
+
             # Validate it looks like a git diff
-            if not diff.startswith("diff --git"):
+            if not (diff.startswith("--- a/") or diff.startswith("diff --git")):
                 logger.warning(f"Response doesn't look like a git diff: {diff[:100]}")
                 return False
 
@@ -1195,18 +1222,14 @@ If no changes are needed, respond with exactly: NO_CHANGES_NEEDED
             automated_ok = self._try_automated_fix(faults, full_path)
 
             if not automated_ok:
-                # 2) Try git diff approach (works for all file types)
-                logger.info(f"Trying git diff approach for {file_path}")
-                patched_applied = self._generate_git_diff_patch(
+                # 2) Use snippet-based LLM patch (more reliable)
+                logger.info(f"Applying LLM snippet-based patch for {file_path}")
+                patched_applied = self._generate_llm_patch(
                     faults, file_path, full_path, original
                 )
 
-                # 3) Fallback to snippet-based if git diff fails
-                if not patched_applied:
-                    logger.info(f"Git diff failed, falling back to snippet-based patch for {file_path}")
-                    patched_applied = self._generate_llm_patch(
-                        faults, file_path, full_path, original
-                    )
+                # Note: Git diff approach disabled due to reliability issues
+                # The snippet-based approach is simpler and works better
 
                 # Skip formatting to avoid massive whole-file diffs
                 # The LLM should generate targeted fixes only

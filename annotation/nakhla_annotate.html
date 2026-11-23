@@ -338,10 +338,248 @@
                 grid-template-columns: 1fr;
             }
         }
+    
+        /* Ground Truth Diff Styles */
+        .ground-truth-section {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .ground-truth-toggle {
+            cursor: pointer;
+            padding: 8px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 4px;
+            border: 1px solid #4caf50;
+        }
+        .ground-truth-toggle:hover {
+            background: rgba(255,255,255,0.9);
+        }
+        .ground-truth-title {
+            font-weight: 600;
+            color: #2e7d32;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .ground-truth-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .ground-truth-content.open {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .ground-truth-diff {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            padding: 15px;
+            background: #f6f8fa;
+            border-radius: 6px;
+            margin-top: 10px;
+            border: 1px solid #d0d7de;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+    
+    
+        /* Navigation Features CSS */
+        .jump-to-container {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .jump-to-title {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .jump-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .jump-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-annotated {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .overview-toggle {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            border-left: 4px solid #2196f3;
+            margin-bottom: 15px;
+            user-select: none;
+        }
+
+        .overview-toggle:hover {
+            background: #bbdefb;
+        }
+
+        .overview-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .overview-content.open {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .instance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .instance-cell {
+            padding: 8px;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .instance-cell.annotated {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .instance-cell.pending {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 2px solid #dee2e6;
+        }
+
+        .instance-cell.current {
+            background: #cfe2ff;
+            border: 2px solid #0d6efd;
+            color: #084298;
+            box-shadow: 0 0 0 3px rgba(13,110,253,0.25);
+        }
+
+        .instance-cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 20px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #333;
+        }
+    
     </style>
 </head>
 <body>
-    <div class="container">
+    
+        <!-- Navigation Features -->
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+            <!-- Jump to Instance -->
+            <div class="jump-to-container">
+                <div class="jump-to-title">🎯 Quick Navigation</div>
+                <div class="jump-controls">
+                    <input type="text" id="jumpInput" class="jump-input"
+                           placeholder="Type instance ID or number (e.g., '44' or '5')..."
+                           onkeypress="if(event.key==='Enter') jumpToInstance()">
+                    <button class="btn-primary btn-small" onclick="jumpToInstance()">Jump →</button>
+                    <button class="btn-secondary btn-small" onclick="jumpToFirstUnannotated()">First Unannotated ⭐</button>
+                </div>
+            </div>
+
+            <!-- Instance Overview -->
+            <div class="overview-toggle" onclick="toggleOverview()">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>📊 Instance Overview & Progress</strong>
+                    <span id="overviewArrow">▼</span>
+                </div>
+            </div>
+
+            <div class="overview-content" id="overviewContent">
+                <div class="stats-bar" id="statsBar">
+                    <div class="stat-item">
+                        <span class="stat-label">Total:</span>
+                        <span class="stat-value" id="statTotal">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">✓ Annotated:</span>
+                        <span class="stat-value" style="color: #155724;" id="statAnnotated">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">⏳ Pending:</span>
+                        <span class="stat-value" style="color: #721c24;" id="statPending">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Progress:</span>
+                        <span class="stat-value" style="color: #0d6efd;" id="statProgress">0%</span>
+                    </div>
+                </div>
+                <div class="instance-grid" id="instanceGrid"></div>
+            </div>
+        </div>
+
+        <div class="container">
         <div class="header">
             <h1>🔬 CI Failure Annotation Tool - Nakhla</h1>
             <p>Classify failure types - Select multiple types, add custom ones, choose sub-types</p>
@@ -383,6 +621,25 @@
                     </a>
                 </div>
 
+                <!-- Ground Truth Diff Section -->
+                <div class="ground-truth-section">
+                    <div class="ground-truth-toggle" onclick="toggleGroundTruth()">
+                        <div class="ground-truth-title">
+                            <span>✅ Ground Truth Diff (Actual Fix)</span>
+                            <span id="groundTruthArrow">▼</span>
+                        </div>
+                    </div>
+                    <div class="ground-truth-content" id="groundTruthContent">
+                        <div class="info-row" style="margin-top: 10px;">
+                            <div style="font-size: 12px; color: #2e7d32; margin-bottom: 8px; font-style: italic;">
+                                📝 This shows the actual code changes that fixed the issue
+                            </div>
+                            <div class="ground-truth-diff" id="groundTruthDiff">No ground truth available</div>
+                        </div>
+                    </div>
+                </div>
+
+
                 <div class="system-ref">
                     <div class="system-ref-title">⚠️ SYSTEM-GENERATED CLASSIFICATION (For Reference)</div>
                     <div class="info-row">
@@ -394,8 +651,12 @@
                         <div class="system-ref-content" id="systemSubTypes" style="font-weight: 600; color: #856404;">-</div>
                     </div>
                     <div class="info-row" style="margin-top: 10px;">
-                        <strong>Evidence/Description:</strong>
-                        <div class="system-ref-content" id="systemEvidence" style="max-height: 200px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 4px;">-</div>
+                        <div style="cursor: pointer; padding: 8px; background: rgba(255,255,255,0.5); border-radius: 4px; border: 1px solid #ffc107;" onclick="toggleEvidence()">
+                            <strong>Evidence/Description:</strong> <span style="float: right;">▼</span>
+                        </div>
+                        <div class="instructions-content" id="evidenceContent" style="margin-top: 5px;">
+                            <div class="system-ref-content" id="systemEvidence" style="white-space: pre-wrap; line-height: 1.5; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 4px;">-</div>
+                        </div>
                     </div>
                 </div>
 
@@ -459,7 +720,10 @@
             </div>
 
             <div>
-                <div class="instance-counter" id="instanceCounter">Instance 1 of 565</div>
+                <div class="instance-counter">
+                    <span id="instanceCounter">Instance 1 of 565</span>
+                    <span class="status-badge" id="statusBadge">Not Annotated</span>
+                </div>
                 <div id="autoSaveStatus" style="font-size: 13px; color: #999; margin-top: 5px;">Auto-save: OFF</div>
             </div>
 
@@ -524,6 +788,7 @@
                         githubLink: row['GitHub_Compare_Link'],
                         systemTypes: row['System_Generated_Failure_Types'],
                         systemSubTypes: row['System_Generated_Sub_Types'],
+                        groundTruthDiff: row['Ground_Truth_Diff'] || 'Not available',
                         systemEvidence: row['System_Generated_Evidence']
                     };
                 });
@@ -753,6 +1018,7 @@
             document.getElementById('systemTypes').textContent = instance.systemTypes || 'N/A';
             document.getElementById('systemSubTypes').textContent = instance.systemSubTypes || 'N/A';
             document.getElementById('systemEvidence').textContent = instance.systemEvidence || 'No evidence provided';
+            document.getElementById('groundTruthDiff').textContent = instance.groundTruthDiff || 'Ground truth diff not available';
             document.getElementById('instanceCounter').textContent = `Instance ${index + 1} of ${instances.length}`;
 
             // Load saved annotation for this instance
@@ -772,6 +1038,8 @@
             document.getElementById('nextBtn').textContent = index === instances.length - 1 ? 'Finish ✓' : 'Next →';
 
             updateProgress();
+            updateStatusBadge();
+            updateInstanceGrid();
         }
 
         function saveCurrentAnnotation() {
@@ -791,6 +1059,8 @@
 
             localStorage.setItem('annotations_nakhla', JSON.stringify(annotations));
             updateProgress();
+            updateStatusBadge();
+            updateInstanceGrid();
 
             // Auto-save to CSV if enabled
             if (autoSaveEnabled) {
@@ -802,16 +1072,19 @@
             try {
                 if (!csvFileHandle) return;
 
-                // Generate updated CSV
-                let csv = 'ID,Repository,Workflow_Name,GitHub_Compare_Link,System_Generated_Failure_Types,System_Generated_Sub_Types,System_Generated_Evidence,--- YOUR ANNOTATIONS BELOW ---,Your_Failure_Types,Your_Sub_Types,Your_Notes\n';
+                // Generate updated CSV - match exact column headers from original CSV
+                let csv = 'ID,Repository,Workflow_Name,Workflow_Content,GitHub_Compare_Link,System_Generated_Failure_Types,System_Generated_Sub_Types,System_Generated_Evidence,failed_jobs,Human_Failure_Types,Human_Sub_Types,Human_Notes\n';
 
                 instances.forEach(instance => {
                     const ann = annotations[instance.id] || {};
                     const types = (ann.types || []).join(', ');
                     const subTypes = (ann.subTypes || []).join(', ');
                     const notes = (ann.notes || '').replace(/"/g, '""');
+                    const workflowContent = (instance.workflowContent || '').replace(/"/g, '""');
+                    const systemEvidence = (instance.systemEvidence || '').replace(/"/g, '""');
+                    const failedJobs = (instance.failedJobs || '{}').replace(/"/g, '""');
 
-                    csv += `"${instance.id}","${instance.repository}","${instance.workflowName}","${instance.githubLink}","${instance.systemTypes}","${instance.systemSubTypes}","${instance.systemEvidence}","→→→","${types}","${subTypes}","${notes}"\n`;
+                    csv += `"${instance.id}","${instance.repository}","${instance.workflowName}","${workflowContent}","${instance.githubLink}","${instance.systemTypes}","${instance.systemSubTypes}","${systemEvidence}","${failedJobs}","${types}","${subTypes}","${notes}"\n`;
                 });
 
                 // Write to file
@@ -890,29 +1163,181 @@
         function exportAnnotations() {
             saveCurrentAnnotation();
 
-            let csv = 'ID,Repository,Workflow_Name,GitHub_Compare_Link,System_Generated_Failure_Types,System_Generated_Sub_Types,System_Generated_Evidence,--- YOUR ANNOTATIONS BELOW ---,Your_Failure_Types,Your_Sub_Types,Your_Notes\n';
+            let csv = 'ID,Repository,Workflow_Name,Workflow_Content,GitHub_Compare_Link,System_Generated_Failure_Types,System_Generated_Sub_Types,System_Generated_Evidence,failed_jobs,Human_Failure_Types,Human_Sub_Types,Human_Notes\n';
 
             instances.forEach(instance => {
                 const ann = annotations[instance.id] || {};
                 const types = (ann.types || []).join(', ');
                 const subTypes = (ann.subTypes || []).join(', ');
                 const notes = (ann.notes || '').replace(/"/g, '""');
+                const workflowContent = (instance.workflowContent || '').replace(/"/g, '""');
+                const systemEvidence = (instance.systemEvidence || '').replace(/"/g, '""');
+                const failedJobs = (instance.failedJobs || '{}').replace(/"/g, '""');
 
-                csv += `"${instance.id}","${instance.repository}","${instance.workflowName}","${instance.githubLink}","${instance.systemTypes}","${instance.systemSubTypes}","${instance.systemEvidence}","→→→","${types}","${subTypes}","${notes}"\n`;
+                csv += `"${instance.id}","${instance.repository}","${instance.workflowName}","${workflowContent}","${instance.githubLink}","${instance.systemTypes}","${instance.systemSubTypes}","${systemEvidence}","${failedJobs}","${types}","${subTypes}","${notes}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'my_annotations.csv';
+            a.download = 'nakhla_annotations.csv';
             a.click();
 
-            alert('✓ Annotations exported successfully!');
+            alert('✓ Annotations exported as nakhla_annotations.csv!\n\nMove it from Downloads to replace the original file in the annotation folder.');
         }
 
         function toggleInstructions() {
             const content = document.getElementById('taxonomyRef');
+            content.classList.toggle('open');
+        }
+
+        
+        
+        // Navigation Features JavaScript
+
+        function toggleOverview() {
+            const content = document.getElementById('overviewContent');
+            const arrow = document.getElementById('overviewArrow');
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                arrow.textContent = '▼';
+            } else {
+                content.classList.add('open');
+                arrow.textContent = '▲';
+                updateInstanceGrid();
+            }
+        }
+
+        function updateInstanceGrid() {
+            const grid = document.getElementById('instanceGrid');
+            grid.innerHTML = '';
+
+            let annotatedCount = 0;
+
+            instances.forEach((instance, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'instance-cell';
+
+                const isAnnotated = annotations[instance.id] &&
+                    (annotations[instance.id].types?.length > 0 ||
+                     annotations[instance.id].notes?.trim());
+
+                if (isAnnotated) {
+                    cell.classList.add('annotated');
+                    annotatedCount++;
+                } else {
+                    cell.classList.add('pending');
+                }
+
+                if (index === currentIndex) {
+                    cell.classList.add('current');
+                }
+
+                cell.textContent = instance.id;
+                cell.title = `ID: ${instance.id}\n${instance.repository}\nStatus: ${isAnnotated ? 'Annotated' : 'Pending'}`;
+                cell.onclick = () => {
+                    displayInstance(index);
+                    updateInstanceGrid();
+                };
+
+                grid.appendChild(cell);
+            });
+
+            // Update stats
+            document.getElementById('statTotal').textContent = instances.length;
+            document.getElementById('statAnnotated').textContent = annotatedCount;
+            document.getElementById('statPending').textContent = instances.length - annotatedCount;
+            document.getElementById('statProgress').textContent =
+                `${Math.round(annotatedCount / instances.length * 100)}%`;
+        }
+
+        function jumpToInstance() {
+            const input = document.getElementById('jumpInput');
+            const value = input.value.trim();
+
+            if (!value) return;
+
+            // Try to find by ID first
+            let index = instances.findIndex(inst => inst.id === value);
+
+            // If not found, try as 1-based index
+            if (index === -1) {
+                const num = parseInt(value);
+                if (!isNaN(num) && num > 0 && num <= instances.length) {
+                    index = num - 1;
+                }
+            }
+
+            if (index !== -1) {
+                displayInstance(index);
+                input.value = '';
+                input.placeholder = `Jumped to ID ${instances[index].id}`;
+                setTimeout(() => {
+                    input.placeholder = 'Type instance ID or number...';
+                }, 2000);
+            } else {
+                input.value = '';
+                input.placeholder = '❌ Not found! Try again...';
+                setTimeout(() => {
+                    input.placeholder = 'Type instance ID or number...';
+                }, 2000);
+            }
+        }
+
+        function jumpToFirstUnannotated() {
+            for (let i = 0; i < instances.length; i++) {
+                const instance = instances[i];
+                const isAnnotated = annotations[instance.id] &&
+                    (annotations[instance.id].types?.length > 0 ||
+                     annotations[instance.id].notes?.trim());
+
+                if (!isAnnotated) {
+                    displayInstance(i);
+                    document.getElementById('jumpInput').placeholder =
+                        `First unannotated: ID ${instance.id}`;
+                    setTimeout(() => {
+                        document.getElementById('jumpInput').placeholder =
+                            'Type instance ID or number...';
+                    }, 2000);
+                    return;
+                }
+            }
+
+            alert('🎉 All instances are annotated!');
+        }
+
+        function updateStatusBadge() {
+            const instance = instances[currentIndex];
+            const badge = document.getElementById('statusBadge');
+
+            const isAnnotated = annotations[instance.id] &&
+                (annotations[instance.id].types?.length > 0 ||
+                 annotations[instance.id].notes?.trim());
+
+            if (isAnnotated) {
+                badge.textContent = '✓ Annotated';
+                badge.className = 'status-badge status-annotated';
+            } else {
+                badge.textContent = '⏳ Not Annotated';
+                badge.className = 'status-badge status-pending';
+            }
+        }
+
+        function toggleGroundTruth() {
+            const content = document.getElementById('groundTruthContent');
+            const arrow = document.getElementById('groundTruthArrow');
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                arrow.textContent = '▼';
+            } else {
+                content.classList.add('open');
+                arrow.textContent = '▲';
+            }
+        }
+
+        function toggleEvidence() {
+            const content = document.getElementById('evidenceContent');
             content.classList.toggle('open');
         }
 

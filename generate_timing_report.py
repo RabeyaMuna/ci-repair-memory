@@ -56,14 +56,22 @@ def calculate_timing_from_job(job):
     started_at = parse_timestamp(job.get('started_at'))
     completed_at = parse_timestamp(job.get('completed_at'))
 
+    # Try to get run_started_at from timing if available
+    run_started_at = None
+    if 'timing' in job and job['timing'].get('run_started_at'):
+        run_started_at = parse_timestamp(job['timing']['run_started_at'])
+
     exec_time = None
     queue_time = None
 
     if started_at and completed_at:
         exec_time = (completed_at - started_at).total_seconds()
 
-    if pushed_at and started_at:
-        queue_time = (started_at - pushed_at).total_seconds()
+    # Queue delay: pushed_at → run_started_at (time in queue before execution)
+    if pushed_at:
+        actual_start = run_started_at or started_at
+        if actual_start:
+            queue_time = (actual_start - pushed_at).total_seconds()
 
     return exec_time, queue_time, started_at, completed_at
 
@@ -147,7 +155,7 @@ def generate_timing_report(base_dir=".", output_file=None):
             instances_without_timing.append(job_id)
 
         # Collect queue delays
-        if queue_time and queue_time >= 0:
+        if queue_time is not None and queue_time >= 0:
             queue_delays.append(queue_time)
 
     # Calculate statistics

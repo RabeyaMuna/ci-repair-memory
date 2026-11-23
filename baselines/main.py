@@ -26,7 +26,7 @@ from utilities.ensure_repo import ensure_repo_at_commit
 load_dotenv()
 
 
-def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm", num_instances=None, base_dir=None):
+def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="llm", num_instances=None, base_dir=None, run_name=None):
     error_details = []
     fault_localization = []
     generated_patches = []
@@ -41,9 +41,13 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
     project_result_dir = config.project_result_dir
     if base_dir and not os.path.isabs(project_result_dir):
         project_result_dir = os.path.join(base_dir, project_result_dir)
-    result_dir = os.path.join(
-        project_result_dir, f"{model_key}_{log_analyzer_type}"
-    )
+
+    # Add run_name suffix if provided
+    dir_name = f"{model_key}_{log_analyzer_type}"
+    if run_name:
+        dir_name = f"{dir_name}_{run_name}"
+
+    result_dir = os.path.join(project_result_dir, dir_name)
     os.makedirs(result_dir, exist_ok=True)
 
     # Load existing results to check what's already been processed
@@ -211,16 +215,17 @@ def process_entire_dataset(dataset, config, llm, model_key, log_analyzer_type="l
                     changed_files_info=changed_files_info,
                 ).run()
 
+                # Check if FL has data before saving
+                if not fault_localizer.get("fault_localization_data"):
+                    print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
+                    continue
+
                 # Only append if not already in list (prevent duplicates)
                 if not any(item.get("sha_fail") == sha_fail for item in fault_localization):
                     fault_localization.append(fault_localizer)
 
                 with open(os.path.join(result_dir, "fault_localization.json"), "w") as f:
                     json.dump(fault_localization, f, indent=4)
-
-                if not fault_localizer.get("fault_localization_data"):
-                    print(f"[MAIN] No suspicious files found for {sha_fail}, skipping...")
-                    continue
 
             except Exception as e:
                 print(f"[ERROR] Failed processing {sha_fail} during fault localization: {e}")
@@ -285,6 +290,12 @@ if __name__ == "__main__":
         default=None,
         help='Number of instances to process (default: all)'
     )
+    parser.add_argument(
+        '--run-name',
+        type=str,
+        default=None,
+        help='Run name suffix for output directory (e.g., run2, run3)'
+    )
 
     args = parser.parse_args()
 
@@ -307,15 +318,20 @@ if __name__ == "__main__":
     model_key = args.model
     llm = get_llm(model_key)
 
-    hf_token = os.getenv("HF_TOKEN") or config.get("HUGGINGFACE_TOKEN")
+    # ========== DATASET LOADING ==========
+    # Option 1: Load from local workspace (ACTIVE)
+    print("Loading dataset from local workspace...")
+    dataset_path = os.path.join(base_dir, "dataset", "lca_dataset.parquet")
 
-    print("Loading dataset...")
-    dataset_path = hf_hub_download(
-        repo_id="ci-benchmark-user/ci-repair-bench",
-        filename="ci_repair_dataset.parquet",
-        repo_type="dataset",
-        token=hf_token,
-    )
+    # Option 2: Load from HuggingFace (commented out for now)
+    # hf_token = os.getenv("HF_TOKEN") or config.get("HUGGINGFACE_TOKEN")
+    # print("Loading dataset from HuggingFace...")
+    # dataset_path = hf_hub_download(
+    #     repo_id="ci-benchmark-user/ci-repair-bench",
+    #     filename="ci_repair_dataset.parquet",
+    #     repo_type="dataset",
+    #     token=hf_token,
+    # )
 
     dataset_df = pd.read_parquet(dataset_path)
     dataset = dataset_df.to_dict(orient="records")
@@ -324,10 +340,18 @@ if __name__ == "__main__":
     log_analyzer_type = args.analyzer
 
     results = process_entire_dataset(
-        dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type, num_instances=args.num_instances, base_dir=base_dir
+        dataset, config, llm, model_key, log_analyzer_type=log_analyzer_type, num_instances=args.num_instances, base_dir=base_dir, run_name=args.run_name
     )
 
-    output_file = os.path.join(config.project_result_dir, "generated_patches.json")
+    # Determine result directory name
+    dir_name = f"{model_key}_{log_analyzer_type}"
+    if args.run_name:
+        dir_name = f"{dir_name}_{args.run_name}"
+
+    result_dir = os.path.join(config.project_result_dir, dir_name)
+    os.makedirs(result_dir, exist_ok=True)
+
+    output_file = os.path.join(result_dir, "generated_patches.json")
     with open(output_file, "w") as f:
         json.dump(results, f, indent=4)
 
@@ -336,11 +360,6 @@ if __name__ == "__main__":
     # Save LLM usage tracking report
     print("\n" + "=" * 80)
     tracker.print_summary()
-
-    result_dir = os.path.join(
-        config.project_result_dir, f"{model_key}_{log_analyzer_type}"
-    )
-    os.makedirs(result_dir, exist_ok=True)
 
     usage_report_path = os.path.join(result_dir, "llm_usage_report.json")
     tracker.save_report(usage_report_path, include_all_calls=True)
