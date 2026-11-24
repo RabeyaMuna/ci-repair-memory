@@ -271,6 +271,24 @@ class FaultLocalization:
                 print(f"[Selector] Skipping '{file_path}' - CI workflow file in .github/")
                 continue
 
+            # Skip generated/build files (huge files that shouldn't be analyzed)
+            generated_patterns = [
+                '_next/static/',  # Next.js build
+                '/dist/',         # Build output
+                '/build/',        # Build output
+                '/out/',          # Build output
+                '.min.js',        # Minified JS
+                '.bundle.js',     # Bundled JS
+                '.chunk.js',      # Webpack chunks
+                '/node_modules/', # Dependencies
+                '/vendor/',       # Dependencies
+                '/.venv/',        # Virtual env
+                '/venv/',         # Virtual env
+            ]
+            if any(pattern in file_path for pattern in generated_patterns):
+                print(f"[Selector] Skipping '{file_path}' - Generated/build file")
+                continue
+
             suspecious_files.append({"file": file_path})
             files_from_logs += 1
             print(f"[Selector] Added from error log: {file_path}")
@@ -301,6 +319,24 @@ class FaultLocalization:
 
             # Skip only .github/ directory files (CI workflow files)
             if file_path.startswith('.github/'):
+                continue
+
+            # Skip generated/build files (huge files that shouldn't be analyzed)
+            generated_patterns = [
+                '_next/static/',  # Next.js build
+                '/dist/',         # Build output
+                '/build/',        # Build output
+                '/out/',          # Build output
+                '.min.js',        # Minified JS
+                '.bundle.js',     # Bundled JS
+                '.chunk.js',      # Webpack chunks
+                '/node_modules/', # Dependencies
+                '/vendor/',       # Dependencies
+                '/.venv/',        # Virtual env
+                '/venv/',         # Virtual env
+            ]
+            if any(pattern in file_path for pattern in generated_patterns):
+                print(f"[Selector] Skipping '{file_path}' - Generated/build file")
                 continue
 
             candidates.append({
@@ -346,16 +382,16 @@ class FaultLocalization:
         max_tokens = get_prompt_token_budget(self.model_name or "gpt-4")
         prompt_overhead = 3500 + estimate_tokens(failed_jobs_text)
 
-        # Use only 60% of remaining tokens for conservative batching
+        # Use only 40% of remaining tokens for conservative batching (reduced from 60% to avoid context limit)
         available_for_files = max_tokens - prompt_overhead
-        available_tokens = int(available_for_files * 0.6)
+        available_tokens = int(available_for_files * 0.4)
 
         batches = []
         current_batch = []
         current_batch_tokens = 0
 
-        # Max tokens for a single file chunk (50% of available)
-        max_file_tokens = int(available_tokens * 0.5)
+        # Max tokens for a single file chunk (40% of available, reduced from 50%)
+        max_file_tokens = int(available_tokens * 0.4)
 
         for candidate in candidates:
             file_tokens = estimate_tokens(candidate["file_path"] + candidate["diff"])
@@ -500,6 +536,24 @@ FILES TO ANALYZE:
             # Skip only .github/ directory files (CI workflow files)
             if file_path.startswith('.github/'):
                 print(f"[FL] Skipping '{file_path}' - CI workflow file")
+                continue
+
+            # Skip generated/build files (huge files that shouldn't be analyzed)
+            generated_patterns = [
+                '_next/static/',  # Next.js build
+                '/dist/',         # Build output
+                '/build/',        # Build output
+                '/out/',          # Build output
+                '.min.js',        # Minified JS
+                '.bundle.js',     # Bundled JS
+                '.chunk.js',      # Webpack chunks
+                '/node_modules/', # Dependencies
+                '/vendor/',       # Dependencies
+                '/.venv/',        # Virtual env
+                '/venv/',         # Virtual env
+            ]
+            if any(pattern in file_path for pattern in generated_patterns):
+                print(f"[FL] Skipping '{file_path}' - Generated/build file")
                 continue
 
             resolved = self.find_full_file_path(file_path)
@@ -649,6 +703,12 @@ R3. Code Verification
 - Each fault must be observable in this chunk OR
   provably absent (e.g., missing import or symbol).
 - If CI claims something missing, confirm absence here.
+
+R4. Pre-existing Issues Rule
+- If this file appears in RELEVANT FILES FROM LOGS, you MUST localize faults in it
+- Do NOT skip localization because the file wasn't changed in this commit
+- Linter/formatter errors can appear in unchanged files when CI rules change
+- Localize ALL errors that caused the CI failure, even in unchanged files
 
 ==============================================================================
 OUTLINE-BASED SCOPE CLASSIFICATION (STRICT — NUMERIC ONLY)

@@ -35,7 +35,7 @@ MODEL_LIMITS: Dict[str, ModelLimits] = {
     # DeepSeek (adjust if needed)
     "deepseek-chat":  ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
     "deepseek-coder": ModelLimits(context_window=128_000, reserved_output=8_000, max_output=8_000),
-    "deepseek-v4-flash": ModelLimits(context_window=163_840, reserved_output=8_000, max_output=8_000),  # Actual limit via OpenRouter
+    "deepseek-v4-flash": ModelLimits(context_window=160_000, reserved_output=8_000, max_output=8_000),  # OpenRouter → actual limit 163K, using 160K conservatively
 }
 
 def get_model_limits(model_name: Optional[str]) -> ModelLimits:
@@ -52,9 +52,9 @@ def get_chunk_threshold_simple(model_name: Optional[str]) -> int:
     limits = get_model_limits(model_name)
     ctx = limits.context_window
 
-    # DeepSeek V4 Flash: 160k context, use conservative threshold
+    # DeepSeek V4 Flash via OpenRouter: 160k context limit
     if model_name and "deepseek-v4-flash" in model_name.lower():
-        return 80_000  # Half of 160k context window
+        return 100_000  # Conservative chunking for 160K limit (leaves room for prompt+output)
 
     # Other DeepSeek models: use smaller chunks to reduce input token costs
     if model_name and "deepseek" in model_name.lower():
@@ -81,9 +81,9 @@ def get_fl_chunk_threshold(model_name: Optional[str]) -> tuple[int, int]:
     limits = get_model_limits(model_name)
     ctx = limits.context_window
 
-    # DeepSeek V4 Flash: 160k context, use moderate chunks
+    # DeepSeek V4 Flash via OpenRouter: 160k context limit
     if model_name and "deepseek-v4-flash" in model_name.lower():
-        return (400, 50)  # Moderate for 160k context
+        return (400, 50)  # Moderate chunks for 160K limit (400 lines ≈ 20-30K tokens)
 
     # Other DeepSeek models: moderate chunks
     if model_name and "deepseek" in model_name.lower():

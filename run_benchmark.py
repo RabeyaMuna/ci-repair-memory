@@ -145,8 +145,8 @@ if args.resume:
         print(f"[RESUME] No existing results file found ({jobs_file}). Running all {len(selected_ids)} instances.")
 
 
-# selected_ids = all_ids[0:100]  # Default to all IDs if no specific IDs are provided
-selected_ids = ["10"]
+selected_ids = all_ids[0:100]
+
 
 # selected_ids = [
 #   "63",
